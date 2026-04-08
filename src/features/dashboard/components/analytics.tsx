@@ -9,7 +9,7 @@ import { AnalyticsChart } from './analytics-chart'
 
 export function Analytics() {
   return (
-    <div className='space-y-4'>
+    <div className='flex flex-col gap-4'>
       <Card>
         <CardHeader>
           <CardTitle>Traffic Overview</CardTitle>
@@ -162,7 +162,7 @@ function SimpleBarList({
 }) {
   const max = Math.max(...items.map((i) => i.value), 1)
   return (
-    <ul className='space-y-3'>
+    <ul className='flex flex-col gap-3'>
       {items.map((i) => {
         const width = `${Math.round((i.value / max) * 100)}%`
         return (

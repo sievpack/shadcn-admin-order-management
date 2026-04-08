@@ -1,6 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
-import { Eye, Edit, Trash2 } from 'lucide-react'
+import { Eye, Edit, Trash2, Plus, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,9 +17,18 @@ type DataTableRowActionsProps = {
   onViewOrder: (id: number, order: Order) => void
   onEditOrder: (id: number, order: Order) => void
   onDeleteOrder: (id: number) => void
+  onAddOrderItem?: (order: Order) => void
+  onPrintOrder?: (id: number, orderNumber: string) => void
 }
 
-export function DataTableRowActions({ row, onViewOrder, onEditOrder, onDeleteOrder }: DataTableRowActionsProps) {
+export function DataTableRowActions({
+  row,
+  onViewOrder,
+  onEditOrder,
+  onDeleteOrder,
+  onAddOrderItem,
+  onPrintOrder,
+}: DataTableRowActionsProps) {
   const order = row.original
   return (
     <>
@@ -33,21 +42,38 @@ export function DataTableRowActions({ row, onViewOrder, onEditOrder, onDeleteOrd
             <span className='sr-only'>Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align='end' className='w-[160px]'>
-          <DropdownMenuItem
-            onClick={() => onViewOrder(order.id, order)}
-          >
+        <DropdownMenuContent align='end' className='w-[180px]'>
+          <DropdownMenuItem onClick={() => onViewOrder(order.id, order)}>
             查看
             <DropdownMenuShortcut>
               <Eye size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => onEditOrder(order.id, order)}
-          >
+          <DropdownMenuItem onClick={() => onEditOrder(order.id, order)}>
             编辑
             <DropdownMenuShortcut>
               <Edit size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+          {onPrintOrder && (
+            <DropdownMenuItem
+              onClick={() => onPrintOrder(order.id, order.order_number)}
+            >
+              打印加工单
+              <DropdownMenuShortcut>
+                <Printer size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => {
+              onAddOrderItem?.(order)
+            }}
+          >
+            添加分项
+            <DropdownMenuShortcut>
+              <Plus size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

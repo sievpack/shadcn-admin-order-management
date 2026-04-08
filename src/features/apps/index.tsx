@@ -1,6 +1,7 @@
 import { type ChangeEvent, useState } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import { SlidersHorizontal, ArrowUpAZ, ArrowDownAZ } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -150,7 +151,12 @@ export function Apps() {
           {filteredApps.map((app) => (
             <li
               key={app.name}
-              className='rounded-lg border p-4 hover:shadow-md'
+              className='cursor-pointer rounded-lg border p-4 hover:shadow-md'
+              onClick={() => {
+                if (app.name === 'Chats') {
+                  window.location.href = '/_authenticated/chats'
+                }
+              }}
             >
               <div className='mb-8 flex items-center justify-between'>
                 <div
@@ -161,9 +167,18 @@ export function Apps() {
                 <Button
                   variant='outline'
                   size='sm'
-                  className={`${app.connected ? 'border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900' : ''}`}
+                  className={cn(
+                    app.connected &&
+                      'border-primary bg-primary/10 hover:bg-primary/20'
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (app.name === 'Chats') {
+                      window.location.href = '/_authenticated/chats'
+                    }
+                  }}
                 >
-                  {app.connected ? 'Connected' : 'Connect'}
+                  {app.connected ? 'Open' : 'Connect'}
                 </Button>
               </div>
               <div>

@@ -1,12 +1,11 @@
 import * as React from 'react'
-import { ChevronsUpDown, Plus } from 'lucide-react'
+import { ChevronsUpDown, User, LogOut } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -16,17 +15,39 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 
-type TeamSwitcherProps = {
-  teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
-}
-
-export function TeamSwitcher({ teams }: TeamSwitcherProps) {
+export function TeamSwitcher() {
   const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const [userInfo, setUserInfo] = React.useState<{
+    username: string
+    first_name: string
+    last_name: string
+    role: string
+    email?: string
+  } | null>(null)
+
+  React.useEffect(() => {
+    const stored = localStorage.getItem('userInfo')
+    if (stored) {
+      setUserInfo(JSON.parse(stored))
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+    window.location.href = '/sign-in'
+  }
+
+  const displayName = userInfo
+    ? `${userInfo.last_name}${userInfo.first_name}`
+    : '未登录'
+
+  const roleNames: Record<string, string> = {
+    superadmin: '超级管理员',
+    admin: '管理员',
+    manager: '经理',
+    cashier: '收银员',
+  }
 
   return (
     <SidebarMenu>
@@ -38,13 +59,15 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
               <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
-                <activeTeam.logo className='size-4' />
+                <User className='size-4' />
               </div>
               <div className='grid flex-1 text-start text-sm leading-tight'>
-                <span className='truncate font-semibold'>
-                  {activeTeam.name}
+                <span className='truncate font-semibold'>{displayName}</span>
+                <span className='truncate text-xs'>
+                  {userInfo
+                    ? roleNames[userInfo.role] || userInfo.role
+                    : '用户'}
                 </span>
-                <span className='truncate text-xs'>{activeTeam.plan}</span>
               </div>
               <ChevronsUpDown className='ms-auto' />
             </SidebarMenuButton>
@@ -56,28 +79,33 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
             sideOffset={4}
           >
             <DropdownMenuLabel className='text-xs text-muted-foreground'>
-              Teams
+              当前用户
             </DropdownMenuLabel>
-            {teams.map((team, index) => (
-              <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
-                className='gap-2 p-2'
-              >
-                <div className='flex size-6 items-center justify-center rounded-sm border'>
-                  <team.logo className='size-4 shrink-0' />
-                </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className='gap-2 p-2'>
-              <div className='flex size-6 items-center justify-center rounded-md border bg-background'>
-                <Plus className='size-4' />
-              </div>
-              <div className='font-medium text-muted-foreground'>Add team</div>
-            </DropdownMenuItem>
+            {userInfo && (
+              <>
+                <DropdownMenuItem className='gap-2 p-2'>
+                  <div className='flex size-6 items-center justify-center rounded-sm border'>
+                    <User className='size-4' />
+                  </div>
+                  <div className='flex flex-col'>
+                    <span>{displayName}</span>
+                    <span className='text-xs text-muted-foreground'>
+                      {userInfo.username}
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className='gap-2 p-2 text-red-500'
+                  onClick={handleLogout}
+                >
+                  <div className='flex size-6 items-center justify-center rounded-sm border'>
+                    <LogOut className='size-4' />
+                  </div>
+                  <span>退出登录</span>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

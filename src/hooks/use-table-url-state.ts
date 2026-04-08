@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import type {
   ColumnFiltersState,
   OnChangeFn,
@@ -34,7 +34,6 @@ type UseTableUrlStateParams = {
         columnId: string
         searchKey: string
         type?: 'string'
-        // Optional transformers for custom types
         serialize?: (value: unknown) => unknown
         deserialize?: (value: unknown) => unknown
       }
@@ -49,16 +48,12 @@ type UseTableUrlStateParams = {
 }
 
 type UseTableUrlStateReturn = {
-  // Global filter
   globalFilter?: string
   onGlobalFilterChange?: OnChangeFn<string>
-  // Column filters
   columnFilters: ColumnFiltersState
   onColumnFiltersChange: OnChangeFn<ColumnFiltersState>
-  // Pagination
   pagination: PaginationState
   onPaginationChange: OnChangeFn<PaginationState>
-  // Helpers
   ensurePageInRange: (
     pageCount: number,
     opts?: { resetTo?: 'first' | 'last' }
@@ -85,7 +80,6 @@ export function useTableUrlState(
   const globalFilterEnabled = globalFilterCfg?.enabled ?? true
   const trimGlobal = globalFilterCfg?.trim ?? true
 
-  // Build initial column filters from the current search params
   const initialColumnFilters: ColumnFiltersState = useMemo(() => {
     const collected: ColumnFiltersState = []
     for (const cfg of columnFiltersCfg) {
@@ -97,10 +91,9 @@ export function useTableUrlState(
           collected.push({ id: cfg.columnId, value })
         }
       } else {
-        // default to array type
-        const value = (deserialize(raw) as unknown[]) ?? []
-        if (Array.isArray(value) && value.length > 0) {
-          collected.push({ id: cfg.columnId, value })
+        const value = (deserialize(raw) as string) ?? ''
+        if (typeof value === 'string' && value.trim() !== '') {
+          collected.push({ id: cfg.columnId, value: value.split(',') })
         }
       }
     }
@@ -139,6 +132,8 @@ export function useTableUrlState(
     return typeof raw === 'string' ? raw : ''
   })
 
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const onGlobalFilterChange: OnChangeFn<string> | undefined =
     globalFilterEnabled
       ? (updater) => {
@@ -148,22 +143,74 @@ export function useTableUrlState(
               : updater
           const value = trimGlobal ? next.trim() : next
           setGlobalFilter(value)
-          navigate({
-            search: (prev) => ({
-              ...(prev as SearchRecord),
-              [pageKey]: undefined,
-              [globalFilterKey]: value ? value : undefined,
-            }),
-          })
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current)
+          }
+          debounceTimerRef.current = setTimeout(() => {
+            navigate({
+              search: (prev) => ({
+                ...(prev as SearchRecord),
+                [pageKey]: undefined,
+                [globalFilterKey]: value ? value : undefined,
+              }),
+            })
+          }, 300)
         }
       : undefined
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (globalFilterEnabled) {
+      const raw = (search as SearchRecord)[globalFilterKey]
+      const value = typeof raw === 'string' ? raw : ''
+      if (value !== globalFilter) {
+        setGlobalFilter(value)
+      }
+    }
+  }, [search, globalFilterKey, globalFilterEnabled])
+
+  useEffect(() => {
+    const newColumnFilters: ColumnFiltersState = []
+    for (const cfg of columnFiltersCfg) {
+      const raw = (search as SearchRecord)[cfg.searchKey]
+      const deserialize = cfg.deserialize ?? ((v: unknown) => v)
+      if (cfg.type === 'string') {
+        const value = (deserialize(raw) as string) ?? ''
+        if (typeof value === 'string' && value.trim() !== '') {
+          newColumnFilters.push({ id: cfg.columnId, value })
+        }
+      } else {
+        const value = (deserialize(raw) as string) ?? ''
+        if (typeof value === 'string' && value.trim() !== '') {
+          newColumnFilters.push({ id: cfg.columnId, value: value.split(',') })
+        }
+      }
+    }
+    // 只在用户触发的更新时才设置 columnFilters，避免循环
+    if (JSON.stringify(newColumnFilters) !== JSON.stringify(columnFilters)) {
+      setColumnFilters(newColumnFilters)
+    }
+  }, [search, columnFiltersCfg, columnFilters])
 
   const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updater) => {
     const next =
       typeof updater === 'function' ? updater(columnFilters) : updater
+
+    // 如果没有变化，不做任何操作
+    if (JSON.stringify(next) === JSON.stringify(columnFilters)) {
+      return
+    }
+
     setColumnFilters(next)
 
-    const patch: Record<string, unknown> = {}
+    const newSearch: Record<string, unknown> = {}
 
     for (const cfg of columnFiltersCfg) {
       const found = next.find((f) => f.id === cfg.columnId)
@@ -171,22 +218,36 @@ export function useTableUrlState(
       if (cfg.type === 'string') {
         const value =
           typeof found?.value === 'string' ? (found.value as string) : ''
-        patch[cfg.searchKey] =
+        newSearch[cfg.searchKey] =
           value.trim() !== '' ? serialize(value) : undefined
       } else {
         const value = Array.isArray(found?.value)
           ? (found!.value as unknown[])
           : []
-        patch[cfg.searchKey] = value.length > 0 ? serialize(value) : undefined
+        newSearch[cfg.searchKey] =
+          value.length > 0
+            ? (serialize(value) as unknown[]).join(',')
+            : undefined
       }
     }
 
+    const currentSearch = search as SearchRecord
+    const prevPage = currentSearch[pageKey]
+
+    const hasFiltersCleared = Object.values(newSearch).some(
+      (v) => v === undefined
+    )
+    const resetPage = hasFiltersCleared ? undefined : prevPage
+
     navigate({
-      search: (prev) => ({
-        ...(prev as SearchRecord),
-        [pageKey]: undefined,
-        ...patch,
-      }),
+      search: {
+        ...Object.fromEntries(
+          Object.entries({ ...currentSearch, ...newSearch }).filter(
+            ([, v]) => v !== undefined
+          )
+        ),
+        [pageKey]: resetPage,
+      },
     })
   }
 

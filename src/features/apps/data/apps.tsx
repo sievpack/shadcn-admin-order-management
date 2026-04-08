@@ -107,4 +107,10 @@ export const apps = [
     connected: false,
     desc: 'Easily integrate WhatsApp for direct messaging.',
   },
+  {
+    name: 'Chats',
+    logo: <IconDiscord />,
+    connected: true,
+    desc: 'Manage all your chat conversations in one place.',
+  },
 ]

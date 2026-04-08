@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>报工记录 - {{报工编号}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft YaHei", "SimSun", sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+            padding: 20px;
+        }
+        .print-container {
+            max-width: 700px;
+            margin: 0 auto;
+            border: 2px solid #333;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 2px solid #333;
+            background: #f5f5f5;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .header .no {
+            font-size: 14px;
+            color: #666;
+        }
+        .info-section {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .info-item {
+            width: 25%;
+            padding: 12px 15px;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+        }
+        .info-item:nth-child(4n) { border-right: none; }
+        .info-item .label {
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+        .info-item .value {
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .sign-section {
+            display: flex;
+            padding: 25px 20px;
+            border-top: 2px solid #333;
+        }
+        .sign-item {
+            flex: 1;
+        }
+        .sign-item .sign-line {
+            margin-top: 35px;
+            border-bottom: 1px solid #333;
+            min-height: 30px;
+        }
+        .sign-item .sign-label {
+            color: #888;
+            font-size: 11px;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            background: #f5f5f5;
+            font-size: 11px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <div class="header">
+            <h1>报 工 记 录</h1>
+            <div class="no">编号：{{报工编号}}</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-item">
+                <div class="label">工单编号</div>
+                <div class="value">{{工单编号}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">报工日期</div>
+                <div class="value">{{报工日期}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">报工人</div>
+                <div class="value">{{报工人}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">检验员</div>
+                <div class="value">{{检验员}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">报工数量</div>
+                <div class="value">{{报工数量}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">合格数量</div>
+                <div class="value">{{合格数量}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">不良数量</div>
+                <div class="value">{{不良数量}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">工序</div>
+                <div class="value">{{工序}}</div>
+            </div>
+        </div>
+        
+        <div class="sign-section">
+            <div class="sign-item">
+                <div class="sign-label">班组长签字</div>
+                <div class="sign-line"></div>
+            </div>
+            <div class="sign-item">
+                <div class="sign-label">质检员签字</div>
+                <div class="sign-line"></div>
+            </div>
+            <div class="sign-item">
+                <div class="sign-label">车间主任签字</div>
+                <div class="sign-line"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            打印时间：{{print_time}} | JNS订单管理系统
+        </div>
+    </div>
+</body>
+</html>

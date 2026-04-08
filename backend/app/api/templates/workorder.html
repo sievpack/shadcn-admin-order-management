@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>生产工单 - {{工单编号}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft YaHei", "SimSun", sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+            padding: 20px;
+        }
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid #333;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 2px solid #333;
+            background: #f5f5f5;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .header .order-no {
+            font-size: 14px;
+            color: #666;
+        }
+        .info-section {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ddd;
+        }
+        .info-item {
+            width: 25%;
+            padding: 10px 15px;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+        }
+        .info-item:nth-child(4n) { border-right: none; }
+        .info-item .label {
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+        .info-item .value {
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .product-info {
+            padding: 15px;
+            border-bottom: 2px solid #333;
+        }
+        .product-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .product-info th,
+        .product-info td {
+            border: 1px solid #333;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .product-info th {
+            background: #f5f5f5;
+            font-weight: bold;
+            text-align: center;
+        }
+        .product-info .text-center { text-align: center; }
+        .product-info .text-right { text-align: right; }
+        .product-info .total-row {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        .sign-section {
+            display: flex;
+            padding: 20px;
+            border-top: 2px solid #333;
+        }
+        .sign-item {
+            flex: 1;
+            padding: 10px;
+        }
+        .sign-item .sign-line {
+            margin-top: 30px;
+            border-bottom: 1px solid #333;
+            min-height: 30px;
+        }
+        .sign-item .sign-label {
+            color: #888;
+            font-size: 11px;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            background: #f5f5f5;
+            font-size: 11px;
+            color: #888;
+        }
+        @media print {
+            body { padding: 0; }
+            .print-container { border: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <div class="header">
+            <h1>生 产 工 单</h1>
+            <div class="order-no">编号：{{工单编号}}</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-item">
+                <div class="label">计划编号</div>
+                <div class="value">{{计划编号}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">产线</div>
+                <div class="value">{{产线}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">工单状态</div>
+                <div class="value">{{工单状态}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">创建时间</div>
+                <div class="value">{{create_at}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">计划开始</div>
+                <div class="value">{{计划开始}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">计划结束</div>
+                <div class="value">{{计划结束}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">实际开始</div>
+                <div class="value">{{实际开始}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">实际结束</div>
+                <div class="value">{{实际结束}}</div>
+            </div>
+        </div>
+        
+        <div class="product-info">
+            <table>
+                <thead>
+                    <tr>
+                        <th>产品类型</th>
+                        <th>产品型号</th>
+                        <th>规格</th>
+                        <th class="text-center">单位</th>
+                        <th class="text-right">数量</th>
+                        <th class="text-right">已完成</th>
+                        <th class="text-center">工序</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{产品类型}}</td>
+                        <td>{{产品型号}}</td>
+                        <td>{{规格}}</td>
+                        <td class="text-center">{{单位}}</td>
+                        <td class="text-right">{{工单数量}}</td>
+                        <td class="text-right">{{已完成数量}}</td>
+                        <td class="text-center">{{工序}} / {{总工序}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="sign-section">
+            <div class="sign-item">
+                <div class="sign-label">审核签字</div>
+                <div class="sign-line"></div>
+            </div>
+            <div class="sign-item">
+                <div class="sign-label">生产签字</div>
+                <div class="sign-line"></div>
+            </div>
+            <div class="sign-item">
+                <div class="sign-label">检验签字</div>
+                <div class="sign-line"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            打印时间：{{print_time}} | JNS订单管理系统
+        </div>
+    </div>
+</body>
+</html>

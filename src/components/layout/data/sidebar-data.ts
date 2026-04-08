@@ -4,12 +4,15 @@ import {
   Folder,
   Database,
   FileText,
-  ChevronRight,
   User,
   Activity,
   Settings,
   HelpCircle,
   Command,
+  Send,
+  ListOrdered,
+  Warehouse,
+  Book,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -37,7 +40,7 @@ export const sidebarData: SidebarData = {
         },
         {
           title: '订单管理',
-          icon: BarChart3,
+          icon: ListOrdered,
           items: [
             {
               title: '订单列表',
@@ -51,7 +54,7 @@ export const sidebarData: SidebarData = {
         },
         {
           title: '发货管理',
-          icon: Folder,
+          icon: Send,
           items: [
             {
               title: '已发货列表',
@@ -80,7 +83,15 @@ export const sidebarData: SidebarData = {
         {
           title: '生产管理',
           icon: Activity,
-          items: [],
+          items: [
+            { title: '生产统计', url: '/production/stats' },
+            { title: '生产计划', url: '/production/plan' },
+            { title: '生产工单', url: '/production/order' },
+            { title: '报工记录', url: '/production/report' },
+            { title: '质检记录', url: '/production/qc' },
+            { title: '成品入库', url: '/production/inbound' },
+            { title: '物料消耗', url: '/production/material' },
+          ],
         },
         {
           title: '外协管理',
@@ -99,13 +110,20 @@ export const sidebarData: SidebarData = {
         },
         {
           title: '仓库管理',
-          icon: Database,
+          icon: Warehouse,
           items: [],
         },
         {
           title: '财务管理',
           icon: FileText,
-          items: [],
+          items: [
+            { title: '财务报表', url: '/finance/stats' },
+            { title: '应收账款', url: '/finance/ar' },
+            { title: '收款记录', url: '/finance/collection' },
+            { title: '应付账款', url: '/finance/ap' },
+            { title: '付款记录', url: '/finance/payment' },
+            { title: '凭证管理', url: '/finance/voucher' },
+          ],
         },
         {
           title: '统计报表',
@@ -130,9 +148,18 @@ export const sidebarData: SidebarData = {
           ],
         },
         {
-          title: '用户管理',
-          icon: User,
-          url: '/users',
+          title: '系统管理',
+          icon: Book,
+          items: [
+            {
+              title: '用户管理',
+              url: '/users',
+            },
+            {
+              title: '字典管理',
+              url: '/dict/type',
+            },
+          ],
         },
         {
           title: '测试页面',
@@ -141,6 +168,10 @@ export const sidebarData: SidebarData = {
             {
               title: 'Tasks',
               url: '/tasks',
+            },
+            {
+              title: '模板页面',
+              url: '/template',
             },
           ],
         },

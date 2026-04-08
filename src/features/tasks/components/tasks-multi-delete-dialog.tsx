@@ -65,7 +65,7 @@ export function TasksMultiDeleteDialog<TData>({
         </span>
       }
       desc={
-        <div className='space-y-4'>
+        <div className='flex flex-col gap-4'>
           <p className='mb-2'>
             Are you sure you want to delete the selected tasks? <br />
             This action cannot be undone.

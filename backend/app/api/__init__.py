@@ -1,4 +1,4 @@
 # API路由模块
-from . import order, auth
+from . import order, auth, report
 
-__all__ = ['order', 'auth']
+__all__ = ['order', 'auth', 'report']

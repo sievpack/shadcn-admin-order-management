@@ -2,31 +2,44 @@
 
 import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { toast } from 'sonner'
+import { userAPI } from '@/lib/api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { type User } from '../data/schema'
+import { type User } from './users-columns'
 
 type UserDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow: User
+  onSuccess?: () => void
 }
 
 export function UsersDeleteDialog({
   open,
   onOpenChange,
   currentRow,
+  onSuccess,
 }: UserDeleteDialogProps) {
   const [value, setValue] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (value.trim() !== currentRow.username) return
 
-    onOpenChange(false)
-    showSubmittedData(currentRow, 'The following user has been deleted:')
+    setLoading(true)
+    try {
+      await userAPI.deleteUser(currentRow.id)
+      toast.success('用户删除成功')
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || '删除失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -34,47 +47,43 @@ export function UsersDeleteDialog({
       open={open}
       onOpenChange={onOpenChange}
       handleConfirm={handleDelete}
-      disabled={value.trim() !== currentRow.username}
+      disabled={value.trim() !== currentRow.username || loading}
       title={
         <span className='text-destructive'>
           <AlertTriangle
             className='me-1 inline-block stroke-destructive'
             size={18}
           />{' '}
-          Delete User
+          删除用户
         </span>
       }
       desc={
-        <div className='space-y-4'>
+        <div className='flex flex-col gap-4'>
           <p className='mb-2'>
-            Are you sure you want to delete{' '}
-            <span className='font-bold'>{currentRow.username}</span>?
+            确定要删除用户{' '}
+            <span className='font-bold'>{currentRow.username}</span> 吗？
             <br />
-            This action will permanently remove the user with the role of{' '}
-            <span className='font-bold'>
-              {currentRow.role.toUpperCase()}
-            </span>{' '}
-            from the system. This cannot be undone.
+            此操作将永久删除角色为{' '}
+            <span className='font-bold'>{currentRow.role}</span>{' '}
+            的用户。此操作无法撤销。
           </p>
 
           <Label className='my-2'>
-            Username:
+            请输入用户名确认删除：
             <Input
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder='Enter username to confirm deletion.'
+              placeholder={`请输入 ${currentRow.username} 确认`}
             />
           </Label>
 
           <Alert variant='destructive'>
-            <AlertTitle>Warning!</AlertTitle>
-            <AlertDescription>
-              Please be careful, this operation can not be rolled back.
-            </AlertDescription>
+            <AlertTitle>警告！</AlertTitle>
+            <AlertDescription>请注意，此操作无法撤销。</AlertDescription>
           </Alert>
         </div>
       }
-      confirmText='Delete'
+      confirmText='删除'
       destructive
     />
   )

@@ -18,15 +18,38 @@ import {
 type DataTablePaginationProps<TData> = {
   table: Table<TData>
   className?: string
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
+  /** 是否为服务器端分页模式，默认为 false */
+  serverPaginationMode?: boolean
 }
 
 export function DataTablePagination<TData>({
   table,
   className,
+  onPageChange,
+  onPageSizeChange,
+  serverPaginationMode = false,
 }: DataTablePaginationProps<TData>) {
   const currentPage = table.getState().pagination.pageIndex + 1
   const totalPages = table.getPageCount()
   const pageNumbers = getPageNumbers(currentPage, totalPages)
+
+  const handlePageChange = (pageIndex: number) => {
+    if (serverPaginationMode && onPageChange) {
+      onPageChange(pageIndex + 1)
+    } else if (!serverPaginationMode) {
+      table.setPageIndex(pageIndex)
+    }
+  }
+
+  const handlePageSizeChange = (size: number) => {
+    if (serverPaginationMode && onPageSizeChange) {
+      onPageSizeChange(size)
+    } else if (!serverPaginationMode) {
+      table.setPageSize(size)
+    }
+  }
 
   return (
     <div
@@ -45,7 +68,7 @@ export function DataTablePagination<TData>({
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
-              table.setPageSize(Number(value))
+              handlePageSizeChange(Number(value))
             }}
           >
             <SelectTrigger className='h-8 w-[70px]'>
@@ -71,23 +94,22 @@ export function DataTablePagination<TData>({
           <Button
             variant='outline'
             className='size-8 p-0 @max-md/content:hidden'
-            onClick={() => table.setPageIndex(0)}
+            onClick={() => handlePageChange(0)}
             disabled={!table.getCanPreviousPage()}
           >
-            <span className='sr-only'>Go to first page</span>
+            <span className='sr-only'>首页</span>
             <DoubleArrowLeftIcon className='h-4 w-4' />
           </Button>
           <Button
             variant='outline'
             className='size-8 p-0'
-            onClick={() => table.previousPage()}
+            onClick={() => handlePageChange(currentPage - 1 - 1)}
             disabled={!table.getCanPreviousPage()}
           >
-            <span className='sr-only'>Go to previous page</span>
+            <span className='sr-only'>上一页</span>
             <ChevronLeftIcon className='h-4 w-4' />
           </Button>
 
-          {/* Page number buttons */}
           {pageNumbers.map((pageNumber, index) => (
             <div key={`${pageNumber}-${index}`} className='flex items-center'>
               {pageNumber === '...' ? (
@@ -96,9 +118,9 @@ export function DataTablePagination<TData>({
                 <Button
                   variant={currentPage === pageNumber ? 'default' : 'outline'}
                   className='h-8 min-w-8 px-2'
-                  onClick={() => table.setPageIndex((pageNumber as number) - 1)}
+                  onClick={() => handlePageChange((pageNumber as number) - 1)}
                 >
-                  <span className='sr-only'>Go to page {pageNumber}</span>
+                  <span className='sr-only'>第 {pageNumber} 页</span>
                   {pageNumber}
                 </Button>
               )}
@@ -108,19 +130,19 @@ export function DataTablePagination<TData>({
           <Button
             variant='outline'
             className='size-8 p-0'
-            onClick={() => table.nextPage()}
+            onClick={() => handlePageChange(currentPage)}
             disabled={!table.getCanNextPage()}
           >
-            <span className='sr-only'>Go to next page</span>
+            <span className='sr-only'>下一页</span>
             <ChevronRightIcon className='h-4 w-4' />
           </Button>
           <Button
             variant='outline'
             className='size-8 p-0 @max-md/content:hidden'
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            onClick={() => handlePageChange(totalPages - 1)}
             disabled={!table.getCanNextPage()}
           >
-            <span className='sr-only'>Go to last page</span>
+            <span className='sr-only'>末页</span>
             <DoubleArrowRightIcon className='h-4 w-4' />
           </Button>
         </div>

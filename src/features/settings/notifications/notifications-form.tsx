@@ -51,13 +51,13 @@ export function NotificationsForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((data) => showSubmittedData(data))}
-        className='space-y-8'
+        className='flex flex-col gap-8'
       >
         <FormField
           control={form.control}
           name='type'
           render={({ field }) => (
-            <FormItem className='relative space-y-3'>
+            <FormItem className='relative flex flex-col gap-3'>
               <FormLabel>Notify me about...</FormLabel>
               <FormControl>
                 <RadioGroup
@@ -95,13 +95,13 @@ export function NotificationsForm() {
         />
         <div className='relative'>
           <h3 className='mb-4 text-lg font-medium'>Email Notifications</h3>
-          <div className='space-y-4'>
+          <div className='flex flex-col gap-4'>
             <FormField
               control={form.control}
               name='communication_emails'
               render={({ field }) => (
                 <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
+                  <div className='flex flex-col gap-0.5'>
                     <FormLabel className='text-base'>
                       Communication emails
                     </FormLabel>
@@ -123,7 +123,7 @@ export function NotificationsForm() {
               name='marketing_emails'
               render={({ field }) => (
                 <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
+                  <div className='flex flex-col gap-0.5'>
                     <FormLabel className='text-base'>
                       Marketing emails
                     </FormLabel>
@@ -145,7 +145,7 @@ export function NotificationsForm() {
               name='social_emails'
               render={({ field }) => (
                 <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
+                  <div className='flex flex-col gap-0.5'>
                     <FormLabel className='text-base'>Social emails</FormLabel>
                     <FormDescription>
                       Receive emails for friend requests, follows, and more.
@@ -165,7 +165,7 @@ export function NotificationsForm() {
               name='security_emails'
               render={({ field }) => (
                 <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
+                  <div className='flex flex-col gap-0.5'>
                     <FormLabel className='text-base'>Security emails</FormLabel>
                     <FormDescription>
                       Receive emails about your account activity and security.
@@ -195,7 +195,7 @@ export function NotificationsForm() {
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <div className='space-y-1 leading-none'>
+              <div className='flex flex-col gap-1 leading-none'>
                 <FormLabel>
                   Use different settings for my mobile devices
                 </FormLabel>

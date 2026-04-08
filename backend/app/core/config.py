@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "mssql+pymssql://@JNS-Server:1433/test?charset=utf8"
     DB_JNS_URL: str = "mssql+pymssql://@JNS-Server:1433/JNS?charset=utf8"
     
-    # CORS配置
-    CORS_ORIGINS: str = '["http://localhost:3000","http://localhost:3001","http://localhost:5173","http://localhost:5174"]'
+    # CORS配置（允许所有来源，局域网访问时使用）
+    CORS_ORIGINS: str = '["http://localhost:3000","http://localhost:3001","http://localhost:5173","http://localhost:5174","http://127.0.0.1:3000","http://127.0.0.1:3001","http://127.0.0.1:5173","http://127.0.0.1:5174","*"]'
     
     # JWT配置
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080

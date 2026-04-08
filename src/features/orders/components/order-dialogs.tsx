@@ -1,12 +1,26 @@
-import { useState } from 'react'
+import { format } from 'date-fns'
+import { Loader2, Printer } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { DatePicker } from '@/components/date-picker'
-import { format } from 'date-fns'
 import { type Order } from './orderlist-columns'
 
 type OrderDetailDialogProps = {
@@ -15,6 +29,7 @@ type OrderDetailDialogProps = {
   order: Order | null
   orderItems: any[]
   loading?: boolean
+  onPrint?: (orderId: number, orderNumber: string) => void
 }
 
 type OrderEditDialogProps = {
@@ -29,12 +44,19 @@ type OrderEditDialogProps = {
   loading?: boolean
 }
 
-export function OrderDetailDialog({ open, onOpenChange, order, orderItems, loading }: OrderDetailDialogProps) {
+export function OrderDetailDialog({
+  open,
+  onOpenChange,
+  order,
+  orderItems,
+  loading,
+  onPrint,
+}: OrderDetailDialogProps) {
   if (!order) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-6xl max-h-[90vh] overflow-y-auto'>
+      <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-6xl'>
         <DialogHeader>
           <DialogTitle>订单详情</DialogTitle>
           <DialogDescription>
@@ -42,46 +64,46 @@ export function OrderDetailDialog({ open, onOpenChange, order, orderItems, loadi
           </DialogDescription>
         </DialogHeader>
         {loading ? (
-          <div className='py-8 flex justify-center'>
-            <p className='text-primary'>正在加载数据...</p>
+          <div className='flex justify-center py-8'>
+            <Loader2 className='h-8 w-8 animate-spin text-primary' />
           </div>
         ) : (
-          <div className='space-y-6 py-4'>
+          <div className='flex flex-col gap-6 py-4'>
             <div className='grid grid-cols-2 gap-4'>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>订单编号</Label>
                 <Input value={order.order_number} disabled />
               </div>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>客户名称</Label>
                 <Input value={order.customer_name} disabled />
               </div>
             </div>
             <div className='grid grid-cols-2 gap-4'>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>订单日期</Label>
-                <Input 
+                <Input
                   value={
-                    typeof order.order_date === 'string' 
-                      ? format(new Date(order.order_date), 'yyyy-MM-dd') 
+                    typeof order.order_date === 'string'
+                      ? format(new Date(order.order_date), 'yyyy-MM-dd')
                       : ''
-                  } 
-                  disabled 
+                  }
+                  disabled
                 />
               </div>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>交期日期</Label>
-                <Input 
+                <Input
                   value={
-                    typeof order.delivery_date === 'string' 
-                      ? format(new Date(order.delivery_date), 'yyyy-MM-dd') 
+                    typeof order.delivery_date === 'string'
+                      ? format(new Date(order.delivery_date), 'yyyy-MM-dd')
                       : ''
-                  } 
-                  disabled 
+                  }
+                  disabled
                 />
               </div>
             </div>
-            <div className='space-y-2'>
+            <div className='flex flex-col gap-2'>
               <Label>状态</Label>
               <div className='flex items-center'>
                 <Badge variant={order.status ? 'default' : 'outline'}>
@@ -89,10 +111,10 @@ export function OrderDetailDialog({ open, onOpenChange, order, orderItems, loadi
                 </Badge>
               </div>
             </div>
-            <div className='space-y-2'>
+            <div className='flex flex-col gap-2'>
               <Label>订单项目</Label>
               {orderItems.length > 0 ? (
-                <div className='border rounded-md overflow-hidden'>
+                <div className='overflow-hidden rounded-md border'>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -128,7 +150,16 @@ export function OrderDetailDialog({ open, onOpenChange, order, orderItems, loadi
             </div>
           </div>
         )}
-        <div className='flex justify-end'>
+        <div className='flex justify-end gap-2'>
+          {onPrint && (
+            <Button
+              variant='default'
+              onClick={() => onPrint(order.id, order.order_number)}
+            >
+              <Printer data-icon='inline-start' />
+              打印加工单
+            </Button>
+          )}
           <DialogClose asChild>
             <Button variant='outline'>关闭</Button>
           </DialogClose>
@@ -138,7 +169,17 @@ export function OrderDetailDialog({ open, onOpenChange, order, orderItems, loadi
   )
 }
 
-export function OrderEditDialog({ open, onOpenChange, order, orderItems, onSave, editFormData, onEditFormDataChange, onOrderItemsChange, loading }: OrderEditDialogProps) {
+export function OrderEditDialog({
+  open,
+  onOpenChange,
+  order,
+  orderItems,
+  onSave,
+  editFormData,
+  onEditFormDataChange,
+  onOrderItemsChange,
+  loading,
+}: OrderEditDialogProps) {
   if (!order) return null
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,20 +202,26 @@ export function OrderEditDialog({ open, onOpenChange, order, orderItems, onSave,
     }
   }
 
-  const handleOrderItemChange = (index: number, field: string, value: string) => {
+  const handleOrderItemChange = (
+    index: number,
+    field: string,
+    value: string
+  ) => {
     const updatedItems = [...orderItems]
     updatedItems[index] = {
       ...updatedItems[index],
-      [field]: value
+      [field]: value,
     }
     onOrderItemsChange(updatedItems)
   }
 
-  const deliveryDate = editFormData.delivery_date ? new Date(editFormData.delivery_date) : undefined
+  const deliveryDate = editFormData.delivery_date
+    ? new Date(editFormData.delivery_date)
+    : undefined
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-6xl max-h-[90vh] overflow-y-auto'>
+      <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-6xl'>
         <DialogHeader>
           <DialogTitle>编辑订单</DialogTitle>
           <DialogDescription>
@@ -182,66 +229,66 @@ export function OrderEditDialog({ open, onOpenChange, order, orderItems, onSave,
           </DialogDescription>
         </DialogHeader>
         {loading ? (
-          <div className='py-8 flex justify-center'>
+          <div className='flex justify-center py-8'>
             <p className='text-primary'>正在加载数据...</p>
           </div>
         ) : (
-          <div className='space-y-6 py-4'>
+          <div className='flex flex-col gap-6 py-4'>
             <div className='grid grid-cols-2 gap-4'>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>订单编号</Label>
-                <Input 
-                  name='order_number' 
-                  value={editFormData.order_number || ''} 
+                <Input
+                  name='order_number'
+                  value={editFormData.order_number || ''}
                   disabled
                 />
               </div>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>客户名称</Label>
-                <Input 
-                  name='customer_name' 
-                  value={editFormData.customer_name || ''} 
+                <Input
+                  name='customer_name'
+                  value={editFormData.customer_name || ''}
                   disabled
                 />
               </div>
             </div>
             <div className='grid grid-cols-2 gap-4'>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>订单日期</Label>
-                <Input 
-                  name='order_date' 
-                  type='date' 
+                <Input
+                  name='order_date'
+                  type='date'
                   value={
-                    typeof editFormData.order_date === 'string' 
-                      ? editFormData.order_date.split('T')[0] 
+                    typeof editFormData.order_date === 'string'
+                      ? editFormData.order_date.split('T')[0]
                       : ''
-                  } 
+                  }
                   disabled
                 />
               </div>
-              <div className='space-y-2'>
+              <div className='flex flex-col gap-2'>
                 <Label>交期日期</Label>
-                <DatePicker 
-                  selected={deliveryDate} 
-                  onSelect={handleDeliveryDateChange} 
-                  placeholder='选择交期日期' 
+                <DatePicker
+                  selected={deliveryDate}
+                  onSelect={handleDeliveryDateChange}
+                  placeholder='选择交期日期'
                 />
               </div>
             </div>
             <div className='flex items-center space-x-2'>
-              <input 
-                type='checkbox' 
-                id='status' 
-                checked={editFormData.status || false} 
-                onChange={handleStatusChange} 
+              <input
+                type='checkbox'
+                id='status'
+                checked={editFormData.status || false}
+                onChange={handleStatusChange}
                 className='h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary'
               />
               <Label htmlFor='status'>已完成</Label>
             </div>
-            <div className='space-y-2'>
+            <div className='flex flex-col gap-2'>
               <Label>订单项目</Label>
               {orderItems.length > 0 ? (
-                <div className='border rounded-md overflow-hidden'>
+                <div className='overflow-hidden rounded-md border'>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -259,53 +306,101 @@ export function OrderEditDialog({ open, onOpenChange, order, orderItems, onSave,
                       {orderItems.map((item, index) => (
                         <TableRow key={index}>
                           <TableCell>
-                            <Input 
-                              value={item.产品类型 || ''} 
-                              onChange={(e) => handleOrderItemChange(index, '产品类型', e.target.value)} 
+                            <Input
+                              value={item.产品类型 || ''}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '产品类型',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell>
-                            <Input 
-                              value={item.型号 || ''} 
-                              onChange={(e) => handleOrderItemChange(index, '型号', e.target.value)} 
+                            <Input
+                              value={item.型号 || ''}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '型号',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell>
-                            <Input 
-                              value={item.规格 || ''} 
-                              onChange={(e) => handleOrderItemChange(index, '规格', e.target.value)} 
+                            <Input
+                              value={item.规格 || ''}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '规格',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell>
-                            <Input 
-                              type='number' 
-                              value={item.数量 || 0} 
-                              onChange={(e) => handleOrderItemChange(index, '数量', e.target.value)} 
+                            <Input
+                              type='number'
+                              value={item.数量 || 0}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '数量',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell>
-                            <Input 
-                              value={item.单位 || '件'} 
-                              onChange={(e) => handleOrderItemChange(index, '单位', e.target.value)} 
+                            <Input
+                              value={item.单位 || '件'}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '单位',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell>
-                            <Input 
-                              type='number' 
-                              value={item.销售单价 || 0} 
-                              onChange={(e) => handleOrderItemChange(index, '销售单价', e.target.value)} 
+                            <Input
+                              type='number'
+                              value={item.销售单价 || 0}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '销售单价',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell>
-                            <Input 
-                              value={item.合同编号 || ''} 
-                              onChange={(e) => handleOrderItemChange(index, '合同编号', e.target.value)} 
+                            <Input
+                              value={item.合同编号 || ''}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '合同编号',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell>
-                            <Input 
-                              value={item.备注 || ''} 
-                              onChange={(e) => handleOrderItemChange(index, '备注', e.target.value)} 
+                            <Input
+                              value={item.备注 || ''}
+                              onChange={(e) =>
+                                handleOrderItemChange(
+                                  index,
+                                  '备注',
+                                  e.target.value
+                                )
+                              }
                             />
                           </TableCell>
                         </TableRow>

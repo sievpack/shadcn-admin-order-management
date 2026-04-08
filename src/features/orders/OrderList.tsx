@@ -1,103 +1,93 @@
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
+import { useState, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { orderItemKeys } from '@/queries/orders/keys'
+import { useCreateOrder } from '@/queries/orders/useCreateOrder'
+import { useCreateOrderItem } from '@/queries/orders/useCreateOrderItem'
+import { useDeleteOrder } from '@/queries/orders/useDeleteOrder'
+import { useDeleteOrderItem } from '@/queries/orders/useDeleteOrderItem'
+import { useUpdateOrder } from '@/queries/orders/useUpdateOrder'
+import { useUpdateOrderItem } from '@/queries/orders/useUpdateOrderItem'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
-import { orderAPI } from '@/lib/api'
+import { orderItemAPI } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search as SearchComponent } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { OrderListTable } from './components/orderlist-table'
-import { type Order } from './components/orderlist-columns'
-import { OrderDetailDialog, OrderEditDialog } from './components/order-dialogs'
-import { OrderDeleteDialog } from './components/order-delete-dialog'
 import { OrderAddDialog } from './components/order-add-dialog'
+import { OrderDeleteDialog } from './components/order-delete-dialog'
+import { OrderDetailDialog, OrderEditDialog } from './components/order-dialogs'
+import { OrderItemAddDialog } from './components/orderitem-add-dialog'
+import { OrderItemDeleteDialog } from './components/orderitem-delete-dialog'
+import { OrderItemEditDialog } from './components/orderitem-edit-dialog'
+import { type Order } from './components/orderlist-columns'
+import { OrderListTable } from './components/orderlist-table'
+import { ProcessingOrderPrintDialog } from './components/processing-order-print-dialog'
 
 export function OrderList() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string>('')
+  const queryClient = useQueryClient()
+  const createOrder = useCreateOrder()
+  const updateOrder = useUpdateOrder()
+  const deleteOrder = useDeleteOrder()
+  const createOrderItem = useCreateOrderItem()
+  const updateOrderItem = useUpdateOrderItem()
+  const deleteOrderItem = useDeleteOrderItem()
 
-  // 订单详情相关状态
+  const [refreshKey, setRefreshKey] = useState(0)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<any[]>([])
   const [showDetails, setShowDetails] = useState(false)
   const [detailsLoading, setDetailsLoading] = useState<boolean>(false)
-  
-  // 编辑订单相关状态
+
   const [showEditModal, setShowEditModal] = useState(false)
   const [editFormData, setEditFormData] = useState<any>({})
-  
-  // 删除确认对话框
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<number | null>(null)
-  
-  // 新增订单相关状态
+
+  const [deleteItemDialogOpen, setDeleteItemDialogOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null)
+  const [itemToDeleteLabel, setItemToDeleteLabel] = useState<string>('')
+
+  const [editItemDialogOpen, setEditItemDialogOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<any>(null)
+
+  const [addItemDialogOpen, setAddItemDialogOpen] = useState(false)
+  const [addingOrder, setAddingOrder] = useState<Order | null>(null)
+
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addLoading, setAddLoading] = useState<boolean>(false)
 
-  const fetchOrders = async () => {
-    setLoading(true)
-    setError('')
+  const [printDialogOpen, setPrintDialogOpen] = useState(false)
+  const [printOrderId, setPrintOrderId] = useState<number | null>(null)
+  const [printOrderNumber, setPrintOrderNumber] = useState<string>('')
+
+  const handleViewOrder = useCallback(async (id: number, order: Order) => {
+    setSelectedOrder(order)
+    setOrderItems([])
+    setShowDetails(true)
+    setDetailsLoading(true)
     try {
-      const response = await orderAPI.getAllOrders()
-      if (response.data.code === 0) {
-        let ordersData = response.data.data || []
-        
-        // 转换数据结构以适配前端
-        const transformedOrders = ordersData.map((item: any) => ({
-          id: item.id,
-          order_number: item.订单编号,
-          customer_name: item.客户名称,
-          order_date: item.订单日期,
-          delivery_date: item.交货日期,
-          status: item.status
-        }))
-        
-        setOrders(transformedOrders)
-      } else {
-        setError('API返回错误: ' + response.data.msg)
-        setOrders([])
-      }
-    } catch (error: any) {
-      console.error('获取订单失败:', error)
-      setError('获取数据失败: ' + error.message)
-      setOrders([])
+      const result = await orderItemAPI.getItemsByOrderId(id)
+      setOrderItems(
+        result?.data?.data?.list || result?.data?.list || result?.data || []
+      )
+    } catch (error) {
+      console.error('获取订单详情失败:', error)
+      setOrderItems([])
     } finally {
-      setLoading(false)
+      setDetailsLoading(false)
     }
-  }
-
-  useEffect(() => {
-    fetchOrders()
   }, [])
 
-  const handleViewOrder = async (id: number, order: Order) => {
+  const handleEditOrder = useCallback(async (id: number, order: Order) => {
     setDetailsLoading(true)
     try {
-      const response = await orderAPI.getOrderItems(id)
-      setOrderItems(response.data.data || [])
+      const result = await orderItemAPI.getItemsByOrderId(id)
+      setOrderItems(result?.data || [])
       setSelectedOrder(order)
-      setShowDetails(true)
-    } catch (error) {
-      console.error('获取订单详情失败:', error)
-      setOrderItems([])
-      setSelectedOrder(order)
-      setShowDetails(true)
-    } finally {
-      setDetailsLoading(false)
-    }
-  }
-
-  const handleEditOrder = async (id: number, order: Order) => {
-    setDetailsLoading(true)
-    try {
-      const response = await orderAPI.getOrderItems(id)
-      setOrderItems(response.data.data || [])
-      setSelectedOrder(order)
-      // 确保订单日期和交期日期格式正确
       const formatDate = (dateString: string) => {
         const date = new Date(dateString)
         const year = date.getFullYear()
@@ -105,11 +95,13 @@ export function OrderList() {
         const day = String(date.getDate()).padStart(2, '0')
         return `${year}-${month}-${day}`
       }
-      
+
       const formData = {
         ...order,
         order_date: order.order_date ? formatDate(order.order_date) : '',
-        delivery_date: order.delivery_date ? formatDate(order.delivery_date) : ''
+        delivery_date: order.delivery_date
+          ? formatDate(order.delivery_date)
+          : '',
       }
       setEditFormData(formData)
       setShowEditModal(true)
@@ -117,7 +109,6 @@ export function OrderList() {
       console.error('获取订单详情失败:', error)
       setOrderItems([])
       setSelectedOrder(order)
-      // 确保订单日期和交期日期格式正确
       const formatDate = (dateString: string) => {
         const date = new Date(dateString)
         const year = date.getFullYear()
@@ -125,148 +116,188 @@ export function OrderList() {
         const day = String(date.getDate()).padStart(2, '0')
         return `${year}-${month}-${day}`
       }
-      
+
       const formData = {
         ...order,
         order_date: order.order_date ? formatDate(order.order_date) : '',
-        delivery_date: order.delivery_date ? formatDate(order.delivery_date) : ''
+        delivery_date: order.delivery_date
+          ? formatDate(order.delivery_date)
+          : '',
       }
       setEditFormData(formData)
       setShowEditModal(true)
     } finally {
       setDetailsLoading(false)
     }
-  }
+  }, [])
 
-  const handleSaveOrder = async () => {
-    setLoading(true)
+  const handleSaveOrder = useCallback(async () => {
     try {
-      // 只更新可编辑的字段：交期日期和状态
       const updateData = {
         id: editFormData.id,
         delivery_date: editFormData.delivery_date,
-        status: editFormData.status
+        status: editFormData.status,
       }
-      const orderResponse = await orderAPI.updateOrder(updateData)
-      if (orderResponse.data.code === 0) {
+      const orderResponse = await updateOrder.mutateAsync(updateData)
+      if (orderResponse) {
         for (const item of orderItems) {
-          await orderAPI.updateOrderItem(item)
+          await updateOrderItem.mutateAsync(item)
         }
-        await fetchOrders()
         setShowEditModal(false)
-        toast.success('订单更新成功')
-      } else {
-        toast.error('更新失败: ' + orderResponse.data.msg)
       }
     } catch (error) {
       console.error('更新订单失败:', error)
       toast.error('更新失败，请稍后重试')
-    } finally {
-      setLoading(false)
     }
-  }
+  }, [editFormData, orderItems, updateOrder, updateOrderItem])
 
-  const handleDeleteOrder = async (id: number) => {
-    setLoading(true)
-    try {
-      const response = await orderAPI.deleteOrder(id)
-      if (response.data.code === 0) {
-        await fetchOrders()
-        toast.success('订单删除成功')
-      } else {
-        toast.error('删除失败: ' + response.data.msg)
+  const handleDeleteOrder = useCallback(
+    async (id: number) => {
+      try {
+        await deleteOrder.mutateAsync(id)
+      } catch (error) {
+        console.error('删除订单失败:', error)
+        toast.error('删除失败，请稍后重试')
       }
+    },
+    [deleteOrder]
+  )
+
+  const handleDeleteOrderItem = useCallback((id: number) => {
+    setItemToDelete(id)
+    setItemToDeleteLabel(`ID: ${id}`)
+    setDeleteItemDialogOpen(true)
+  }, [])
+
+  const handleEditOrderItem = useCallback((_id: number, item: any) => {
+    setEditingItem(item)
+    setEditItemDialogOpen(true)
+  }, [])
+
+  const handleSaveEditOrderItem = useCallback(
+    async (data: any) => {
+      try {
+        await updateOrderItem.mutateAsync(data)
+        // 触发刷新
+        setRefreshKey((k) => k + 1)
+      } catch (error) {
+        console.error('更新订单分项失败:', error)
+        toast.error('更新失败，请稍后重试')
+      }
+    },
+    [updateOrderItem]
+  )
+
+  const handleAddOrderItem = useCallback((order: Order) => {
+    setAddingOrder(order)
+    setAddItemDialogOpen(true)
+  }, [])
+
+  const handleSaveAddOrderItem = useCallback(
+    async (data: any) => {
+      try {
+        await createOrderItem.mutateAsync(data)
+        // 使该订单的分项缓存失效
+        queryClient.invalidateQueries({
+          queryKey: orderItemKeys.list(data.oid),
+        })
+        // 触发刷新
+        setRefreshKey((k) => k + 1)
+        setAddItemDialogOpen(false)
+      } catch (error) {
+        console.error('创建订单分项失败:', error)
+        toast.error('创建失败，请稍后重试')
+      }
+    },
+    [createOrderItem, queryClient]
+  )
+
+  const handleConfirmDeleteOrderItem = useCallback(async () => {
+    if (!itemToDelete) return
+    try {
+      await deleteOrderItem.mutateAsync(itemToDelete)
+      // 触发刷新，清除缓存
+      setRefreshKey((k) => k + 1)
     } catch (error) {
-      console.error('删除订单失败:', error)
+      console.error('删除订单分项失败:', error)
       toast.error('删除失败，请稍后重试')
     } finally {
-      setLoading(false)
+      setItemToDelete(null)
     }
-  }
+  }, [itemToDelete, deleteOrderItem])
 
-  const handleBulkDelete = async (ids: number[]) => {
-    setLoading(true)
-    try {
-      for (const id of ids) {
-        await orderAPI.deleteOrder(id)
-      }
-      await fetchOrders()
-      toast.success(`成功删除 ${ids.length} 个订单`)
-    } catch (error) {
-      console.error('批量删除订单失败:', error)
-      toast.error('批量删除失败，请稍后重试')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // 打开新增订单对话框
-  const handleAddOrder = () => {
-    setShowAddModal(true)
-  }
-
-  // 保存新增订单
-  const handleSaveNewOrder = async (formData: any, orderItems: any[]) => {
-    setAddLoading(true)
-    try {
-      // 首先创建订单主表
-      const orderResponse = await orderAPI.createOrder(formData)
-      if (orderResponse.data.code === 0) {
-        const orderId = orderResponse.data.data.id
-        
-        // 然后创建订单子项目
-        console.log('订单子项目列表:', orderItems)
-        for (const item of orderItems) {
-          // 构建订单子项目数据，确保所有字段都有值
-          // 根据数据库表结构，订单表需要以下必填字段：
-          // 订单编号、合同编号、订单日期、交货日期、规格、产品类型、型号、数量、单位、销售单价、客户名称、外购
-          // 注意：金额是数据库自动计算的字段，不需要传递
-          const orderItemData = {
-            oid: orderId,
-            订单编号: formData.order_number || '',
-            合同编号: item.合同编号 || formData.order_number || '',
-            订单日期: formData.order_date || '',
-            交货日期: formData.delivery_date || '',
-            规格: item.规格 || '',
-            产品类型: item.产品类型 || '',
-            型号: item.型号 || '',
-            数量: Number(item.数量) || 0,
-            单位: item.单位 || '',
-            销售单价: Number(item.销售单价) || 0,
-            备注: item.备注 || '',
-            结算方式: item.结算方式 || '',
-            发货单号: item.发货单号 || '',
-            快递单号: item.快递单号 || '',
-            客户物料编号: item.客户物料编号 || '',
-            客户名称: formData.customer_name || '',
-            外购: item.外购 === true ? 1 : 0  // 数据库中是 bit 类型，需要转换为 0 或 1
-          }
-          
-          console.log('完整的订单子项目数据:', JSON.stringify(orderItemData, null, 2))
-          const itemResponse = await orderAPI.createOrderItem(orderItemData)
-          
-          if (itemResponse.data.code !== 0) {
-            console.error('创建订单子项目失败:', itemResponse.data.msg)
-            console.error('请求数据:', JSON.stringify(orderItemData, null, 2))
-            toast.error(`创建订单子项目失败: ${itemResponse.data.msg}`)
-            // 继续创建其他子项目，不中断流程
-          }
+  const handleBulkDelete = useCallback(
+    async (ids: number[]) => {
+      try {
+        for (const id of ids) {
+          await deleteOrder.mutateAsync(id)
         }
-        
-        // 重新获取订单列表
-        await fetchOrders()
-        setShowAddModal(false)
-        toast.success('订单创建成功')
-      } else {
-        toast.error('创建失败: ' + orderResponse.data.msg)
+        toast.success(`成功删除 ${ids.length} 个订单`)
+      } catch (error) {
+        console.error('批量删除订单失败:', error)
+        toast.error('批量删除失败，请稍后重试')
       }
-    } catch (error) {
-      console.error('创建订单失败:', error)
-      toast.error('创建失败，请稍后重试')
-    } finally {
-      setAddLoading(false)
-    }
-  }
+    },
+    [deleteOrder]
+  )
+
+  const handleAddOrder = useCallback(async () => {
+    setShowAddModal(true)
+  }, [])
+
+  const handlePrintProcessingOrder = useCallback(
+    (orderId: number, orderNumber: string) => {
+      setPrintOrderId(orderId)
+      setPrintOrderNumber(orderNumber)
+      setPrintDialogOpen(true)
+    },
+    []
+  )
+
+  const handleSaveNewOrder = useCallback(
+    async (formData: any, orderItems: any[]) => {
+      try {
+        const orderNumber = formData.order_number
+
+        const orderResponse = await createOrder.mutateAsync({
+          ...formData,
+          order_number: orderNumber,
+        })
+        if (orderResponse) {
+          const orderId = orderResponse.data.id
+
+          for (const item of orderItems) {
+            const orderItemData = {
+              oid: orderId,
+              订单编号: orderNumber,
+              合同编号: item.合同编号 || orderNumber,
+              订单日期: formData.order_date || '',
+              交货日期: formData.delivery_date || '',
+              规格: item.规格 || '',
+              产品类型: item.产品类型 || '',
+              型号: item.型号 || '',
+              数量: Number(item.数量) || 0,
+              单位: item.单位 || '',
+              销售单价: Number(item.销售单价) || 0,
+              备注: item.备注 || '',
+              结算方式: item.结算方式 || '',
+              客户物料编号: item.客户物料编号 || '',
+              客户名称: formData.customer_name || '',
+              外购: item.外购 === true ? 1 : 0,
+            }
+
+            await createOrderItem.mutateAsync(orderItemData)
+          }
+
+          setShowAddModal(false)
+        }
+      } catch (error) {
+        console.error('创建订单失败:', error)
+        toast.error('创建失败，请稍后重试')
+      }
+    },
+    [createOrder, createOrderItem]
+  )
 
   return (
     <>
@@ -286,73 +317,99 @@ export function OrderList() {
             <p className='text-muted-foreground'>管理所有订单信息</p>
           </div>
           <Button onClick={handleAddOrder}>
-            <Plus data-icon="inline-start" />
+            <Plus data-icon='inline-start' />
             新增订单
           </Button>
         </div>
 
-        {error && (
-          <div className='mb-4 px-4 py-3 bg-destructive/10 border-l-4 border-destructive'>
-            <p className='text-destructive'>{error}</p>
-          </div>
-        )}
-
-        {loading && (
-          <div className='mb-4 px-4 py-3 bg-primary/10 border-l-4 border-primary'>
-            <p className='text-primary'>正在加载数据...</p>
-          </div>
-        )}
-
-        {!loading && !error && (
-          <OrderListTable 
-            data={orders} 
-            onViewOrder={handleViewOrder} 
-            onEditOrder={handleEditOrder} 
-            onDeleteOrder={(id) => {
-              setOrderToDelete(id)
-              setDeleteDialogOpen(true)
-            }} 
-            onBulkDelete={handleBulkDelete}
-          />
-        )}
+        <OrderListTable
+          onViewOrder={handleViewOrder}
+          onEditOrder={handleEditOrder}
+          onDeleteOrder={(id) => {
+            setOrderToDelete(id)
+            setDeleteDialogOpen(true)
+          }}
+          onBulkDelete={handleBulkDelete}
+          onEditOrderItem={handleEditOrderItem}
+          onDeleteOrderItem={handleDeleteOrderItem}
+          onAddOrderItem={handleAddOrderItem}
+          onPrintOrder={handlePrintProcessingOrder}
+          refreshKey={refreshKey}
+        />
       </Main>
 
-      {/* 订单详情对话框 */}
-      <OrderDetailDialog 
-        open={showDetails} 
-        onOpenChange={setShowDetails} 
-        order={selectedOrder} 
-        orderItems={orderItems} 
+      <OrderDetailDialog
+        open={showDetails}
+        onOpenChange={setShowDetails}
+        order={selectedOrder}
+        orderItems={orderItems}
+        loading={detailsLoading}
+        onPrint={handlePrintProcessingOrder}
+      />
+
+      <OrderEditDialog
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        order={selectedOrder}
+        orderItems={orderItems}
+        onSave={handleSaveOrder}
+        editFormData={editFormData}
+        onEditFormDataChange={setEditFormData}
+        onOrderItemsChange={setOrderItems}
         loading={detailsLoading}
       />
 
-      {/* 编辑订单对话框 */}
-      <OrderEditDialog 
-        open={showEditModal} 
-        onOpenChange={setShowEditModal} 
-        order={selectedOrder} 
-        orderItems={orderItems} 
-        onSave={handleSaveOrder} 
-        editFormData={editFormData} 
-        onEditFormDataChange={setEditFormData} 
-        onOrderItemsChange={setOrderItems} 
-        loading={detailsLoading}
+      <OrderDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        orderId={orderToDelete}
+        onDelete={handleDeleteOrder}
       />
 
-      {/* 删除确认对话框 */}
-      <OrderDeleteDialog 
-        open={deleteDialogOpen} 
-        onOpenChange={setDeleteDialogOpen} 
-        orderId={orderToDelete} 
-        onDelete={handleDeleteOrder} 
+      <OrderItemDeleteDialog
+        open={deleteItemDialogOpen}
+        onOpenChange={setDeleteItemDialogOpen}
+        itemId={itemToDelete}
+        itemLabel={itemToDeleteLabel}
+        onDelete={handleConfirmDeleteOrderItem}
       />
-      
-      {/* 新增订单对话框 */}
-      <OrderAddDialog 
-        open={showAddModal} 
-        onOpenChange={setShowAddModal} 
-        onSave={handleSaveNewOrder} 
-        loading={addLoading} 
+
+      <OrderItemEditDialog
+        open={editItemDialogOpen}
+        onOpenChange={setEditItemDialogOpen}
+        item={editingItem}
+        onSave={handleSaveEditOrderItem}
+      />
+
+      <OrderAddDialog
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSave={handleSaveNewOrder}
+      />
+
+      {addingOrder && (
+        <OrderItemAddDialog
+          open={addItemDialogOpen}
+          onOpenChange={(open) => {
+            setAddItemDialogOpen(open)
+            if (!open) {
+              setAddingOrder(null)
+            }
+          }}
+          orderId={addingOrder.id}
+          orderNumber={addingOrder.order_number}
+          customerName={addingOrder.customer_name}
+          orderDate={addingOrder.order_date}
+          deliveryDate={addingOrder.delivery_date}
+          onSave={handleSaveAddOrderItem}
+        />
+      )}
+
+      <ProcessingOrderPrintDialog
+        open={printDialogOpen}
+        onOpenChange={setPrintDialogOpen}
+        orderId={printOrderId}
+        orderNumber={printOrderNumber}
       />
     </>
   )

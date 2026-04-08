@@ -1,22 +1,28 @@
 import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
-import { UsersInviteDialog } from './users-invite-dialog'
 import { useUsers } from './users-provider'
 
-export function UsersDialogs() {
+type UsersDialogsProps = {
+  onRefresh?: () => void
+}
+
+export function UsersDialogs({ onRefresh }: UsersDialogsProps) {
   const { open, setOpen, currentRow, setCurrentRow } = useUsers()
+
+  const handleClose = () => {
+    setOpen(null)
+    setTimeout(() => {
+      setCurrentRow(null)
+    }, 300)
+  }
+
   return (
     <>
       <UsersActionDialog
         key='user-add'
         open={open === 'add'}
-        onOpenChange={() => setOpen('add')}
-      />
-
-      <UsersInviteDialog
-        key='user-invite'
-        open={open === 'invite'}
-        onOpenChange={() => setOpen('invite')}
+        onOpenChange={(isOpen) => !isOpen && handleClose()}
+        onSuccess={onRefresh}
       />
 
       {currentRow && (
@@ -24,25 +30,17 @@ export function UsersDialogs() {
           <UsersActionDialog
             key={`user-edit-${currentRow.id}`}
             open={open === 'edit'}
-            onOpenChange={() => {
-              setOpen('edit')
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
-            }}
+            onOpenChange={(isOpen) => !isOpen && handleClose()}
             currentRow={currentRow}
+            onSuccess={onRefresh}
           />
 
           <UsersDeleteDialog
             key={`user-delete-${currentRow.id}`}
             open={open === 'delete'}
-            onOpenChange={() => {
-              setOpen('delete')
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
-            }}
+            onOpenChange={(isOpen) => !isOpen && handleClose()}
             currentRow={currentRow}
+            onSuccess={onRefresh}
           />
         </>
       )}

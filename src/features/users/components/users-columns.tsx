@@ -4,9 +4,21 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { callTypes, roles } from '../data/data'
-import { type User } from '../data/schema'
+import { userStatuses, roles } from '../data/data'
 import { DataTableRowActions } from './data-table-row-actions'
+
+export interface User {
+  id: number
+  username: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  role: string
+  status: string
+  created_at: string
+  updated_at: string
+}
 
 export const usersColumns: ColumnDef<User>[] = [
   {
@@ -39,7 +51,7 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     accessorKey: 'username',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Username' />
+      <DataTableColumnHeader column={column} title='用户名' />
     ),
     cell: ({ row }) => (
       <LongText className='max-w-36 ps-3'>{row.getValue('username')}</LongText>
@@ -55,11 +67,11 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     id: 'fullName',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Name' />
+      <DataTableColumnHeader column={column} title='姓名' />
     ),
     cell: ({ row }) => {
-      const { firstName, lastName } = row.original
-      const fullName = `${firstName} ${lastName}`
+      const { last_name,first_name } = row.original
+      const fullName = `${last_name}${first_name}`
       return <LongText className='max-w-36'>{fullName}</LongText>
     },
     meta: { className: 'w-36' },
@@ -67,32 +79,40 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     accessorKey: 'email',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Email' />
+      <DataTableColumnHeader column={column} title='邮箱' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit ps-2 text-nowrap'>{row.getValue('email')}</div>
+      <div className='w-fit ps-2 text-nowrap'>
+        {row.getValue('email') || '-'}
+      </div>
     ),
   },
   {
-    accessorKey: 'phoneNumber',
+    accessorKey: 'phone',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Phone Number' />
+      <DataTableColumnHeader column={column} title='手机' />
     ),
-    cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
+    cell: ({ row }) => <div>{row.getValue('phone') || '-'}</div>,
     enableSorting: false,
   },
   {
     accessorKey: 'status',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Status' />
+      <DataTableColumnHeader column={column} title='状态' />
     ),
     cell: ({ row }) => {
-      const { status } = row.original
-      const badgeColor = callTypes.get(status)
+      const status = row.getValue('status') as string
+      const statusLabel: Record<string, string> = {
+        active: '启用',
+        inactive: '禁用',
+        invited: '待激活',
+        suspended: '停用',
+      }
+      const badgeColor = userStatuses.get(status as any)
       return (
         <div className='flex space-x-2'>
-          <Badge variant='outline' className={cn('capitalize', badgeColor)}>
-            {row.getValue('status')}
+          <Badge variant='outline' className={cn(badgeColor)}>
+            {statusLabel[status] || status}
           </Badge>
         </div>
       )
@@ -106,14 +126,14 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     accessorKey: 'role',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Role' />
+      <DataTableColumnHeader column={column} title='角色' />
     ),
     cell: ({ row }) => {
-      const { role } = row.original
+      const role = row.getValue('role') as string
       const userType = roles.find(({ value }) => value === role)
 
       if (!userType) {
-        return null
+        return <span>{role}</span>
       }
 
       return (
@@ -121,7 +141,7 @@ export const usersColumns: ColumnDef<User>[] = [
           {userType.icon && (
             <userType.icon size={16} className='text-muted-foreground' />
           )}
-          <span className='text-sm capitalize'>{row.getValue('role')}</span>
+          <span className='text-sm'>{userType.label}</span>
         </div>
       )
     },
@@ -130,6 +150,16 @@ export const usersColumns: ColumnDef<User>[] = [
     },
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: 'created_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='创建时间' />
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue('created_at') as string
+      return <div>{value ? value.split('T')[0] : '-'}</div>
+    },
   },
   {
     id: 'actions',

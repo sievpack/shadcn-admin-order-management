@@ -17,17 +17,25 @@ import {
 
 type DataTableColumnHeaderProps<TData, TValue> =
   React.HTMLAttributes<HTMLDivElement> & {
-    column: Column<TData, TValue>
-    title: string
+    column?: Column<TData, TValue>
+    header?: any // React Table header object
+    title?: string
   }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
+  header,
   title,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
-  if (!column.getCanSort()) {
-    return <div className={cn(className)}>{title}</div>
+  // 使用 header 或 column
+  const columnObj = header || column
+  
+  // 获取标题
+  const columnTitle = title || columnObj?.columnDef?.header || ''
+  
+  if (!columnObj || !columnObj.getCanSort?.()) {
+    return <div className={cn(className)}>{columnTitle}</div>
   }
 
   return (
@@ -39,10 +47,10 @@ export function DataTableColumnHeader<TData, TValue>({
             size='sm'
             className='h-8 data-[state=open]:bg-accent'
           >
-            <span>{title}</span>
-            {column.getIsSorted() === 'desc' ? (
+            <span>{columnTitle}</span>
+            {columnObj.getIsSorted?.() === 'desc' ? (
               <ArrowDownIcon className='ms-2 h-4 w-4' />
-            ) : column.getIsSorted() === 'asc' ? (
+            ) : columnObj.getIsSorted?.() === 'asc' ? (
               <ArrowUpIcon className='ms-2 h-4 w-4' />
             ) : (
               <CaretSortIcon className='ms-2 h-4 w-4' />
@@ -50,18 +58,18 @@ export function DataTableColumnHeader<TData, TValue>({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align='start'>
-          <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+          <DropdownMenuItem onClick={() => columnObj.toggleSorting?.(false)}>
             <ArrowUpIcon className='size-3.5 text-muted-foreground/70' />
             Asc
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+          <DropdownMenuItem onClick={() => columnObj.toggleSorting?.(true)}>
             <ArrowDownIcon className='size-3.5 text-muted-foreground/70' />
             Desc
           </DropdownMenuItem>
-          {column.getCanHide() && (
+          {columnObj.getCanHide?.() && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
+              <DropdownMenuItem onClick={() => columnObj.toggleVisibility?.(false)}>
                 <EyeNoneIcon className='size-3.5 text-muted-foreground/70' />
                 Hide
               </DropdownMenuItem>

@@ -23,7 +23,7 @@ export function OrderMultiDeleteDialog<TData>({
   open,
   onOpenChange,
   table,
-  onBulkDelete
+  onBulkDelete,
 }: OrderMultiDeleteDialogProps<TData>) {
   const [value, setValue] = useState('')
 
@@ -38,8 +38,8 @@ export function OrderMultiDeleteDialog<TData>({
     onOpenChange(false)
 
     const selectedOrders = selectedRows.map((row) => row.original as Order)
-    const orderIds = selectedOrders.map(order => order.id)
-    
+    const orderIds = selectedOrders.map((order) => order.id)
+
     if (orderIds.length > 0) {
       onBulkDelete(orderIds)
       table.resetRowSelection()
@@ -64,7 +64,7 @@ export function OrderMultiDeleteDialog<TData>({
         </span>
       }
       desc={
-        <div className='space-y-4'>
+        <div className='flex flex-col gap-4'>
           <p className='mb-2'>
             您确定要删除选中的订单吗？ <br />
             此操作无法撤销。
@@ -81,12 +81,11 @@ export function OrderMultiDeleteDialog<TData>({
 
           <Alert variant='destructive'>
             <AlertTitle>警告！</AlertTitle>
-            <AlertDescription>
-              请小心操作，此操作无法回滚。
-            </AlertDescription>
+            <AlertDescription>请小心操作，此操作无法回滚。</AlertDescription>
           </Alert>
         </div>
       }
+      cancelBtnText='取消'
       confirmText='删除'
       destructive
     />

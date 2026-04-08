@@ -1,0 +1,114 @@
+{
+  "project": {
+    "name": "shadcn-admin",
+    "techStack": ["React 19", "Vite 8", "TanStack Router", "TanStack Query", "Tailwind CSS 4", "shadcn/ui", "Zustand", "Zod"],
+    "description": "后台管理系统"
+  },
+  "preferences": {
+    "language": "中文",
+    "codeStyle": {
+      "commentStyle": "中文注释",
+      "useSemicolon": false,
+      "useSingleQuote": true
+    },
+    "uiFramework": "shadcn/ui (base API)"
+  },
+  "rules": {
+    "tableDataFetch": "表格组件获取数据时，useEffect 应监听 globalFilter/columnFilters/pagination 等最终值，而不是 search 对象本身。因为 React 批处理可能导致 search 已更新但内部状态未同步。",
+    "paginationWithUrl": "分页状态通过 useTableUrlState 管理，onPaginationChange 传递给 useReactTable，确保分页状态同步到 URL。使用 DataTablePagination 时，serverPaginationMode=true 必须传递 onPageChange 和 onPageSizeChange 回调。",
+    "toolbarArchitecture": "工具栏状态管理应放在使用工具栏的组件内部（如 OrderListTable），使用 navigate({ search: {} }) 清空所有 URL 参数。避免通过 props 传递 useTableUrlState 的回调函数，这会导致状态同步问题。"
+  },
+  "history": [
+    {
+      "date": "2026-04-07",
+      "description": "修复 dashboard 最近订单排序错误",
+      "file": "backend/app/api/order/stats.py",
+      "detail": "将最近订单的排序从 订单日期 DESC 改为 ID DESC"
+    },
+    {
+      "date": "2026-04-07",
+      "description": "已发货列表操作菜单添加编辑和添加分项功能",
+      "files": [
+        "shipping-provider.tsx - 添加 edit/addItem dialog type",
+        "data-table-row-actions.tsx - 添加编辑和添加分项菜单项",
+        "shipping-columns.tsx - columns 接收回调参数",
+        "shipping-table.tsx - 传递回调给 columns",
+        "ShippingList.tsx - 添加处理函数",
+        "shipping-edit-dialog.tsx - 新建编辑对话框",
+        "shipping-dialogs.tsx - 添加对话框引用"
+      ],
+      "note": "后端暂无更新发货单 API"
+    },
+    {
+      "date": "2026-04-07",
+      "description": "新增发货弹窗自动生成发货单号",
+      "file": "new-ship.tsx",
+      "detail": "使用 useEffect 监听 open 变化，调用 /api/code/generate-code?prefix=FH 自动填充"
+    },
+    {
+      "date": "2026-04-07",
+      "description": "订单新增使用统一编号生成接口",
+      "file": "order-add-dialog.tsx, OrderList.tsx",
+      "detail": "改用 codeAPI.generate('DD') 调用 /api/code/generate-code?prefix=DD；移除 OrderList.tsx 中 handleAddOrder 的旧生成逻辑"
+    },
+    {
+      "date": "2026-04-07",
+      "description": "修复所有页面搜索导致卡死问题",
+      "file": "hooks/use-table-url-state.ts",
+      "detail": "在 onGlobalFilterChange 中添加 300ms 防抖，避免每次按键都触发 URL 更新和 API 请求"
+    },
+    {
+      "date": "2026-04-07",
+      "description": "客户资料页面搜索输入框不显示内容，重置按钮不出现",
+      "file": "features/customers/CustomerList.tsx, features/customers/components/customer-table.tsx",
+      "detail": "问题原因：CustomerList 组件调用 useTableUrlState 并通过 props 传递给 CustomerTable，这种架构导致状态同步复杂化。修复方案：完全参照 orderlist-table.tsx 的架构，让 CustomerTable 内部自己调用 route.useSearch()、route.useNavigate() 和 useTableUrlState。CustomerList 从 143 行简化为 57 行。"
+    }
+  ],
+  "knownIssues": [
+    {
+      "issue": "后端 CODE_PREFIXES 可用前缀",
+      "detail": "DD=订单, PC=生产计划, WO=生产工单, BG=报工记录, ZJ=质检记录, RK=成品入库, FH=发货单（注意：没有 DH 前缀）"
+    },
+    {
+      "issue": "未发货列表数据表格只显示部分字段",
+      "file": "backend/app/api/order/list.py",
+      "detail": "后端 get_orders 函数缺少 items 参数，导致前端传递 items:true 时被忽略。已在函数签名中添加 items: bool = False，并修改条件判断为 if items or query == 'items'"
+    },
+    {
+      "issue": "点击重置后数据未恢复全部显示",
+      "file": "hooks/use-table-url-state.ts",
+      "detail": "问题原因：useTableUrlState 使用 useState 初始化状态，但状态只在 mount 时从 search 读取。当 URL/search 变化时（如重置导航到空对象 {}），内部状态没有同步更新。解决方案：添加 useEffect 监听 search 变化，同步 globalFilter 和 columnFilters 状态"
+    },
+    {
+      "issue": "点击重置后只显示第一页数据",
+      "file": "hooks/use-table-url-state.ts, xxx-table.tsx",
+      "detail": "问题原因：虽然 pagination 状态通过 useMemo 从 search 计算，但 fetchData 可能在 pagination 状态更新完成前就被调用，导致使用旧的 pagination 值。解决方案：在表格组件中添加 useEffect(() => { fetchData() }, [search])，确保 search 变化时强制刷新数据"
+    },
+    {
+      "issue": "订单分项列表获取数据很慢",
+      "file": "features/orders/AllOrders.tsx",
+      "detail": "问题原因：AllOrders.tsx 使用 orderAPI.getAllOrderItems（即 getAllItemsNoPagination），一次性获取所有数据（约16000+条）。解决方案：改用分页接口 orderItemAPI.getAllItems，添加 useTableUrlState 管理分页状态和搜索，启用 serverPagination 模式"
+    },
+    {
+      "issue": "订单分项列表分页按钮不工作",
+      "file": "features/orders/components/allorders-table.tsx",
+      "detail": "问题原因：DataTablePagination 在 serverPaginationMode=true 时需要 onPageChange 和 onPageSizeChange 回调来处理分页操作，但 AllOrdersTable 没有传递这些回调。解决方案：在 DataTablePagination 组件上添加 onPageChange 和 onPageSizeChange 属性，内部调用 onPaginationChange 来更新 URL 状态"
+    },
+    {
+      "issue": "未发货列表显示'第 1 页，共 0 页'",
+      "file": "features/shipping/components/unshipped-table.tsx",
+      "detail": "问题原因：后端 /order/list/data 接口在 items=true 时返回 count 字段，而不是 total。解决方案：修改 setTotal 调用为 setTotal(response.data.count || response.data.total || 0)"
+    },
+    {
+      "issue": "未发货列表搜索和日期筛选不生效",
+      "file": "backend/app/api/order/list.py",
+      "detail": "问题原因：后端 items=true 分支没有处理 query（搜索）和 start_date/end_date（日期范围）参数。解决方案：在 items=true 分支中添加搜索筛选（合同编号、规格、产品类型、型号、客户名称）和日期范围筛选（基于订单日期）"
+    },
+    {
+      "issue": "未发货列表点击重置后搜索框内容仍然存在",
+      "file": "features/shipping/components/unshipped-table.tsx",
+      "detail": "问题原因：React 批处理导致 useEffect([search]) 在 useTableUrlState 的 setGlobalFilter 之前执行。fetchData 闭包中的 globalFilter 仍是旧值。解决方案：将 useEffect([search]) 改为 useEffect([globalFilter])，确保在 globalFilter 更新后再调用 fetchData。重要规则：表格组件监听 search 变化时，应监听 globalFilter 而不是 search，因为 globalFilter 是最终用于 API 请求的值"
+    }
+  ],
+  "decisions": []
+}

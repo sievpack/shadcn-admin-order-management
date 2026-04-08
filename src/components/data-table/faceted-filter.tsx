@@ -28,15 +28,113 @@ type DataTableFacetedFilterProps<TData, TValue> = {
     value: string
     icon?: React.ComponentType<{ className?: string }>
   }[]
+  onFilterChange?: (value: string | undefined) => void
+  /** 是否为服务器端分页模式，默认为 false */
+  serverPaginationMode?: boolean
+  /** 用于触发清空的 key，当变化时清空本地状态 */
+  clearKey?: number
+  /** 外部传入的选中值，用于同步 URL 状态 */
+  selectedValues?: string
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  onFilterChange,
+  serverPaginationMode = false,
+  clearKey = 0,
+  selectedValues,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-  const facets = column?.getFacetedUniqueValues()
-  const selectedValues = new Set(column?.getFilterValue() as string[])
+  const facets = serverPaginationMode
+    ? undefined
+    : column?.getFacetedUniqueValues()
+  const initialSelectedValues = serverPaginationMode
+    ? new Set<string>()
+    : new Set(column?.getFilterValue() as string[])
+  const [localSelectedValues, setLocalSelectedValues] = React.useState(
+    initialSelectedValues
+  )
+  const localSelectedValuesRef = React.useRef(localSelectedValues)
+  localSelectedValuesRef.current = localSelectedValues
+  const isInternalChangeRef = React.useRef(false)
+  const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
+
+  React.useEffect(() => {
+    if (clearKey > 0 && serverPaginationMode) {
+      setLocalSelectedValues(new Set())
+      if (onFilterChange) {
+        onFilterChange(undefined)
+      }
+    }
+  }, [clearKey, serverPaginationMode, onFilterChange])
+
+  React.useEffect(() => {
+    if (serverPaginationMode && !isInternalChangeRef.current) {
+      if (selectedValues === undefined || selectedValues === '') {
+        setLocalSelectedValues(new Set())
+      } else {
+        const newSet = new Set(selectedValues.split(','))
+        setLocalSelectedValues(newSet)
+      }
+    }
+    isInternalChangeRef.current = false
+  }, [serverPaginationMode, selectedValues])
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
+
+  const selectedValuesSet = serverPaginationMode
+    ? localSelectedValues
+    : new Set(column?.getFilterValue() as string[])
+
+  const handleSelect = (optionValue: string, isSelected: boolean) => {
+    if (serverPaginationMode) {
+      isInternalChangeRef.current = true
+      const newSelected = new Set(localSelectedValuesRef.current)
+      if (isSelected) {
+        newSelected.delete(optionValue)
+      } else {
+        newSelected.add(optionValue)
+      }
+      setLocalSelectedValues(newSelected)
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        const filterValues = Array.from(newSelected)
+        if (onFilterChange) {
+          onFilterChange(
+            filterValues.length ? filterValues.join(',') : undefined
+          )
+        }
+      }, 0)
+    } else {
+      const currentFilter = (column?.getFilterValue() as string[]) || []
+      const newFilter = isSelected
+        ? currentFilter.filter((v) => v !== optionValue)
+        : [...currentFilter, optionValue]
+      column?.setFilterValue(newFilter.length ? newFilter : undefined)
+    }
+  }
+
+  const handleClear = () => {
+    if (serverPaginationMode) {
+      setLocalSelectedValues(new Set())
+      if (onFilterChange) {
+        onFilterChange(undefined)
+      }
+    } else {
+      column?.setFilterValue(undefined)
+    }
+  }
 
   return (
     <Popover>
@@ -44,26 +142,26 @@ export function DataTableFacetedFilter<TData, TValue>({
         <Button variant='outline' size='sm' className='h-8 border-dashed'>
           <PlusCircledIcon className='size-4' />
           {title}
-          {selectedValues?.size > 0 && (
+          {selectedValuesSet.size > 0 && (
             <>
               <Separator orientation='vertical' className='mx-2 h-4' />
               <Badge
                 variant='secondary'
                 className='rounded-sm px-1 font-normal lg:hidden'
               >
-                {selectedValues.size}
+                {selectedValuesSet.size}
               </Badge>
               <div className='hidden space-x-1 lg:flex'>
-                {selectedValues.size > 2 ? (
+                {selectedValuesSet.size > 2 ? (
                   <Badge
                     variant='secondary'
                     className='rounded-sm px-1 font-normal'
                   >
-                    {selectedValues.size} selected
+                    {selectedValuesSet.size} 已选
                   </Badge>
                 ) : (
                   options
-                    .filter((option) => selectedValues.has(option.value))
+                    .filter((option) => selectedValuesSet.has(option.value))
                     .map((option) => (
                       <Badge
                         variant='secondary'
@@ -83,24 +181,14 @@ export function DataTableFacetedFilter<TData, TValue>({
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>无结果</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
-                const isSelected = selectedValues.has(option.value)
+                const isSelected = selectedValuesSet.has(option.value)
                 return (
                   <CommandItem
                     key={option.value}
-                    onSelect={() => {
-                      if (isSelected) {
-                        selectedValues.delete(option.value)
-                      } else {
-                        selectedValues.add(option.value)
-                      }
-                      const filterValues = Array.from(selectedValues)
-                      column?.setFilterValue(
-                        filterValues.length ? filterValues : undefined
-                      )
-                    }}
+                    onSelect={() => handleSelect(option.value, isSelected)}
                   >
                     <div
                       className={cn(
@@ -125,15 +213,15 @@ export function DataTableFacetedFilter<TData, TValue>({
                 )
               })}
             </CommandGroup>
-            {selectedValues.size > 0 && (
+            {selectedValuesSet.size > 0 && (
               <>
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem
-                    onSelect={() => column?.setFilterValue(undefined)}
+                    onSelect={handleClear}
                     className='justify-center text-center'
                   >
-                    Clear filters
+                    清除过滤
                   </CommandItem>
                 </CommandGroup>
               </>

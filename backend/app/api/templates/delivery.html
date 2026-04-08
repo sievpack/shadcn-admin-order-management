@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>送货单 - {{发货单号}}</title>
+    <style>
+        @page {
+            size: 241mm 140mm;
+            margin: 0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 241mm;
+            height: 140mm;
+            font-family: "Microsoft YaHei", "SimSun", sans-serif;
+            font-size: 10px;
+            line-height: 1.4;
+            color: #333;
+        }
+        .page {
+            width: 241mm;
+            height: 140mm;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ddd;
+            margin-bottom: 0;
+        }
+        .page:last-child { page-break-after: avoid; }
+        .header {
+            text-align: center;
+            padding: 8px 10px;
+            border-bottom: 2px solid #333;
+            flex-shrink: 0;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        .header .order-no {
+            font-size: 12px;
+            color: #666;
+        }
+        .info-section {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        .info-item {
+            width: 25%;
+            padding: 6px 10px;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+        }
+        .info-item:nth-child(4n) { border-right: none; }
+        .info-item .label {
+            color: #888;
+            font-size: 9px;
+            margin-bottom: 2px;
+        }
+        .info-item .value {
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .items-table {
+            flex: 1;
+            overflow: hidden;
+        }
+        .items-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .items-table th,
+        .items-table td {
+            border: 1px solid #333;
+            padding: 4px 6px;
+            font-size: 9px;
+        }
+        .items-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+            text-align: center;
+        }
+        .items-table .text-center { text-align: center; }
+        .items-table .text-right { text-align: right; }
+        .items-table .total-row {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        .sign-section {
+            display: flex;
+            padding: 10px 15px;
+            border-top: 2px solid #333;
+            flex-shrink: 0;
+        }
+        .sign-section-empty {
+            padding: 10px 15px;
+            border-top: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        .sign-item {
+            flex: 1;
+        }
+        .sign-item .sign-line {
+            margin-top: 20px;
+            border-bottom: 1px solid #333;
+            min-height: 25px;
+        }
+        .sign-item .sign-label {
+            color: #888;
+            font-size: 9px;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 15px;
+            background: #f5f5f5;
+            font-size: 9px;
+            color: #888;
+            border-top: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        @media print {
+            html, body {
+                width: 241mm;
+                height: 140mm;
+            }
+            .page {
+                border: none;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% for page in pages %}
+    <div class="page">
+        <div class="header">
+            <h1>送 货 单</h1>
+            <div class="order-no">单号：{{发货单号}}</div>
+        </div>
+        
+        {% if page['is_first'] %}
+        <div class="info-section">
+            <div class="info-item">
+                <div class="label">客户名称</div>
+                <div class="value">{{客户名称}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">发货日期</div>
+                <div class="value">{{发货日期}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">快递公司</div>
+                <div class="value">{{快递公司}}</div>
+            </div>
+            <div class="info-item">
+                <div class="label">快递单号</div>
+                <div class="value">{{快递单号}}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="items-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">序号</th>
+                        <th>产品型号</th>
+                        <th>规格</th>
+                        <th style="width: 70px;">产品类型</th>
+                        <th style="width: 55px;">数量</th>
+                        <th style="width: 45px;">单位</th>
+                        <th style="width: 65px;">单价</th>
+                        <th style="width: 75px;">金额</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in page['items'] %}
+                    <tr>
+                        <td class="text-center">{{ item['index'] }}</td>
+                        <td>{{ item['产品型号'] }}</td>
+                        <td>{{ item['规格'] }}</td>
+                        <td class="text-center">{{ item['产品类型'] }}</td>
+                        <td class="text-right">{{ item['数量'] }}</td>
+                        <td class="text-center">{{ item['单位'] }}</td>
+                        <td class="text-right">{{ item['销售单价'] }}</td>
+                        <td class="text-right">{{ item['金额'] }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {% if page.show_total %}
+                    <tr class="total-row">
+                        <td colspan="7" class="text-right">合计金额：</td>
+                        <td class="text-right">¥ {{total_amount}}{% if page['is_last'] == false %}(续){% endif %}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if page['is_last'] %}
+        <div class="sign-section">
+            <div class="sign-item">
+                <div class="sign-label">客户签收</div>
+                <div class="sign-line"></div>
+            </div>
+            <div class="sign-item">
+                <div class="sign-label">发货人</div>
+                <div class="sign-line"></div>
+            </div>
+            <div class="sign-item">
+                <div class="sign-label">仓库主管</div>
+                <div class="sign-line"></div>
+            </div>
+        </div>
+        {% else %}
+        <div class="sign-section-empty"></div>
+        {% endif %}
+        
+        <div class="footer">
+            <span class="page-info">第 {{page.page_num}} 页 / 共 {{total_pages}} 页</span>
+            <span class="print-time">打印时间：{{print_time}} | JNS订单管理系统</span>
+        </div>
+    </div>
+    {% endfor %}
+</body>
+</html>

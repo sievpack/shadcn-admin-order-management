@@ -64,7 +64,7 @@ export function DisplayForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((data) => showSubmittedData(data))}
-        className='space-y-8'
+        className='flex flex-col gap-8'
       >
         <FormField
           control={form.control}

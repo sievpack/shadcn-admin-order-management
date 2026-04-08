@@ -85,7 +85,7 @@ export function TasksMutateDrawer({
           <form
             id='tasks-form'
             onSubmit={form.handleSubmit(onSubmit)}
-            className='flex-1 space-y-6 overflow-y-auto px-4'
+            className='flex flex-1 flex-col gap-6 overflow-y-auto px-4'
           >
             <FormField
               control={form.control}
@@ -132,7 +132,7 @@ export function TasksMutateDrawer({
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className='flex flex-col space-y-1'
+                      className='flex flex-col gap-1'
                     >
                       <FormItem className='flex items-center'>
                         <FormControl>
@@ -170,7 +170,7 @@ export function TasksMutateDrawer({
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className='flex flex-col space-y-1'
+                      className='flex flex-col gap-1'
                     >
                       <FormItem className='flex items-center'>
                         <FormControl>

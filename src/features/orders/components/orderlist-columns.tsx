@@ -1,8 +1,8 @@
+import { format } from 'date-fns'
 import { type ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { Badge } from '@/components/ui/badge'
-import { format } from 'date-fns'
 import { DataTableRowActions } from './data-table-row-actions'
 
 interface Order {
@@ -17,11 +17,15 @@ interface Order {
 export const orderListColumns = ({
   onViewOrder,
   onEditOrder,
-  onDeleteOrder
+  onDeleteOrder,
+  onAddOrderItem,
+  onPrintOrder,
 }: {
   onViewOrder?: (id: number, order: Order) => void
   onEditOrder?: (id: number, order: Order) => void
   onDeleteOrder?: (id: number) => void
+  onAddOrderItem?: (order: Order) => void
+  onPrintOrder?: (id: number, orderNumber: string) => void
 }): ColumnDef<Order>[] => [
   {
     id: 'select',
@@ -92,7 +96,7 @@ export const orderListColumns = ({
         const rowDate = new Date(orderDate)
         // 确保日期是同一天的开始时间
         rowDate.setHours(0, 0, 0, 0)
-        
+
         if (filterValue instanceof Date) {
           // 处理单个日期过滤
           const filterDate = new Date(filterValue)
@@ -139,7 +143,9 @@ export const orderListColumns = ({
     filterFn: (row, id, filterValue) => {
       if (!filterValue) return true
       const status = row.getValue(id) as boolean
-      const filterValues = Array.isArray(filterValue) ? filterValue : [filterValue]
+      const filterValues = Array.isArray(filterValue)
+        ? filterValue
+        : [filterValue]
       return filterValues.includes(status.toString())
     },
     meta: { label: '状态' },
@@ -147,11 +153,13 @@ export const orderListColumns = ({
   {
     id: 'actions',
     cell: ({ row }) => (
-      <DataTableRowActions 
-        row={row} 
+      <DataTableRowActions
+        row={row}
         onViewOrder={onViewOrder!}
         onEditOrder={onEditOrder!}
         onDeleteOrder={onDeleteOrder!}
+        onAddOrderItem={onAddOrderItem}
+        onPrintOrder={onPrintOrder}
       />
     ),
   },

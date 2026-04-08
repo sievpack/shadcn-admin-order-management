@@ -76,6 +76,14 @@ export const allOrdersColumns = ({
     meta: { label: '合同编号' },
   },
   {
+    accessorKey: '产品类型',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='产品类型' />
+    ),
+    cell: ({ row }) => <span>{row.getValue('产品类型') || '-'}</span>,
+    meta: { label: '产品类型' },
+  },
+  {
     accessorKey: '规格',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='规格' />

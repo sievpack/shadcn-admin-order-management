@@ -1,113 +1,133 @@
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
+import { Calendar as CalendarIcon } from 'lucide-react'
 import { reportAPI } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search as SearchComponent } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { ConfigDrawer } from '@/components/config-drawer'
 
 const formatNumber = (num: number): string => {
   return num.toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   })
 }
 
+const PAGE_SIZE = 15
+
 export function CustomerYearlyReport() {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear()
+  )
+  const [activeTab, setActiveTab] = useState<string>('order')
   const [loading, setLoading] = useState<boolean>(false)
   const [currentPage, setCurrentPage] = useState<number>(1)
-  const [pageSize] = useState<number>(15)
-  const [reportData, setReportData] = useState<any>({
+  const [orderReportData, setOrderReportData] = useState<any>({
     year: new Date().getFullYear(),
     customers: [],
     monthly_totals: {},
     yearly_total: 0,
     total_customers: 0,
     current_page: 1,
-    total_pages: 0
+    total_pages: 0,
+  })
+  const [shipmentReportData, setShipmentReportData] = useState<any>({
+    year: new Date().getFullYear(),
+    customers: [],
+    monthly_totals: {},
+    yearly_total: 0,
+    total_customers: 0,
+    current_page: 1,
+    total_pages: 0,
   })
   const [error, setError] = useState<string>('')
 
-  const yearOptions = Array.from({ length: 21 }, (_, i) => new Date().getFullYear() - 10 + i)
+  const yearOptions = Array.from(
+    { length: 21 },
+    (_, i) => new Date().getFullYear() - 10 + i
+  )
 
-  const fetchCustomerYearlyReport = async (page: number = 1) => {
+  const fetchOrderReport = async (page: number = 1) => {
     setLoading(true)
     setError('')
     try {
       const response = await reportAPI.getCustomerYearlyReport({
         year: selectedYear,
         page,
-        limit: pageSize
+        limit: PAGE_SIZE,
       })
       if (response.data.code === 0) {
-        setReportData(response.data.data)
-        setCurrentPage(response.data.data.current_page)
+        setOrderReportData(response.data.data)
       } else {
         setError('API返回错误: ' + response.data.msg)
       }
     } catch (error: any) {
-      console.error('获取客户年度统计数据失败:', error)
+      console.error('获取客户年度订单统计数据失败:', error)
       setError('获取数据失败: ' + error.message)
     } finally {
       setLoading(false)
     }
   }
 
+  const fetchShipmentReport = async (page: number = 1) => {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await reportAPI.getCustomerYearlyShipmentReport({
+        year: selectedYear,
+        page,
+        limit: PAGE_SIZE,
+      })
+      if (response.data.code === 0) {
+        setShipmentReportData(response.data.data)
+      } else {
+        setError('API返回错误: ' + response.data.msg)
+      }
+    } catch (error: any) {
+      console.error('获取客户年度发货统计数据失败:', error)
+      setError('获取数据失败: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchData = (page: number = 1) => {
+    if (activeTab === 'order') {
+      fetchOrderReport(page)
+    } else {
+      fetchShipmentReport(page)
+    }
+  }
+
   useEffect(() => {
     setCurrentPage(1)
-    fetchCustomerYearlyReport(1)
-  }, [selectedYear])
+    fetchData(1)
+  }, [selectedYear, activeTab])
 
   const handleYearChange = (year: string) => {
     setSelectedYear(parseInt(year))
   }
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= reportData.total_pages) {
+    const totalPages =
+      activeTab === 'order'
+        ? orderReportData.total_pages
+        : shipmentReportData.total_pages
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
-      fetchCustomerYearlyReport(page)
+      fetchData(page)
     }
-  }
-
-  const getPageNumbers = () => {
-    const totalPages = reportData.total_pages || 1
-    const current = currentPage
-    const pages: (number | string)[] = []
-    
-    pages.push(1)
-    
-    let startPage = Math.max(2, current - 2)
-    let endPage = Math.min(totalPages - 1, current + 2)
-    
-    if (current <= 3) {
-      endPage = Math.min(totalPages - 1, 5)
-    }
-    if (current >= totalPages - 2) {
-      startPage = Math.max(2, totalPages - 4)
-    }
-    
-    if (startPage > 2) {
-      pages.push('...')
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i)
-    }
-    
-    if (endPage < totalPages - 1) {
-      pages.push('...')
-    }
-    
-    if (totalPages > 1) {
-      pages.push(totalPages)
-    }
-    
-    return pages
   }
 
   return (
@@ -122,30 +142,23 @@ export function CustomerYearlyReport() {
       </Header>
 
       <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2'>
+        <div className='mb-2 flex items-center justify-between'>
           <h1 className='text-2xl font-bold tracking-tight'>客户年度统计</h1>
         </div>
 
-        {error && (
-          <div className="mb-4 px-4 py-3 bg-destructive/10 border-l-4 border-destructive">
-            <p className="text-destructive">{error}</p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="mb-4 px-4 py-3 bg-primary/10 border-l-4 border-primary">
-            <p className="text-primary">正在加载数据...</p>
-          </div>
-        )}
-
-        <div className="space-y-6">
-          <div className="bg-card rounded-lg shadow-sm border p-4">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">年份:</span>
-                <Select value={selectedYear.toString()} onValueChange={handleYearChange}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="选择年份" />
+        <div className='flex flex-col gap-6'>
+          <div className='rounded-lg border bg-card p-4 shadow-sm'>
+            <div className='flex flex-col items-start gap-4 md:flex-row md:items-center'>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm font-medium text-foreground'>
+                  年份:
+                </span>
+                <Select
+                  value={selectedYear.toString()}
+                  onValueChange={handleYearChange}
+                >
+                  <SelectTrigger className='w-[120px]'>
+                    <SelectValue placeholder='选择年份' />
                   </SelectTrigger>
                   <SelectContent>
                     {yearOptions.map((year) => (
@@ -157,121 +170,294 @@ export function CustomerYearlyReport() {
                 </Select>
               </div>
 
-              <Button onClick={() => fetchCustomerYearlyReport(1)} disabled={loading}>
-                <CalendarIcon className="h-4 w-4 mr-2" />
+              <Button onClick={() => fetchData(1)} disabled={loading}>
+                <CalendarIcon className='mr-2 h-4 w-4' />
                 {loading ? '加载中...' : '查询'}
               </Button>
             </div>
           </div>
 
-          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
-            <div className="px-6 py-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-medium text-foreground">
-                {selectedYear}年客户订单金额统计
-              </h3>
-              <span className="text-sm text-muted-foreground">
-                共 {reportData.total_customers || 0} 个客户
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border">
-                <thead className="bg-accent">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      客户名称
-                    </th>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                      <th key={month} className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        {month}月
-                      </th>
-                    ))}
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      合计
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-card divide-y divide-border">
-                  {reportData.customers.map((customer: any, index: number) => (
-                    <tr key={index} className="hover:bg-accent/50 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-foreground font-medium">
-                        {customer.customer_name}
-                      </td>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                        <td key={month} className="px-4 py-3 whitespace-nowrap text-sm text-right text-foreground">
-                          {formatNumber(customer.months[month.toString()] || 0)}
-                        </td>
-                      ))}
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-primary font-medium">
-                        {formatNumber(customer.total_amount)}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-accent/30">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-foreground">
-                      合计
-                    </td>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                      <td key={month} className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-foreground">
-                        {formatNumber(reportData.monthly_totals[month.toString()] || 0)}
-                      </td>
-                    ))}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-primary">
-                      {formatNumber(reportData.yearly_total)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value='order'>订单</TabsTrigger>
+              <TabsTrigger value='shipment'>发货</TabsTrigger>
+            </TabsList>
 
-            {reportData.total_pages > 1 && (
-              <div className="px-6 py-4 border-t flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  第 {currentPage} / {reportData.total_pages} 页，
-                  每页 {pageSize} 条，
-                  共 {reportData.total_customers} 条记录
+            <TabsContent value='order'>
+              <div className='overflow-hidden rounded-lg border bg-card shadow-sm'>
+                <div className='flex items-center justify-between border-b px-6 py-4'>
+                  <h3 className='text-lg font-medium text-foreground'>
+                    {orderReportData.year}年客户订单金额统计
+                  </h3>
+                  <span className='text-sm text-muted-foreground'>
+                    共 {orderReportData.total_customers || 0} 个客户
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1 || loading}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-
-                  <div className="flex items-center gap-1">
-                    {getPageNumbers().map((page, index) => (
-                      <div key={index}>
-                        {page === '...' ? (
-                          <span className="px-2 text-muted-foreground">...</span>
-                        ) : (
-                          <Button
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(page as number)}
-                            disabled={loading}
-                            className="min-w-[32px]"
-                          >
-                            {page}
-                          </Button>
+                <div className='overflow-x-auto'>
+                  {orderReportData.customers &&
+                  orderReportData.customers.length > 0 ? (
+                    <table className='min-w-full divide-y divide-border'>
+                      <thead className='bg-accent'>
+                        <tr>
+                          <th className='px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase'>
+                            客户名称
+                          </th>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                            (month) => (
+                              <th
+                                key={month}
+                                className='px-4 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase'
+                              >
+                                {month}月
+                              </th>
+                            )
+                          )}
+                          <th className='px-4 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase'>
+                            合计
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className='divide-y divide-border bg-card'>
+                        {orderReportData.customers.map(
+                          (customer: any, index: number) => (
+                            <tr
+                              key={index}
+                              className='transition-colors hover:bg-accent/50'
+                            >
+                              <td className='px-4 py-3 text-sm font-medium whitespace-nowrap text-foreground'>
+                                {customer.customer_name}
+                              </td>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                                (month) => (
+                                  <td
+                                    key={month}
+                                    className='px-4 py-3 text-right text-sm whitespace-nowrap text-foreground'
+                                  >
+                                    {formatNumber(
+                                      customer.months[month.toString()] || 0
+                                    )}
+                                  </td>
+                                )
+                              )}
+                              <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap text-primary'>
+                                {formatNumber(customer.total_amount)}
+                              </td>
+                            </tr>
+                          )
                         )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === reportData.total_pages || loading}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                        <tr className='bg-accent/30'>
+                          <td className='px-4 py-3 text-sm font-bold whitespace-nowrap text-foreground'>
+                            合计
+                          </td>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                            (month) => (
+                              <td
+                                key={month}
+                                className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap text-foreground'
+                              >
+                                {formatNumber(
+                                  orderReportData.monthly_totals[
+                                    month.toString()
+                                  ] || 0
+                                )}
+                              </td>
+                            )
+                          )}
+                          <td className='px-4 py-3 text-right text-sm font-bold whitespace-nowrap text-primary'>
+                            {formatNumber(orderReportData.yearly_total)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className='p-8 text-center text-muted-foreground'>
+                      暂无数据
+                    </div>
+                  )}
                 </div>
+                {orderReportData.total_pages > 1 && (
+                  <div className='flex items-center justify-between border-t px-6 py-4'>
+                    <div className='text-sm text-muted-foreground'>
+                      第 {orderReportData.current_page} /{' '}
+                      {orderReportData.total_pages} 页， 每页 {PAGE_SIZE} 条，
+                      共 {orderReportData.total_customers} 条记录
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || loading}
+                      >
+                        上一页
+                      </Button>
+                      <span className='text-sm'>
+                        {currentPage} / {orderReportData.total_pages}
+                      </span>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={
+                          currentPage === orderReportData.total_pages || loading
+                        }
+                      >
+                        下一页
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {error && (
+                  <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
+                    <p className='text-destructive'>{error}</p>
+                  </div>
+                )}
+                {loading && (
+                  <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
+                    <p className='text-primary'>正在加载数据...</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </TabsContent>
+
+            <TabsContent value='shipment'>
+              <div className='overflow-hidden rounded-lg border bg-card shadow-sm'>
+                <div className='flex items-center justify-between border-b px-6 py-4'>
+                  <h3 className='text-lg font-medium text-foreground'>
+                    {shipmentReportData.year}年客户发货金额统计
+                  </h3>
+                  <span className='text-sm text-muted-foreground'>
+                    共 {shipmentReportData.total_customers || 0} 个客户
+                  </span>
+                </div>
+                <div className='overflow-x-auto'>
+                  {shipmentReportData.customers &&
+                  shipmentReportData.customers.length > 0 ? (
+                    <table className='min-w-full divide-y divide-border'>
+                      <thead className='bg-accent'>
+                        <tr>
+                          <th className='px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase'>
+                            客户名称
+                          </th>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                            (month) => (
+                              <th
+                                key={month}
+                                className='px-4 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase'
+                              >
+                                {month}月
+                              </th>
+                            )
+                          )}
+                          <th className='px-4 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase'>
+                            合计
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className='divide-y divide-border bg-card'>
+                        {shipmentReportData.customers.map(
+                          (customer: any, index: number) => (
+                            <tr
+                              key={index}
+                              className='transition-colors hover:bg-accent/50'
+                            >
+                              <td className='px-4 py-3 text-sm font-medium whitespace-nowrap text-foreground'>
+                                {customer.customer_name}
+                              </td>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                                (month) => (
+                                  <td
+                                    key={month}
+                                    className='px-4 py-3 text-right text-sm whitespace-nowrap text-foreground'
+                                  >
+                                    {formatNumber(
+                                      customer.months[month.toString()] || 0
+                                    )}
+                                  </td>
+                                )
+                              )}
+                              <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap text-primary'>
+                                {formatNumber(customer.total_amount)}
+                              </td>
+                            </tr>
+                          )
+                        )}
+                        <tr className='bg-accent/30'>
+                          <td className='px-4 py-3 text-sm font-bold whitespace-nowrap text-foreground'>
+                            合计
+                          </td>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                            (month) => (
+                              <td
+                                key={month}
+                                className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap text-foreground'
+                              >
+                                {formatNumber(
+                                  shipmentReportData.monthly_totals[
+                                    month.toString()
+                                  ] || 0
+                                )}
+                              </td>
+                            )
+                          )}
+                          <td className='px-4 py-3 text-right text-sm font-bold whitespace-nowrap text-primary'>
+                            {formatNumber(shipmentReportData.yearly_total)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className='p-8 text-center text-muted-foreground'>
+                      暂无数据
+                    </div>
+                  )}
+                </div>
+                {shipmentReportData.total_pages > 1 && (
+                  <div className='flex items-center justify-between border-t px-6 py-4'>
+                    <div className='text-sm text-muted-foreground'>
+                      第 {shipmentReportData.current_page} /{' '}
+                      {shipmentReportData.total_pages} 页， 每页 {PAGE_SIZE}{' '}
+                      条， 共 {shipmentReportData.total_customers} 条记录
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || loading}
+                      >
+                        上一页
+                      </Button>
+                      <span className='text-sm'>
+                        {currentPage} / {shipmentReportData.total_pages}
+                      </span>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={
+                          currentPage === shipmentReportData.total_pages ||
+                          loading
+                        }
+                      >
+                        下一页
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {error && (
+                  <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
+                    <p className='text-destructive'>{error}</p>
+                  </div>
+                )}
+                {loading && (
+                  <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
+                    <p className='text-primary'>正在加载数据...</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </Main>
     </>

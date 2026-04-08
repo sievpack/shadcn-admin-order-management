@@ -9,19 +9,49 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 
+function parseLocalDate(dateStr: string): Date | undefined {
+  if (!dateStr) return undefined
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function formatDateForStorage(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 type DatePickerProps = {
-  selected: Date | undefined | Date[]
-  onSelect: (date: Date | undefined | Date[]) => void
+  value?: string
+  onChange?: (date: string) => void
+  selected?: Date | undefined
+  onSelect?: (date: Date | undefined) => void
   placeholder?: string
-  mode?: 'single' | 'range'
 }
 
 export function DatePicker({
-  selected,
-  onSelect,
-  placeholder = 'Pick a date',
-  mode = 'single',
+  value,
+  onChange,
+  selected: selectedProp,
+  onSelect: onSelectProp,
+  placeholder = '选择日期',
 }: DatePickerProps) {
+  const isStringMode = value !== undefined || onChange !== undefined
+  const selected = isStringMode
+    ? value
+      ? parseLocalDate(value)
+      : undefined
+    : selectedProp
+
+  const handleSelect = (date: Date | undefined) => {
+    if (isStringMode && onChange) {
+      onChange(date ? formatDateForStorage(date) : '')
+    } else if (onSelectProp) {
+      onSelectProp(date)
+    }
+  }
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -31,19 +61,7 @@ export function DatePicker({
           className='w-[240px] justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
         >
           {selected ? (
-            Array.isArray(selected) ? (
-              selected.length === 2 && selected[0] instanceof Date && selected[1] instanceof Date ? (
-                `${format(selected[0], 'yyyy年MM月dd日', { locale: zhCN })} 至 ${format(selected[1], 'yyyy年MM月dd日', { locale: zhCN })}`
-              ) : selected.length === 1 && selected[0] instanceof Date ? (
-                format(selected[0], 'yyyy年MM月dd日', { locale: zhCN })
-              ) : (
-                <span>{placeholder}</span>
-              )
-            ) : selected instanceof Date ? (
-              format(selected, 'yyyy年MM月dd日', { locale: zhCN })
-            ) : (
-              <span>{placeholder}</span>
-            )
+            format(selected, 'yyyy年MM月dd日', { locale: zhCN })
           ) : (
             <span>{placeholder}</span>
           )}
@@ -52,15 +70,13 @@ export function DatePicker({
       </PopoverTrigger>
       <PopoverContent className='w-auto p-0'>
         <Calendar
-          mode={mode}
+          mode='single'
           captionLayout='dropdown'
           selected={selected}
-          onSelect={onSelect}
+          onSelect={handleSelect}
           disabled={(date: Date) => {
-            // 允许选择所有日期，只禁用1900年之前的日期
             return date < new Date('1900-01-01')
           }}
-          numberOfMonths={mode === 'range' ? 2 : 1}
           locale={zhCN}
         />
       </PopoverContent>

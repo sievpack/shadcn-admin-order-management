@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import { type DateRange } from 'react-day-picker'
@@ -26,20 +26,173 @@ type DataTableToolbarProps<TData> = {
     endColumnId: string
     title?: string
   }
+  onSearch?: (query: string) => void
+  onFilterChange?: (columnId: string, value: string | undefined) => void
+  onDateRangeChange?: (from: Date | undefined, to: Date | undefined) => void
+  onReset?: () => void
+  /** 是否为服务器端分页模式，默认为 false（客户端分页） */
+  serverPaginationMode?: boolean
+  /** 外部传入的筛选值，格式为 { columnId: value } */
+  filterValues?: Record<string, string>
+  /** 隐藏视图选项按钮 */
+  hideViewOptions?: boolean
 }
 
 export function DataTableToolbar<TData>({
   table,
-  searchPlaceholder = 'Filter...',
+  searchPlaceholder = '搜索...',
   searchKey,
   filters = [],
   dateRangeFilter,
+  onSearch,
+  onFilterChange,
+  onDateRangeChange,
+  onReset,
+  serverPaginationMode = false,
+  filterValues,
+  hideViewOptions = false,
 }: DataTableToolbarProps<TData>) {
+  const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(
+    undefined
+  )
+  const [localSearchValue, setLocalSearchValue] = useState('')
+  const [localFilterValues, setLocalFilterValues] = useState<
+    Record<string, string>
+  >({})
+  const [clearFiltersKey] = useState(0)
+
+  const globalFilterFromTable = table.getState().globalFilter
+  const prevGlobalFilterRef = useRef(globalFilterFromTable)
+
+  useEffect(() => {
+    if (
+      serverPaginationMode &&
+      globalFilterFromTable &&
+      globalFilterFromTable !== prevGlobalFilterRef.current
+    ) {
+      setLocalSearchValue(globalFilterFromTable)
+      prevGlobalFilterRef.current = globalFilterFromTable
+    }
+  }, [serverPaginationMode, globalFilterFromTable])
+
+  // 合并外部和本地筛选值 - 本地优先
+  const effectiveFilterValues = serverPaginationMode
+    ? { ...filterValues, ...localFilterValues }
+    : undefined
+
+  // 检查是否有任何筛选器激活
+  const hasActiveFilters = serverPaginationMode
+    ? Object.values(effectiveFilterValues || {}).some((v) => !!v)
+    : table.getState().columnFilters?.length > 0
+
   const isFiltered =
-    table.getState().columnFilters.length > 0 || table.getState().globalFilter
-  
-  // 本地状态来跟踪日期范围选择
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+    (serverPaginationMode &&
+      (!!localSearchValue ||
+        !!globalFilterFromTable ||
+        hasActiveFilters ||
+        !!localDateRange?.from ||
+        !!localDateRange?.to)) ||
+    (!serverPaginationMode &&
+      (table.getState().columnFilters?.length > 0 ||
+        (searchKey
+          ? table.getColumn(searchKey)?.getFilterValue()
+          : table.getState().globalFilter)))
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      if (serverPaginationMode) {
+        setLocalSearchValue(value)
+        if (onSearch) {
+          onSearch(value)
+        }
+        return
+      }
+      if (searchKey) {
+        table.getColumn(searchKey)?.setFilterValue(value)
+      } else {
+        table.setGlobalFilter(value)
+      }
+    },
+    [serverPaginationMode, onSearch, searchKey]
+  )
+
+  const handleFilterChange = useCallback(
+    (columnId: string, value: string | undefined) => {
+      if (serverPaginationMode) {
+        setLocalFilterValues((prev) => {
+          const newValues = { ...prev }
+          if (value) {
+            newValues[columnId] = value
+          } else {
+            delete newValues[columnId]
+          }
+          // 当清除筛选时，也需要通知 onFilterChange
+          if (onFilterChange) {
+            if (!value) {
+              // 清除操作，传递 undefined
+              onFilterChange(columnId, undefined)
+            } else {
+              // 设置操作，传递所有筛选器的完整状态
+              Object.entries(newValues).forEach(([key, val]) => {
+                onFilterChange(key, val)
+              })
+            }
+          }
+          return newValues
+        })
+      } else {
+        const column = table.getColumn(columnId)
+        if (column) {
+          const filterValue = value ? value.split(',') : undefined
+          column.setFilterValue(filterValue)
+        }
+      }
+    },
+    [serverPaginationMode, onFilterChange]
+  )
+
+  const handleDateRangeChange = useCallback(
+    (dateRange: DateRange | undefined) => {
+      setLocalDateRange(dateRange)
+      if (serverPaginationMode) {
+        if (onDateRangeChange) {
+          onDateRangeChange(dateRange?.from, dateRange?.to)
+        }
+      } else if (dateRangeFilter) {
+        if (dateRange?.from && dateRange?.to) {
+          table
+            .getColumn(dateRangeFilter.startColumnId)
+            ?.setFilterValue(dateRange.from)
+          table
+            .getColumn(dateRangeFilter.endColumnId)
+            ?.setFilterValue(dateRange.to)
+        } else {
+          table
+            .getColumn(dateRangeFilter.startColumnId)
+            ?.setFilterValue(undefined)
+          table
+            .getColumn(dateRangeFilter.endColumnId)
+            ?.setFilterValue(undefined)
+        }
+      }
+    },
+    [serverPaginationMode, onDateRangeChange, dateRangeFilter, table]
+  )
+
+  const handleReset = useCallback(() => {
+    if (serverPaginationMode) {
+      if (onReset) {
+        onReset()
+      }
+      setLocalDateRange(undefined)
+      setLocalSearchValue('')
+      setLocalFilterValues({})
+    } else {
+      table.resetColumnFilters()
+      table.setGlobalFilter('')
+      setLocalDateRange(undefined)
+    }
+  }, [serverPaginationMode, onReset])
 
   return (
     <div className='flex items-center justify-between'>
@@ -48,18 +201,25 @@ export function DataTableToolbar<TData>({
           <Input
             placeholder={searchPlaceholder}
             value={
-              (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
+              serverPaginationMode
+                ? localSearchValue
+                : ((table.getColumn(searchKey)?.getFilterValue() as string) ??
+                  '')
             }
-            onChange={(event) =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
-            }
+            onChange={(event) => handleSearch(event.target.value)}
             className='h-8 w-[150px] lg:w-[250px]'
           />
         ) : (
           <Input
             placeholder={searchPlaceholder}
-            value={table.getState().globalFilter ?? ''}
-            onChange={(event) => table.setGlobalFilter(event.target.value)}
+            value={
+              serverPaginationMode
+                ? localSearchValue
+                : (table.getState().globalFilter ?? '')
+            }
+            onChange={(event) => {
+              handleSearch(event.target.value)
+            }}
             className='h-8 w-[150px] lg:w-[250px]'
           />
         )}
@@ -73,25 +233,20 @@ export function DataTableToolbar<TData>({
                 column={column}
                 title={filter.title}
                 options={filter.options}
+                onFilterChange={(value) =>
+                  handleFilterChange(filter.columnId, value)
+                }
+                serverPaginationMode={serverPaginationMode}
+                clearKey={clearFiltersKey}
+                selectedValues={effectiveFilterValues?.[filter.columnId]}
               />
             )
           })}
           {dateRangeFilter && (
             <div className='flex items-center gap-2'>
-              <DateRangePicker 
-                value={dateRange}
-                onValueChange={(dateRange) => {
-                  setDateRange(dateRange)
-                  if (dateRange?.from && dateRange?.to) {
-                    // 当选择了完整的日期范围时，设置过滤值
-                    table.getColumn(dateRangeFilter.startColumnId)?.setFilterValue(dateRange.from)
-                    table.getColumn(dateRangeFilter.endColumnId)?.setFilterValue(dateRange.to)
-                  } else {
-                    // 当取消选择或只选择了一个日期时，清除过滤值
-                    table.getColumn(dateRangeFilter.startColumnId)?.setFilterValue(undefined)
-                    table.getColumn(dateRangeFilter.endColumnId)?.setFilterValue(undefined)
-                  }
-                }}
+              <DateRangePicker
+                value={localDateRange}
+                onValueChange={handleDateRangeChange}
                 placeholder={dateRangeFilter.title || '选择日期范围'}
               />
             </div>
@@ -100,20 +255,15 @@ export function DataTableToolbar<TData>({
         {isFiltered && (
           <Button
             variant='ghost'
-            onClick={() => {
-              table.resetColumnFilters()
-              table.setGlobalFilter('')
-              // 重置日期范围选择器
-              setDateRange(undefined)
-            }}
+            onClick={handleReset}
             className='h-8 px-2 lg:px-3'
           >
-            Reset
+            重置
             <Cross2Icon className='ms-2 h-4 w-4' />
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      {!hideViewOptions && <DataTableViewOptions table={table} />}
     </div>
   )
 }

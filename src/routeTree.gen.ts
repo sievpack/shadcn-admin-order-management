@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -22,16 +21,17 @@ import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
-import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
-import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedUnshippedlistIndexRouteImport } from './routes/_authenticated/unshippedlist/index'
+import { Route as AuthenticatedTemplatebulkIndexRouteImport } from './routes/_authenticated/templatebulk/index'
+import { Route as AuthenticatedTemplateIndexRouteImport } from './routes/_authenticated/template/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedShippinglistIndexRouteImport } from './routes/_authenticated/shippinglist/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedQuotelistIndexRouteImport } from './routes/_authenticated/quotelist/index'
 import { Route as AuthenticatedProductreportIndexRouteImport } from './routes/_authenticated/productreport/index'
+import { Route as AuthenticatedProductionIndexRouteImport } from './routes/_authenticated/production/index'
 import { Route as AuthenticatedOrderlistIndexRouteImport } from './routes/_authenticated/orderlist/index'
 import { Route as AuthenticatedMonthlyreportIndexRouteImport } from './routes/_authenticated/monthlyreport/index'
 import { Route as AuthenticatedIndustryreportIndexRouteImport } from './routes/_authenticated/industryreport/index'
@@ -41,20 +41,27 @@ import { Route as AuthenticatedCustomerlistIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedAllordersIndexRouteImport } from './routes/_authenticated/allorders/index'
-import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
-import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
-import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedProductionStatsRouteImport } from './routes/_authenticated/production/stats'
+import { Route as AuthenticatedProductionReportRouteImport } from './routes/_authenticated/production/report'
+import { Route as AuthenticatedProductionQcRouteImport } from './routes/_authenticated/production/qc'
+import { Route as AuthenticatedProductionPlanRouteImport } from './routes/_authenticated/production/plan'
+import { Route as AuthenticatedProductionOrderRouteImport } from './routes/_authenticated/production/order'
+import { Route as AuthenticatedProductionMaterialRouteImport } from './routes/_authenticated/production/material'
+import { Route as AuthenticatedProductionInboundRouteImport } from './routes/_authenticated/production/inbound'
+import { Route as AuthenticatedFinanceVoucherRouteImport } from './routes/_authenticated/finance/voucher'
+import { Route as AuthenticatedFinanceStatsRouteImport } from './routes/_authenticated/finance/stats'
+import { Route as AuthenticatedFinancePaymentRouteImport } from './routes/_authenticated/finance/payment'
+import { Route as AuthenticatedFinanceCollectionRouteImport } from './routes/_authenticated/finance/collection'
+import { Route as AuthenticatedFinanceArRouteImport } from './routes/_authenticated/finance/ar'
+import { Route as AuthenticatedFinanceApRouteImport } from './routes/_authenticated/finance/ap'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedDictTypeIndexRouteImport } from './routes/_authenticated/dict/type/index'
+import { Route as AuthenticatedDictDataIndexRouteImport } from './routes/_authenticated/dict/data/index'
 
-const ClerkRouteRoute = ClerkRouteRouteImport.update({
-  id: '/clerk',
-  path: '/clerk',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -114,14 +121,6 @@ const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
-const ClerkauthRouteRoute = ClerkauthRouteRouteImport.update({
-  id: '/(auth)',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
@@ -137,6 +136,18 @@ const AuthenticatedUnshippedlistIndexRoute =
   AuthenticatedUnshippedlistIndexRouteImport.update({
     id: '/unshippedlist/',
     path: '/unshippedlist/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTemplatebulkIndexRoute =
+  AuthenticatedTemplatebulkIndexRouteImport.update({
+    id: '/templatebulk/',
+    path: '/templatebulk/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTemplateIndexRoute =
+  AuthenticatedTemplateIndexRouteImport.update({
+    id: '/template/',
+    path: '/template/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
@@ -166,6 +177,12 @@ const AuthenticatedProductreportIndexRoute =
   AuthenticatedProductreportIndexRouteImport.update({
     id: '/productreport/',
     path: '/productreport/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductionIndexRoute =
+  AuthenticatedProductionIndexRouteImport.update({
+    id: '/production/',
+    path: '/production/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedOrderlistIndexRoute =
@@ -220,22 +237,6 @@ const AuthenticatedAllordersIndexRoute =
     path: '/allorders/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ClerkAuthenticatedUserManagementRoute =
-  ClerkAuthenticatedUserManagementRouteImport.update({
-    id: '/user-management',
-    path: '/user-management',
-    getParentRoute: () => ClerkAuthenticatedRouteRoute,
-  } as any)
-const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
-const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -260,16 +261,103 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedProductionStatsRoute =
+  AuthenticatedProductionStatsRouteImport.update({
+    id: '/production/stats',
+    path: '/production/stats',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductionReportRoute =
+  AuthenticatedProductionReportRouteImport.update({
+    id: '/production/report',
+    path: '/production/report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductionQcRoute =
+  AuthenticatedProductionQcRouteImport.update({
+    id: '/production/qc',
+    path: '/production/qc',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductionPlanRoute =
+  AuthenticatedProductionPlanRouteImport.update({
+    id: '/production/plan',
+    path: '/production/plan',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductionOrderRoute =
+  AuthenticatedProductionOrderRouteImport.update({
+    id: '/production/order',
+    path: '/production/order',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductionMaterialRoute =
+  AuthenticatedProductionMaterialRouteImport.update({
+    id: '/production/material',
+    path: '/production/material',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductionInboundRoute =
+  AuthenticatedProductionInboundRouteImport.update({
+    id: '/production/inbound',
+    path: '/production/inbound',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceVoucherRoute =
+  AuthenticatedFinanceVoucherRouteImport.update({
+    id: '/finance/voucher',
+    path: '/finance/voucher',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceStatsRoute =
+  AuthenticatedFinanceStatsRouteImport.update({
+    id: '/finance/stats',
+    path: '/finance/stats',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinancePaymentRoute =
+  AuthenticatedFinancePaymentRouteImport.update({
+    id: '/finance/payment',
+    path: '/finance/payment',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceCollectionRoute =
+  AuthenticatedFinanceCollectionRouteImport.update({
+    id: '/finance/collection',
+    path: '/finance/collection',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceArRoute = AuthenticatedFinanceArRouteImport.update({
+  id: '/finance/ar',
+  path: '/finance/ar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFinanceApRoute = AuthenticatedFinanceApRouteImport.update({
+  id: '/finance/ap',
+  path: '/finance/ap',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDictTypeIndexRoute =
+  AuthenticatedDictTypeIndexRouteImport.update({
+    id: '/dict/type/',
+    path: '/dict/type/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDictDataIndexRoute =
+  AuthenticatedDictDataIndexRouteImport.update({
+    id: '/dict/data/',
+    path: '/dict/data/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -282,13 +370,23 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/finance/ap': typeof AuthenticatedFinanceApRoute
+  '/finance/ar': typeof AuthenticatedFinanceArRoute
+  '/finance/collection': typeof AuthenticatedFinanceCollectionRoute
+  '/finance/payment': typeof AuthenticatedFinancePaymentRoute
+  '/finance/stats': typeof AuthenticatedFinanceStatsRoute
+  '/finance/voucher': typeof AuthenticatedFinanceVoucherRoute
+  '/production/inbound': typeof AuthenticatedProductionInboundRoute
+  '/production/material': typeof AuthenticatedProductionMaterialRoute
+  '/production/order': typeof AuthenticatedProductionOrderRoute
+  '/production/plan': typeof AuthenticatedProductionPlanRoute
+  '/production/qc': typeof AuthenticatedProductionQcRoute
+  '/production/report': typeof AuthenticatedProductionReportRoute
+  '/production/stats': typeof AuthenticatedProductionStatsRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/allorders/': typeof AuthenticatedAllordersIndexRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
@@ -298,16 +396,20 @@ export interface FileRoutesByFullPath {
   '/industryreport/': typeof AuthenticatedIndustryreportIndexRoute
   '/monthlyreport/': typeof AuthenticatedMonthlyreportIndexRoute
   '/orderlist/': typeof AuthenticatedOrderlistIndexRoute
+  '/production/': typeof AuthenticatedProductionIndexRoute
   '/productreport/': typeof AuthenticatedProductreportIndexRoute
   '/quotelist/': typeof AuthenticatedQuotelistIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/shippinglist/': typeof AuthenticatedShippinglistIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/template/': typeof AuthenticatedTemplateIndexRoute
+  '/templatebulk/': typeof AuthenticatedTemplatebulkIndexRoute
   '/unshippedlist/': typeof AuthenticatedUnshippedlistIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/dict/data/': typeof AuthenticatedDictDataIndexRoute
+  '/dict/type/': typeof AuthenticatedDictTypeIndexRoute
 }
 export interface FileRoutesByTo {
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -320,13 +422,23 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/finance/ap': typeof AuthenticatedFinanceApRoute
+  '/finance/ar': typeof AuthenticatedFinanceArRoute
+  '/finance/collection': typeof AuthenticatedFinanceCollectionRoute
+  '/finance/payment': typeof AuthenticatedFinancePaymentRoute
+  '/finance/stats': typeof AuthenticatedFinanceStatsRoute
+  '/finance/voucher': typeof AuthenticatedFinanceVoucherRoute
+  '/production/inbound': typeof AuthenticatedProductionInboundRoute
+  '/production/material': typeof AuthenticatedProductionMaterialRoute
+  '/production/order': typeof AuthenticatedProductionOrderRoute
+  '/production/plan': typeof AuthenticatedProductionPlanRoute
+  '/production/qc': typeof AuthenticatedProductionQcRoute
+  '/production/report': typeof AuthenticatedProductionReportRoute
+  '/production/stats': typeof AuthenticatedProductionStatsRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/allorders': typeof AuthenticatedAllordersIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -336,21 +448,23 @@ export interface FileRoutesByTo {
   '/industryreport': typeof AuthenticatedIndustryreportIndexRoute
   '/monthlyreport': typeof AuthenticatedMonthlyreportIndexRoute
   '/orderlist': typeof AuthenticatedOrderlistIndexRoute
+  '/production': typeof AuthenticatedProductionIndexRoute
   '/productreport': typeof AuthenticatedProductreportIndexRoute
   '/quotelist': typeof AuthenticatedQuotelistIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/shippinglist': typeof AuthenticatedShippinglistIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/template': typeof AuthenticatedTemplateIndexRoute
+  '/templatebulk': typeof AuthenticatedTemplatebulkIndexRoute
   '/unshippedlist': typeof AuthenticatedUnshippedlistIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/dict/data': typeof AuthenticatedDictDataIndexRoute
+  '/dict/type': typeof AuthenticatedDictTypeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/clerk': typeof ClerkRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
-  '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
@@ -363,13 +477,23 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/_authenticated/finance/ap': typeof AuthenticatedFinanceApRoute
+  '/_authenticated/finance/ar': typeof AuthenticatedFinanceArRoute
+  '/_authenticated/finance/collection': typeof AuthenticatedFinanceCollectionRoute
+  '/_authenticated/finance/payment': typeof AuthenticatedFinancePaymentRoute
+  '/_authenticated/finance/stats': typeof AuthenticatedFinanceStatsRoute
+  '/_authenticated/finance/voucher': typeof AuthenticatedFinanceVoucherRoute
+  '/_authenticated/production/inbound': typeof AuthenticatedProductionInboundRoute
+  '/_authenticated/production/material': typeof AuthenticatedProductionMaterialRoute
+  '/_authenticated/production/order': typeof AuthenticatedProductionOrderRoute
+  '/_authenticated/production/plan': typeof AuthenticatedProductionPlanRoute
+  '/_authenticated/production/qc': typeof AuthenticatedProductionQcRoute
+  '/_authenticated/production/report': typeof AuthenticatedProductionReportRoute
+  '/_authenticated/production/stats': typeof AuthenticatedProductionStatsRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/allorders/': typeof AuthenticatedAllordersIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
@@ -379,19 +503,23 @@ export interface FileRoutesById {
   '/_authenticated/industryreport/': typeof AuthenticatedIndustryreportIndexRoute
   '/_authenticated/monthlyreport/': typeof AuthenticatedMonthlyreportIndexRoute
   '/_authenticated/orderlist/': typeof AuthenticatedOrderlistIndexRoute
+  '/_authenticated/production/': typeof AuthenticatedProductionIndexRoute
   '/_authenticated/productreport/': typeof AuthenticatedProductreportIndexRoute
   '/_authenticated/quotelist/': typeof AuthenticatedQuotelistIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/shippinglist/': typeof AuthenticatedShippinglistIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/_authenticated/template/': typeof AuthenticatedTemplateIndexRoute
+  '/_authenticated/templatebulk/': typeof AuthenticatedTemplatebulkIndexRoute
   '/_authenticated/unshippedlist/': typeof AuthenticatedUnshippedlistIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/dict/data/': typeof AuthenticatedDictDataIndexRoute
+  '/_authenticated/dict/type/': typeof AuthenticatedDictTypeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/clerk'
     | '/settings'
     | '/forgot-password'
     | '/otp'
@@ -404,13 +532,23 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/errors/$error'
+    | '/finance/ap'
+    | '/finance/ar'
+    | '/finance/collection'
+    | '/finance/payment'
+    | '/finance/stats'
+    | '/finance/voucher'
+    | '/production/inbound'
+    | '/production/material'
+    | '/production/order'
+    | '/production/plan'
+    | '/production/qc'
+    | '/production/report'
+    | '/production/stats'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/allorders/'
     | '/apps/'
     | '/chats/'
@@ -420,16 +558,20 @@ export interface FileRouteTypes {
     | '/industryreport/'
     | '/monthlyreport/'
     | '/orderlist/'
+    | '/production/'
     | '/productreport/'
     | '/quotelist/'
     | '/settings/'
     | '/shippinglist/'
     | '/tasks/'
+    | '/template/'
+    | '/templatebulk/'
     | '/unshippedlist/'
     | '/users/'
+    | '/dict/data/'
+    | '/dict/type/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/clerk'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -442,13 +584,23 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/errors/$error'
+    | '/finance/ap'
+    | '/finance/ar'
+    | '/finance/collection'
+    | '/finance/payment'
+    | '/finance/stats'
+    | '/finance/voucher'
+    | '/production/inbound'
+    | '/production/material'
+    | '/production/order'
+    | '/production/plan'
+    | '/production/qc'
+    | '/production/report'
+    | '/production/stats'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/allorders'
     | '/apps'
     | '/chats'
@@ -458,20 +610,22 @@ export interface FileRouteTypes {
     | '/industryreport'
     | '/monthlyreport'
     | '/orderlist'
+    | '/production'
     | '/productreport'
     | '/quotelist'
     | '/settings'
     | '/shippinglist'
     | '/tasks'
+    | '/template'
+    | '/templatebulk'
     | '/unshippedlist'
     | '/users'
+    | '/dict/data'
+    | '/dict/type'
   id:
     | '__root__'
     | '/_authenticated'
-    | '/clerk'
     | '/_authenticated/settings'
-    | '/clerk/(auth)'
-    | '/clerk/_authenticated'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/sign-in'
@@ -484,13 +638,23 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
+    | '/_authenticated/finance/ap'
+    | '/_authenticated/finance/ar'
+    | '/_authenticated/finance/collection'
+    | '/_authenticated/finance/payment'
+    | '/_authenticated/finance/stats'
+    | '/_authenticated/finance/voucher'
+    | '/_authenticated/production/inbound'
+    | '/_authenticated/production/material'
+    | '/_authenticated/production/order'
+    | '/_authenticated/production/plan'
+    | '/_authenticated/production/qc'
+    | '/_authenticated/production/report'
+    | '/_authenticated/production/stats'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
-    | '/clerk/(auth)/sign-in'
-    | '/clerk/(auth)/sign-up'
-    | '/clerk/_authenticated/user-management'
     | '/_authenticated/allorders/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
@@ -500,18 +664,22 @@ export interface FileRouteTypes {
     | '/_authenticated/industryreport/'
     | '/_authenticated/monthlyreport/'
     | '/_authenticated/orderlist/'
+    | '/_authenticated/production/'
     | '/_authenticated/productreport/'
     | '/_authenticated/quotelist/'
     | '/_authenticated/settings/'
     | '/_authenticated/shippinglist/'
     | '/_authenticated/tasks/'
+    | '/_authenticated/template/'
+    | '/_authenticated/templatebulk/'
     | '/_authenticated/unshippedlist/'
     | '/_authenticated/users/'
+    | '/_authenticated/dict/data/'
+    | '/_authenticated/dict/type/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
@@ -526,13 +694,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/clerk': {
-      id: '/clerk'
-      path: '/clerk'
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -617,20 +778,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/clerk/_authenticated': {
-      id: '/clerk/_authenticated'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkAuthenticatedRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
-    '/clerk/(auth)': {
-      id: '/clerk/(auth)'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkauthRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -650,6 +797,20 @@ declare module '@tanstack/react-router' {
       path: '/unshippedlist'
       fullPath: '/unshippedlist/'
       preLoaderRoute: typeof AuthenticatedUnshippedlistIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/templatebulk/': {
+      id: '/_authenticated/templatebulk/'
+      path: '/templatebulk'
+      fullPath: '/templatebulk/'
+      preLoaderRoute: typeof AuthenticatedTemplatebulkIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/template/': {
+      id: '/_authenticated/template/'
+      path: '/template'
+      fullPath: '/template/'
+      preLoaderRoute: typeof AuthenticatedTemplateIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tasks/': {
@@ -685,6 +846,13 @@ declare module '@tanstack/react-router' {
       path: '/productreport'
       fullPath: '/productreport/'
       preLoaderRoute: typeof AuthenticatedProductreportIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/production/': {
+      id: '/_authenticated/production/'
+      path: '/production'
+      fullPath: '/production/'
+      preLoaderRoute: typeof AuthenticatedProductionIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/orderlist/': {
@@ -750,27 +918,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAllordersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/clerk/_authenticated/user-management': {
-      id: '/clerk/_authenticated/user-management'
-      path: '/user-management'
-      fullPath: '/clerk/user-management'
-      preLoaderRoute: typeof ClerkAuthenticatedUserManagementRouteImport
-      parentRoute: typeof ClerkAuthenticatedRouteRoute
-    }
-    '/clerk/(auth)/sign-up': {
-      id: '/clerk/(auth)/sign-up'
-      path: '/sign-up'
-      fullPath: '/clerk/sign-up'
-      preLoaderRoute: typeof ClerkauthSignUpRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
-    }
-    '/clerk/(auth)/sign-in': {
-      id: '/clerk/(auth)/sign-in'
-      path: '/sign-in'
-      fullPath: '/clerk/sign-in'
-      preLoaderRoute: typeof ClerkauthSignInRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
-    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/notifications'
@@ -799,11 +946,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/production/stats': {
+      id: '/_authenticated/production/stats'
+      path: '/production/stats'
+      fullPath: '/production/stats'
+      preLoaderRoute: typeof AuthenticatedProductionStatsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/production/report': {
+      id: '/_authenticated/production/report'
+      path: '/production/report'
+      fullPath: '/production/report'
+      preLoaderRoute: typeof AuthenticatedProductionReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/production/qc': {
+      id: '/_authenticated/production/qc'
+      path: '/production/qc'
+      fullPath: '/production/qc'
+      preLoaderRoute: typeof AuthenticatedProductionQcRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/production/plan': {
+      id: '/_authenticated/production/plan'
+      path: '/production/plan'
+      fullPath: '/production/plan'
+      preLoaderRoute: typeof AuthenticatedProductionPlanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/production/order': {
+      id: '/_authenticated/production/order'
+      path: '/production/order'
+      fullPath: '/production/order'
+      preLoaderRoute: typeof AuthenticatedProductionOrderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/production/material': {
+      id: '/_authenticated/production/material'
+      path: '/production/material'
+      fullPath: '/production/material'
+      preLoaderRoute: typeof AuthenticatedProductionMaterialRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/production/inbound': {
+      id: '/_authenticated/production/inbound'
+      path: '/production/inbound'
+      fullPath: '/production/inbound'
+      preLoaderRoute: typeof AuthenticatedProductionInboundRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/voucher': {
+      id: '/_authenticated/finance/voucher'
+      path: '/finance/voucher'
+      fullPath: '/finance/voucher'
+      preLoaderRoute: typeof AuthenticatedFinanceVoucherRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/stats': {
+      id: '/_authenticated/finance/stats'
+      path: '/finance/stats'
+      fullPath: '/finance/stats'
+      preLoaderRoute: typeof AuthenticatedFinanceStatsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/payment': {
+      id: '/_authenticated/finance/payment'
+      path: '/finance/payment'
+      fullPath: '/finance/payment'
+      preLoaderRoute: typeof AuthenticatedFinancePaymentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/collection': {
+      id: '/_authenticated/finance/collection'
+      path: '/finance/collection'
+      fullPath: '/finance/collection'
+      preLoaderRoute: typeof AuthenticatedFinanceCollectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/ar': {
+      id: '/_authenticated/finance/ar'
+      path: '/finance/ar'
+      fullPath: '/finance/ar'
+      preLoaderRoute: typeof AuthenticatedFinanceArRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance/ap': {
+      id: '/_authenticated/finance/ap'
+      path: '/finance/ap'
+      fullPath: '/finance/ap'
+      preLoaderRoute: typeof AuthenticatedFinanceApRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
       path: '/errors/$error'
       fullPath: '/errors/$error'
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dict/type/': {
+      id: '/_authenticated/dict/type/'
+      path: '/dict/type'
+      fullPath: '/dict/type/'
+      preLoaderRoute: typeof AuthenticatedDictTypeIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dict/data/': {
+      id: '/_authenticated/dict/data/'
+      path: '/dict/data'
+      fullPath: '/dict/data/'
+      preLoaderRoute: typeof AuthenticatedDictDataIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -836,6 +1088,19 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedFinanceApRoute: typeof AuthenticatedFinanceApRoute
+  AuthenticatedFinanceArRoute: typeof AuthenticatedFinanceArRoute
+  AuthenticatedFinanceCollectionRoute: typeof AuthenticatedFinanceCollectionRoute
+  AuthenticatedFinancePaymentRoute: typeof AuthenticatedFinancePaymentRoute
+  AuthenticatedFinanceStatsRoute: typeof AuthenticatedFinanceStatsRoute
+  AuthenticatedFinanceVoucherRoute: typeof AuthenticatedFinanceVoucherRoute
+  AuthenticatedProductionInboundRoute: typeof AuthenticatedProductionInboundRoute
+  AuthenticatedProductionMaterialRoute: typeof AuthenticatedProductionMaterialRoute
+  AuthenticatedProductionOrderRoute: typeof AuthenticatedProductionOrderRoute
+  AuthenticatedProductionPlanRoute: typeof AuthenticatedProductionPlanRoute
+  AuthenticatedProductionQcRoute: typeof AuthenticatedProductionQcRoute
+  AuthenticatedProductionReportRoute: typeof AuthenticatedProductionReportRoute
+  AuthenticatedProductionStatsRoute: typeof AuthenticatedProductionStatsRoute
   AuthenticatedAllordersIndexRoute: typeof AuthenticatedAllordersIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
@@ -845,18 +1110,36 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndustryreportIndexRoute: typeof AuthenticatedIndustryreportIndexRoute
   AuthenticatedMonthlyreportIndexRoute: typeof AuthenticatedMonthlyreportIndexRoute
   AuthenticatedOrderlistIndexRoute: typeof AuthenticatedOrderlistIndexRoute
+  AuthenticatedProductionIndexRoute: typeof AuthenticatedProductionIndexRoute
   AuthenticatedProductreportIndexRoute: typeof AuthenticatedProductreportIndexRoute
   AuthenticatedQuotelistIndexRoute: typeof AuthenticatedQuotelistIndexRoute
   AuthenticatedShippinglistIndexRoute: typeof AuthenticatedShippinglistIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
+  AuthenticatedTemplateIndexRoute: typeof AuthenticatedTemplateIndexRoute
+  AuthenticatedTemplatebulkIndexRoute: typeof AuthenticatedTemplatebulkIndexRoute
   AuthenticatedUnshippedlistIndexRoute: typeof AuthenticatedUnshippedlistIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedDictDataIndexRoute: typeof AuthenticatedDictDataIndexRoute
+  AuthenticatedDictTypeIndexRoute: typeof AuthenticatedDictTypeIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedFinanceApRoute: AuthenticatedFinanceApRoute,
+  AuthenticatedFinanceArRoute: AuthenticatedFinanceArRoute,
+  AuthenticatedFinanceCollectionRoute: AuthenticatedFinanceCollectionRoute,
+  AuthenticatedFinancePaymentRoute: AuthenticatedFinancePaymentRoute,
+  AuthenticatedFinanceStatsRoute: AuthenticatedFinanceStatsRoute,
+  AuthenticatedFinanceVoucherRoute: AuthenticatedFinanceVoucherRoute,
+  AuthenticatedProductionInboundRoute: AuthenticatedProductionInboundRoute,
+  AuthenticatedProductionMaterialRoute: AuthenticatedProductionMaterialRoute,
+  AuthenticatedProductionOrderRoute: AuthenticatedProductionOrderRoute,
+  AuthenticatedProductionPlanRoute: AuthenticatedProductionPlanRoute,
+  AuthenticatedProductionQcRoute: AuthenticatedProductionQcRoute,
+  AuthenticatedProductionReportRoute: AuthenticatedProductionReportRoute,
+  AuthenticatedProductionStatsRoute: AuthenticatedProductionStatsRoute,
   AuthenticatedAllordersIndexRoute: AuthenticatedAllordersIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
@@ -867,63 +1150,24 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndustryreportIndexRoute: AuthenticatedIndustryreportIndexRoute,
   AuthenticatedMonthlyreportIndexRoute: AuthenticatedMonthlyreportIndexRoute,
   AuthenticatedOrderlistIndexRoute: AuthenticatedOrderlistIndexRoute,
+  AuthenticatedProductionIndexRoute: AuthenticatedProductionIndexRoute,
   AuthenticatedProductreportIndexRoute: AuthenticatedProductreportIndexRoute,
   AuthenticatedQuotelistIndexRoute: AuthenticatedQuotelistIndexRoute,
   AuthenticatedShippinglistIndexRoute: AuthenticatedShippinglistIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
+  AuthenticatedTemplateIndexRoute: AuthenticatedTemplateIndexRoute,
+  AuthenticatedTemplatebulkIndexRoute: AuthenticatedTemplatebulkIndexRoute,
   AuthenticatedUnshippedlistIndexRoute: AuthenticatedUnshippedlistIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedDictDataIndexRoute: AuthenticatedDictDataIndexRoute,
+  AuthenticatedDictTypeIndexRoute: AuthenticatedDictTypeIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface ClerkauthRouteRouteChildren {
-  ClerkauthSignInRoute: typeof ClerkauthSignInRoute
-  ClerkauthSignUpRoute: typeof ClerkauthSignUpRoute
-}
-
-const ClerkauthRouteRouteChildren: ClerkauthRouteRouteChildren = {
-  ClerkauthSignInRoute: ClerkauthSignInRoute,
-  ClerkauthSignUpRoute: ClerkauthSignUpRoute,
-}
-
-const ClerkauthRouteRouteWithChildren = ClerkauthRouteRoute._addFileChildren(
-  ClerkauthRouteRouteChildren,
-)
-
-interface ClerkAuthenticatedRouteRouteChildren {
-  ClerkAuthenticatedUserManagementRoute: typeof ClerkAuthenticatedUserManagementRoute
-}
-
-const ClerkAuthenticatedRouteRouteChildren: ClerkAuthenticatedRouteRouteChildren =
-  {
-    ClerkAuthenticatedUserManagementRoute:
-      ClerkAuthenticatedUserManagementRoute,
-  }
-
-const ClerkAuthenticatedRouteRouteWithChildren =
-  ClerkAuthenticatedRouteRoute._addFileChildren(
-    ClerkAuthenticatedRouteRouteChildren,
-  )
-
-interface ClerkRouteRouteChildren {
-  ClerkauthRouteRoute: typeof ClerkauthRouteRouteWithChildren
-  ClerkAuthenticatedRouteRoute: typeof ClerkAuthenticatedRouteRouteWithChildren
-}
-
-const ClerkRouteRouteChildren: ClerkRouteRouteChildren = {
-  ClerkauthRouteRoute: ClerkauthRouteRouteWithChildren,
-  ClerkAuthenticatedRouteRoute: ClerkAuthenticatedRouteRouteWithChildren,
-}
-
-const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
-  ClerkRouteRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  ClerkRouteRoute: ClerkRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,

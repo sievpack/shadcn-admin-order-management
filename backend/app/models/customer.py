@@ -21,6 +21,7 @@ class Customer(Base):
     业务负责人 = Column(String(50))
     送货单版本 = Column(String(50))
     备注 = Column(String(50))
+    状态 = Column(String(50), default='活跃')
     简称 = Column(String(50))
     create_at = Column(DateTime, default=datetime.datetime.now, comment='创建时间')
     update_at = Column(DateTime, default=datetime.datetime.now, comment='更新时间')
