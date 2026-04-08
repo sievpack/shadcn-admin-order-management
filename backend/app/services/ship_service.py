@@ -51,7 +51,7 @@ class ShipService(BaseService[Ship]):
         备注: str = None
     ) -> Tuple[Optional[Ship], Optional[str]]:
         """创建发货单"""
-        if not 发货单号 or not 快递单号 or not 订单项目:
+        if not 发货单号 or not 快递单号:
             return None, "缺少必填字段"
 
         ship = self.repository.create(db, {
@@ -95,6 +95,77 @@ class ShipService(BaseService[Ship]):
             'ship_id': None
         })
         return updated, None
+
+    def add_shipping_items(
+        self,
+        db: Session,
+        发货单号: str,
+        快递单号: str,
+        订单项目: List[dict]
+    ) -> Tuple[int, Optional[str]]:
+        """为已存在的发货单添加分项"""
+        if not 订单项目:
+            return 0, "没有要添加的分项"
+
+        ship = db.query(Ship).filter(Ship.快递单号 == 快递单号).first()
+        if not ship:
+            return 0, "未找到发货单"
+
+        updated_count = 0
+        errors = []
+
+        for item in 订单项目:
+            order_id = item.get("id")
+            发货数量 = item.get("数量")
+
+            if not order_id:
+                continue
+
+            order = db.query(Order).filter(Order.id == order_id).first()
+            if not order:
+                errors.append(f"订单 {order_id} 不存在")
+                continue
+
+            if order.发货单号:
+                errors.append(f"订单 {order_id} 已发货")
+                continue
+
+            if 发货数量 > order.数量:
+                errors.append(f"订单 {order_id} 的发货数量 {发货数量} 大于订单数量 {order.数量}")
+                continue
+
+            if 发货数量 < order.数量:
+                remaining = order.数量 - 发货数量
+                new_order = Order(
+                    oid=order.oid,
+                    订单编号=order.订单编号,
+                    合同编号=order.合同编号,
+                    订单日期=order.订单日期,
+                    交货日期=order.交货日期,
+                    规格=order.规格,
+                    产品类型=order.产品类型,
+                    型号=order.型号,
+                    数量=remaining,
+                    单位=order.单位,
+                    销售单价=order.销售单价,
+                    客户名称=order.客户名称,
+                    结算方式=order.结算方式,
+                    客户物料编号=order.客户物料编号,
+                    外购=order.外购,
+                )
+                db.add(new_order)
+
+                order.数量 = 发货数量
+
+            order.发货单号 = 发货单号
+            order.快递单号 = 快递单号
+            order.ship_id = ship.id
+            updated_count += 1
+
+        if errors:
+            return updated_count, "; ".join(errors)
+
+        return updated_count, None
 
     def get_shipping_detail(self, db: Session, 发货单号: str) -> Tuple[Optional[dict], Optional[str]]:
         """获取发货单详情"""

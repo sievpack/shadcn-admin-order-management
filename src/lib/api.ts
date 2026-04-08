@@ -164,6 +164,13 @@ export const shippingAPI = {
   createShipping: (data: z.infer<typeof createShippingSchema>) => {
     return api.post('/ship/shipping/create', data)
   },
+  addShippingItems: (data: {
+    发货单号: string
+    快递单号: string
+    订单项目: Array<{ id: number; 数量?: number }>
+  }) => {
+    return api.post('/ship/shipping/add-items', data)
+  },
 }
 
 // 保持向后兼容

@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import {
-  Plus,
-  Trash2,
   Package,
   Truck,
   Calendar,
@@ -12,7 +10,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { shippingAPI, orderItemAPI, customerAPI, codeAPI } from '@/lib/api'
+import { shippingAPI, customerAPI, codeAPI } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import {
@@ -25,44 +23,30 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { DatePicker } from '@/components/date-picker'
 
 type NewShipDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onRefresh?: () => void
+  onCreated?: (shipping: {
+    id: number
+    发货单号: string
+    快递单号: string
+    客户名称: string
+  }) => void
 }
 
-type OrderItem = {
-  id: number
-  订单编号: string
-  规格: string
-  产品类型: string
-  型号: string
-  数量: number
-  单位: string
-  销售单价: number
-  金额: number
-  合同编号: string
-  备注: string
-  客户名称?: string
-}
-
-export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
+export function NewShip({
+  open,
+  onOpenChange,
+  onRefresh,
+  onCreated,
+}: NewShipDialogProps) {
   const [loading, setLoading] = useState(false)
   const [customerOptions, setCustomerOptions] = useState<
     { value: string; label: string }[]
   >([])
-  const [availableItems, setAvailableItems] = useState<OrderItem[]>([])
-  const [selectedItems, setSelectedItems] = useState<OrderItem[]>([])
 
   const [formData, setFormData] = useState({
     发货单号: '',
@@ -111,30 +95,6 @@ export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
     }
   }, [open])
 
-  useEffect(() => {
-    const fetchAvailableItems = async () => {
-      if (!formData.客户名称) {
-        setAvailableItems([])
-        return
-      }
-
-      try {
-        const response = await orderItemAPI.getAllItemsNoPagination()
-        if (response.data.code === 0) {
-          const allItems = response.data.data || []
-          const unshippedItems = allItems.filter(
-            (item: any) => !item.发货单号 && item.客户名称 === formData.客户名称
-          )
-          setAvailableItems(unshippedItems)
-        }
-      } catch (error) {
-        console.error('获取待发货订单失败:', error)
-      }
-    }
-
-    fetchAvailableItems()
-  }, [formData.客户名称])
-
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -148,24 +108,9 @@ export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
     }))
   }
 
-  const handleSelectItem = (item: OrderItem) => {
-    if (!selectedItems.find((i) => i.id === item.id)) {
-      setSelectedItems([...selectedItems, item])
-    }
-  }
-
-  const handleRemoveItem = (itemId: number) => {
-    setSelectedItems(selectedItems.filter((item) => item.id !== itemId))
-  }
-
   const handleSave = async () => {
     if (!formData.发货单号 || !formData.快递单号 || !formData.客户名称) {
       toast.error('请填写发货单号、快递单号和客户名称')
-      return
-    }
-
-    if (selectedItems.length === 0) {
-      toast.error('请选择至少一个订单项目')
       return
     }
 
@@ -177,23 +122,24 @@ export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
           formData.发货日期 instanceof Date
             ? `${formData.发货日期.getFullYear()}-${String(formData.发货日期.getMonth() + 1).padStart(2, '0')}-${String(formData.发货日期.getDate()).padStart(2, '0')}`
             : formData.发货日期,
-        订单项目: selectedItems.map((item) => ({ id: item.id })),
+        订单项目: [],
       }
 
       const response = await shippingAPI.createShipping(shippingData)
       if (response.data.code === 0) {
         toast.success('发货单创建成功')
+        resetForm()
         onOpenChange(false)
-        setFormData({
-          发货单号: '',
-          快递单号: '',
-          快递公司: '',
-          客户名称: '',
-          发货日期: new Date(),
-          快递费用: 0,
-          备注: '',
-        })
-        setSelectedItems([])
+
+        if (onCreated) {
+          onCreated({
+            id: response.data.data.ship_id,
+            发货单号: formData.发货单号,
+            快递单号: formData.快递单号,
+            客户名称: formData.客户名称,
+          })
+        }
+
         if (onRefresh) {
           onRefresh()
         }
@@ -208,33 +154,36 @@ export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
     }
   }
 
-  const handleOpenChange = async (newOpen: boolean) => {
-    onOpenChange(newOpen)
+  const resetForm = () => {
+    setFormData({
+      发货单号: '',
+      快递单号: '',
+      快递公司: '',
+      客户名称: '',
+      发货日期: new Date(),
+      快递费用: 0,
+      备注: '',
+    })
+  }
+
+  const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      setFormData({
-        发货单号: '',
-        快递单号: '',
-        快递公司: '',
-        客户名称: '',
-        发货日期: new Date(),
-        快递费用: 0,
-        备注: '',
-      })
-      setSelectedItems([])
-    } else {
-      setSelectedItems([])
+      resetForm()
     }
+    onOpenChange(newOpen)
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-5xl'>
+      <DialogContent className='sm:max-w-2xl'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <Package className='h-5 w-5' />
             新增发货
           </DialogTitle>
-          <DialogDescription>创建新的发货记录</DialogDescription>
+          <DialogDescription>
+            创建新的发货记录，保存后可添加分项
+          </DialogDescription>
         </DialogHeader>
 
         <div className='flex flex-col gap-6 py-4'>
@@ -249,7 +198,7 @@ export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
                 name='发货单号'
                 value={formData.发货单号}
                 onChange={handleInputChange}
-                placeholder='输入发货单号'
+                placeholder='自动生成'
               />
             </div>
 
@@ -306,9 +255,7 @@ export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
                 onSelect={(date) =>
                   setFormData((prev) => ({
                     ...prev,
-                    发货日期: (date instanceof Date
-                      ? date
-                      : new Date()) as Date,
+                    发货日期: date instanceof Date ? date : new Date(),
                   }))
                 }
               />
@@ -342,111 +289,6 @@ export function NewShip({ open, onOpenChange, onRefresh }: NewShipDialogProps) {
                 onChange={handleInputChange}
                 placeholder='输入备注'
               />
-            </div>
-          </div>
-
-          <div className='flex flex-col gap-4'>
-            <div className='flex items-center justify-between'>
-              <h4 className='text-lg font-semibold'>选择订单项目</h4>
-            </div>
-
-            <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
-              <div className='flex flex-col gap-2'>
-                <h5 className='text-sm font-medium text-muted-foreground'>
-                  待发货订单
-                </h5>
-                <div className='max-h-[300px] overflow-y-auto rounded-md border'>
-                  <Table>
-                    <TableHeader className='sticky top-0 bg-background'>
-                      <TableRow>
-                        <TableHead>合同编号</TableHead>
-                        <TableHead>规格</TableHead>
-                        <TableHead>数量</TableHead>
-                        <TableHead className='text-right'>操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {availableItems.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={4}
-                            className='text-center text-muted-foreground'
-                          >
-                            暂无待发货订单
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        availableItems.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>{item.合同编号}</TableCell>
-                            <TableCell>{item.规格}</TableCell>
-                            <TableCell>{item.数量}</TableCell>
-                            <TableCell className='text-right'>
-                              <Button
-                                variant='outline'
-                                size='sm'
-                                onClick={() => handleSelectItem(item)}
-                                disabled={selectedItems.find(
-                                  (i) => i.id === item.id
-                                )}
-                              >
-                                <Plus className='h-4 w-4' />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-
-              <div className='flex flex-col gap-2'>
-                <h5 className='text-sm font-medium text-muted-foreground'>
-                  已选择
-                </h5>
-                <div className='max-h-[300px] overflow-y-auto rounded-md border'>
-                  <Table>
-                    <TableHeader className='sticky top-0 bg-background'>
-                      <TableRow>
-                        <TableHead>合同编号</TableHead>
-                        <TableHead>规格</TableHead>
-                        <TableHead>数量</TableHead>
-                        <TableHead className='text-right'>操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedItems.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={4}
-                            className='text-center text-muted-foreground'
-                          >
-                            请从左侧选择订单项目
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        selectedItems.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>{item.合同编号}</TableCell>
-                            <TableCell>{item.规格}</TableCell>
-                            <TableCell>{item.数量}</TableCell>
-                            <TableCell className='text-right'>
-                              <Button
-                                variant='destructive'
-                                size='sm'
-                                onClick={() => handleRemoveItem(item.id)}
-                              >
-                                <Trash2 className='h-4 w-4' />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
             </div>
           </div>
         </div>

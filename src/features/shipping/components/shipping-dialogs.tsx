@@ -1,6 +1,6 @@
 import { NewShip } from './new-ship'
+import { ShippingAddItemsDialog } from './shipping-add-items-dialog'
 import { ShippingDeleteDialog } from './shipping-delete-dialog'
-import { ShippingEditDialog } from './shipping-edit-dialog'
 import { useShipping } from './shipping-provider'
 import { ShippingViewDialog } from './shipping-view-dialog'
 
@@ -10,6 +10,16 @@ type ShippingDialogsProps = {
 
 export function ShippingDialogs({ onRefresh }: ShippingDialogsProps) {
   const { open, setOpen, currentRow, setCurrentRow } = useShipping()
+
+  const handleNewShipCreated = (shipping: {
+    id: number
+    发货单号: string
+    快递单号: string
+    客户名称: string
+  }) => {
+    setCurrentRow(shipping)
+    setOpen('addItem')
+  }
 
   return (
     <>
@@ -23,6 +33,7 @@ export function ShippingDialogs({ onRefresh }: ShippingDialogsProps) {
           }
         }}
         onRefresh={onRefresh}
+        onCreated={handleNewShipCreated}
       />
 
       {currentRow && (
@@ -38,21 +49,11 @@ export function ShippingDialogs({ onRefresh }: ShippingDialogsProps) {
             }}
             currentRow={currentRow}
             onRefresh={onRefresh}
+            onAddItems={() => setOpen('addItem')}
           />
 
-          <ShippingEditDialog
-            key={`shipping-edit-${currentRow.id}`}
-            open={open === 'edit'}
-            onOpenChange={() => {
-              setOpen('edit')
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
-            }}
-          />
-
-          <ShippingEditDialog
-            key={`shipping-add-item-${currentRow.id}`}
+          <ShippingAddItemsDialog
+            key={`shipping-add-items-${currentRow.id}`}
             open={open === 'addItem'}
             onOpenChange={() => {
               setOpen('addItem')
@@ -60,6 +61,8 @@ export function ShippingDialogs({ onRefresh }: ShippingDialogsProps) {
                 setCurrentRow(null)
               }, 500)
             }}
+            shipping={currentRow}
+            onRefresh={onRefresh}
           />
 
           <ShippingDeleteDialog

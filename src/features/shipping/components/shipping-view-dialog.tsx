@@ -11,10 +11,6 @@ import {
   MessageSquare,
   ListChecks,
   Loader2,
-  Edit,
-  Trash2,
-  Save,
-  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { shippingAPI } from '@/lib/api'
@@ -65,9 +61,13 @@ type ShippingViewDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow: {
+    id: number
     发货单号: string
+    快递单号: string
+    客户名称: string
   }
   onRefresh?: () => void
+  onAddItems?: () => void
 }
 
 export function ShippingViewDialog({
@@ -75,12 +75,11 @@ export function ShippingViewDialog({
   onOpenChange,
   currentRow,
   onRefresh,
+  onAddItems,
 }: ShippingViewDialogProps) {
   const [detail, setDetail] = useState<ShippingDetail | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
-  const [isEditing, setIsEditing] = useState<boolean>(false)
-  const [deletingItem, setDeletingItem] = useState<OrderItem | null>(null)
 
   useEffect(() => {
     if (open && currentRow?.发货单号) {
@@ -105,28 +104,6 @@ export function ShippingViewDialog({
       console.error('获取发货单详情失败:', error)
       setError('获取数据失败: ' + error.message)
       setDetail(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDeleteItem = async (item: OrderItem) => {
-    if (!confirm('确定要删除这条发货记录吗？')) return
-
-    setLoading(true)
-    try {
-      // 调用删除API，将订单表中的发货信息设置为NULL
-      await shippingAPI.deleteShippingItem(item.id)
-      toast.success('删除成功')
-      // 重新获取发货单详情
-      await fetchShippingDetail()
-      // 刷新列表
-      if (onRefresh) {
-        onRefresh()
-      }
-    } catch (error: any) {
-      console.error('删除失败:', error)
-      toast.error('删除失败: ' + (error.message || '未知错误'))
     } finally {
       setLoading(false)
     }
@@ -190,31 +167,16 @@ export function ShippingViewDialog({
               <Eye className='h-5 w-5' />
               发货单详情
             </DialogTitle>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => setIsEditing(!isEditing)}
-              className='flex items-center gap-1'
-            >
-              {isEditing ? (
-                <>
-                  <X data-icon='inline-start' />
-                  取消
-                </>
-              ) : (
-                <>
-                  <Edit data-icon='inline-start' />
-                  编辑
-                </>
-              )}
-            </Button>
+            {onAddItems && (
+              <Button variant='outline' size='sm' onClick={onAddItems}>
+                添加分项
+              </Button>
+            )}
           </div>
           <DialogDescription>查看发货单的详细信息</DialogDescription>
         </DialogHeader>
 
-        {/* 发货单基本信息 */}
         <div className='grid grid-cols-2 gap-6 py-4'>
-          {/* 发货单号 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <FileText className='h-4 w-4' />
@@ -223,7 +185,6 @@ export function ShippingViewDialog({
             <p className='text-sm font-medium'>{detail.发货单号}</p>
           </div>
 
-          {/* 快递单号 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <Package className='h-4 w-4' />
@@ -232,7 +193,6 @@ export function ShippingViewDialog({
             <p className='text-sm font-medium'>{detail.快递单号}</p>
           </div>
 
-          {/* 快递公司 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <Truck className='h-4 w-4' />
@@ -241,7 +201,6 @@ export function ShippingViewDialog({
             <p className='text-sm font-medium'>{detail.快递公司 || '未填写'}</p>
           </div>
 
-          {/* 客户名称 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <User className='h-4 w-4' />
@@ -250,7 +209,6 @@ export function ShippingViewDialog({
             <p className='text-sm font-medium'>{detail.客户名称}</p>
           </div>
 
-          {/* 总金额 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <DollarSign className='h-4 w-4' />
@@ -259,7 +217,6 @@ export function ShippingViewDialog({
             <p className='text-sm font-medium'>¥{detail.总金额.toFixed(2)}</p>
           </div>
 
-          {/* 发货日期 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <Calendar className='h-4 w-4' />
@@ -268,7 +225,6 @@ export function ShippingViewDialog({
             <p className='text-sm font-medium'>{detail.发货日期 || '-'}</p>
           </div>
 
-          {/* 快递费用 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <CreditCard className='h-4 w-4' />
@@ -279,7 +235,6 @@ export function ShippingViewDialog({
             </p>
           </div>
 
-          {/* 备注 */}
           <div className='flex flex-col gap-2'>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <MessageSquare className='h-4 w-4' />
@@ -289,7 +244,6 @@ export function ShippingViewDialog({
           </div>
         </div>
 
-        {/* 订单项目列表 */}
         <div className='mt-6'>
           <h3 className='mb-4 flex items-center gap-2 text-lg font-semibold'>
             <ListChecks className='h-5 w-5' />
@@ -299,6 +253,7 @@ export function ShippingViewDialog({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>ID</TableHead>
                   <TableHead>合同编号</TableHead>
                   <TableHead>规格</TableHead>
                   <TableHead>产品类型</TableHead>
@@ -307,14 +262,12 @@ export function ShippingViewDialog({
                   <TableHead>单位</TableHead>
                   <TableHead className='text-right'>销售单价</TableHead>
                   <TableHead className='text-right'>金额</TableHead>
-                  {isEditing && (
-                    <TableHead className='text-center'>操作</TableHead>
-                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {detail.订单项目.map((item) => (
                   <TableRow key={item.id}>
+                    <TableCell>{item.id}</TableCell>
                     <TableCell>{item.合同编号 || '-'}</TableCell>
                     <TableCell>{item.规格}</TableCell>
                     <TableCell>{item.产品类型}</TableCell>
@@ -327,28 +280,11 @@ export function ShippingViewDialog({
                     <TableCell className='text-right'>
                       ¥{item.金额.toFixed(2)}
                     </TableCell>
-                    {isEditing && (
-                      <TableCell className='text-center'>
-                        <Button
-                          variant='destructive'
-                          size='sm'
-                          onClick={() => handleDeleteItem(item)}
-                          className='h-8 w-8 p-0'
-                          disabled={loading}
-                        >
-                          <Trash2 className='h-4 w-4' />
-                          <span className='sr-only'>删除</span>
-                        </Button>
-                      </TableCell>
-                    )}
                   </TableRow>
                 ))}
                 {detail.订单项目.length === 0 && (
                   <TableRow>
-                    <TableCell
-                      colSpan={isEditing ? 9 : 8}
-                      className='text-center'
-                    >
+                    <TableCell colSpan={9} className='text-center'>
                       暂无订单项目
                     </TableCell>
                   </TableRow>

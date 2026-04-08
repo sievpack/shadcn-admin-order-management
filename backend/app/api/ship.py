@@ -137,3 +137,35 @@ async def create_shipping(
     except Exception as e:
         db.rollback()
         return {"code": 1, "msg": f"创建失败: {str(e)}", "data": {}}
+
+
+@router.post("/shipping/add-items")
+async def add_shipping_items(
+    request: dict,
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
+):
+    """为已存在的发货单添加分项"""
+    try:
+        发货单号 = request.get("发货单号")
+        快递单号 = request.get("快递单号")
+        订单项目 = request.get("订单项目", [])
+
+        if not 发货单号 or not 快递单号:
+            return {"code": 1, "msg": "缺少发货单号或快递单号", "data": {}}
+
+        updated, error = ship_service.add_shipping_items(
+            db,
+            发货单号=发货单号,
+            快递单号=快递单号,
+            订单项目=订单项目
+        )
+
+        if error:
+            return {"code": 1, "msg": error, "data": {}}
+
+        db.commit()
+        return {"code": 0, "msg": f"成功添加 {updated} 个分项", "data": {"updated": updated}}
+    except Exception as e:
+        db.rollback()
+        return {"code": 1, "msg": f"添加失败: {str(e)}", "data": {}}
