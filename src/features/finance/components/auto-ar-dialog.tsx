@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Wand2 } from 'lucide-react'
+import { Wand2, FileSpreadsheet } from 'lucide-react'
 import { toast } from 'sonner'
+import * as XLSX from 'xlsx'
 import { customerAPI } from '@/lib/api'
 import api from '@/lib/api'
+import { financeARAPI } from '@/lib/finance-api'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import {
@@ -153,6 +155,38 @@ export function AutoARDialog({
     }
   }
 
+  const handleExport = async () => {
+    try {
+      setLoading(true)
+      const res = await financeARAPI.exportMonthlyShipment(year, month)
+      if (res.data.code === 0 && res.data.data.length > 0) {
+        const data = res.data.data
+        const wsData = [
+          ['客户名称', '发货单数', '发货金额', '外购金额', '合计', '月份'],
+          ...data.map((row: any) => [
+            row.客户名称,
+            row.发货单数,
+            row.发货金额,
+            row.外购金额 || 0,
+            (row.发货金额 || 0) + (row.外购金额 || 0),
+            `${year}年${month}月`,
+          ]),
+        ]
+        const ws = XLSX.utils.aoa_to_sheet(wsData)
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, '发货汇总')
+        XLSX.writeFile(wb, `${year}年${month}月客户发货汇总.xlsx`)
+        toast.success(`导出成功，共 ${data.length} 条记录`)
+      } else {
+        toast.error('暂无发货数据可导出')
+      }
+    } catch (error) {
+      toast.error('导出失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const months = [
     { label: '1月', value: 1 },
     { label: '2月', value: 2 },
@@ -243,13 +277,27 @@ export function AutoARDialog({
                 )}
               </div>
             )}
-            <Button
-              onClick={handleMonthGenerate}
-              disabled={loading}
-              className='w-full'
-            >
-              {loading ? '生成中...' : '开始生成'}
-            </Button>
+            <div className='flex gap-2'>
+              <Button
+                onClick={handleExport}
+                disabled={loading}
+                variant='outline'
+                className='flex-1'
+              >
+                <FileSpreadsheet
+                  className='mr-1 h-4 w-4'
+                  data-icon='inline-start'
+                />
+                导出表格
+              </Button>
+              <Button
+                onClick={handleMonthGenerate}
+                disabled={loading}
+                className='flex-1'
+              >
+                {loading ? '生成中...' : '开始生成'}
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value='customer' className='space-y-4 py-4'>

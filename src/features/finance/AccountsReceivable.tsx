@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Plus, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { financeARAPI } from '@/lib/finance-api'
+import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -138,14 +140,26 @@ export function AccountsReceivableList() {
             <h2 className='text-2xl font-bold tracking-tight'>应收账款</h2>
             <p className='text-muted-foreground'>管理客户应收款信息</p>
           </div>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setShowAutoDialog(true)}
+            >
+              <Wand2 className='mr-1 h-4 w-4' data-icon='inline-start' />
+              自动应收
+            </Button>
+            <Button size='sm' onClick={() => setShowAddDialog(true)}>
+              <Plus className='mr-1 h-4 w-4' data-icon='inline-start' />
+              新增应收
+            </Button>
+          </div>
         </div>
 
         <ARTable
           onView={handleView}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onAutoClick={() => setShowAutoDialog(true)}
-          onAddClick={() => setShowAddDialog(true)}
           refreshKey={refreshKey}
         />
       </Main>

@@ -49,25 +49,26 @@ export function UsersTable({ search, navigate }: DataTableProps) {
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'username', searchKey: 'username', type: 'string' },
-      { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'role', searchKey: 'role', type: 'array' },
+      { columnId: 'status', searchKey: 'status', type: 'array' },
     ],
   })
 
+  const roleFilter = columnFilters.find((f) => f.id === 'role')?.value as
+    | string[]
+    | undefined
+  const statusFilter = columnFilters.find((f) => f.id === 'status')?.value as
+    | string[]
+    | undefined
   const searchFilter = columnFilters.find((f) => f.id === 'username')
-  const roleFilter = columnFilters.find((f) => f.id === 'role')
-  const statusFilter = columnFilters.find((f) => f.id === 'status')
-
-  const roleValue = roleFilter?.value as string[] | undefined
-  const statusValue = statusFilter?.value as string[] | undefined
 
   const { data: queryData, isLoading } = useUsers({
     params: {
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
       search: (searchFilter?.value as string) || undefined,
-      role: roleValue?.[0] || undefined,
-      status: statusValue?.[0] || undefined,
+      role: roleFilter?.[0] || undefined,
+      status: statusFilter?.[0] || undefined,
     },
   })
 

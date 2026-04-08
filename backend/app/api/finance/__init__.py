@@ -20,19 +20,94 @@ def generate_code(prefix: str) -> str:
 # ==================== 应收账款 API ====================
 @router.get("/ar/list")
 async def get_ar_list(
+    query: Optional[str] = None,
     应收单号: Optional[str] = None,
     客户名称: Optional[str] = None,
-    收款状态: Optional[str] = None,
+    status: Optional[str] = Query(None, description='收款状态'),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=1000),
     db: Session = Depends(get_db_jns),
     current_user: User = Depends(get_current_active_user)
 ):
     items, total = accounts_receivable_service.search(
-        db, 应收单号=应收单号, 客户名称=客户名称, 收款状态=收款状态, page=page, page_size=limit
+        db, query=query, 应收单号=应收单号, 客户名称=客户名称, 收款状态=status, page=page, page_size=limit
     )
     data = [accounts_receivable_service.to_dict(item) for item in items]
     return {"code": 0, "msg": "success", "count": total, "data": data}
+
+
+@router.get("/ar/export-monthly-shipment")
+async def export_monthly_shipment(
+    year: int = Query(2026, description="年份"),
+    month: int = Query(3, description="月份"),
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
+):
+    """导出指定月份发货数据汇总（按客户）
+    
+    返回所有有发货记录的客户及其月发货金额、外购金额，用于导出表格
+    """
+    from app.models.ship import Ship
+    from app.models.order import Order
+    from app.models.customer import Customer
+
+    start_date_str = f'{year}-{month:02d}-01'
+    if month == 12:
+        end_date_str = f'{year + 1}-01-01'
+    else:
+        end_date_str = f'{year}-{month + 1:02d}-01'
+
+    query_obj = db.query(
+        Ship.客户名称,
+        Order.金额,
+        Order.外购
+    ).join(
+        Order, Order.ship_id == Ship.id
+    ).join(
+        Customer, Order.客户名称 == Customer.客户名称
+    ).filter(
+        Customer.状态 != '停用',
+        Ship.发货日期 >= start_date_str,
+        Ship.发货日期 < end_date_str
+    )
+
+    customer_shipments = query_obj.all()
+
+    customer_amount_map = {}
+    for cust_name, amount, 外购 in customer_shipments:
+        if cust_name not in customer_amount_map:
+            customer_amount_map[cust_name] = {
+                "客户名称": cust_name,
+                "发货单数": 0,
+                "发货金额": 0,
+                "外购金额": 0
+            }
+        customer_amount_map[cust_name]["发货单数"] += 1
+        if amount is not None:
+            if 外购 == 1:
+                customer_amount_map[cust_name]["外购金额"] += amount
+            else:
+                customer_amount_map[cust_name]["发货金额"] += amount
+
+    result_list = [
+        {
+            "客户名称": data["客户名称"],
+            "发货单数": data["发货单数"],
+            "发货金额": round(data["发货金额"], 2),
+            "外购金额": round(data["外购金额"], 2),
+            f"{year}年{month}月": f"{year}-{month:02d}"
+        }
+        for data in customer_amount_map.values()
+    ]
+
+    result_list.sort(key=lambda x: x["发货金额"], reverse=True)
+
+    return {
+        "code": 0,
+        "msg": "success",
+        "count": len(result_list),
+        "data": result_list
+    }
 
 
 @router.get("/ar/{ar_id}")
@@ -100,9 +175,25 @@ async def update_ar(
     )
 
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "更新成功", "data": {}}
+    return {
+        "code": 0,
+        "msg": "更新成功",
+        "data": {
+            "id": ar.id,
+            "关联订单": ar.关联订单,
+            "客户名称": ar.客户名称,
+            "应收金额": float(ar.应收金额) if ar.应收金额 else 0,
+            "已收金额": float(ar.已收金额) if ar.已收金额 else 0,
+            "应收余额": float(ar.应收余额) if ar.应收余额 else 0,
+            "应收日期": ar.应收日期.strftime('%Y-%m-%d') if ar.应收日期 else None,
+            "到期日期": ar.到期日期.strftime('%Y-%m-%d') if ar.到期日期 else None,
+            "账期类型": ar.账期类型,
+            "收款状态": ar.收款状态,
+            "备注": ar.备注,
+        }
+    }
 
 
 @router.delete("/ar/{ar_id}")
@@ -620,3 +711,4 @@ async def batch_create_ar_from_shipment(
             "skipped": skipped_records
         }
     }
+

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import {
   type SortingState,
@@ -25,6 +25,7 @@ import {
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { customerColumns } from './customer-columns'
 import { type Customer } from './customer-provider'
+import { useCustomer } from './customer-provider'
 
 const route = getRouteApi('/_authenticated/customerlist/')
 
@@ -33,11 +34,19 @@ interface CustomerTableProps {
 }
 
 export function CustomerTable({ onRefresh }: CustomerTableProps) {
+  const { setRefreshData } = useCustomer()
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting] = useState<SortingState>([
     { id: '客户名称', desc: false },
   ])
+
+  // 设置 refreshData 回调
+  useEffect(() => {
+    setRefreshData(() => () => {
+      onRefresh?.()
+    })
+  }, [setRefreshData, onRefresh])
 
   const search = route.useSearch()
   const navigate = route.useNavigate()

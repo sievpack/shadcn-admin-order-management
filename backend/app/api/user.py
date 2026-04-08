@@ -142,11 +142,20 @@ async def update_user(
         update_data["status"] = status
     
     if update_data:
-        user_service.update(db, user.id, update_data)
+        updated_user = user_service.update(db, user.id, update_data)
+        db.commit()
+        user = updated_user
 
-    db.commit()
-
-    return {"code": 0, "msg": "用户更新成功"}
+    return {"code": 0, "msg": "用户更新成功", "data": {
+        "id": user.id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "phone": user.phone,
+        "role": user.role,
+        "status": user.status,
+    }}
 
 
 @router.delete("/delete/{user_id}")

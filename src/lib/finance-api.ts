@@ -7,6 +7,10 @@ export const financeARAPI = {
   update: (data: any) => api.put('/finance/ar/update', data),
   delete: (id: number) => api.delete(`/finance/ar/${id}`),
   getAging: () => api.get('/finance/ar/aging'),
+  exportMonthlyShipment: (year: number, month: number) =>
+    api.get('/finance/ar/export-monthly-shipment', {
+      params: { year, month },
+    }),
 }
 
 export const financeCollectionAPI = {

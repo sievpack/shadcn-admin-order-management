@@ -506,6 +506,7 @@ export const userSchema = z.object({
 export type User = z.infer<typeof userSchema>
 
 export const userListParamsSchema = paginationParamsSchema.extend({
+  search: z.string().optional(),
   role: userRoleSchema.optional(),
   status: userStatusSchema.optional(),
 })

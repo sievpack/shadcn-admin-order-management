@@ -23,10 +23,11 @@ class AccountsReceivableService:
         应收单号: Optional[str] = None,
         客户名称: Optional[str] = None,
         收款状态: Optional[str] = None,
+        query: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[AccountsReceivable], int]:
-        return self.repo.search(db, 应收单号=应收单号, 客户名称=客户名称, 收款状态=收款状态, page=page, page_size=page_size)
+        return self.repo.search(db, 应收单号=应收单号, 客户名称=客户名称, 收款状态=收款状态, query=query, page=page, page_size=page_size)
 
     def search_dict(self, db: Session, **kwargs) -> Tuple[List[Dict[str, Any]], int]:
         items, total = self.search(db, **kwargs)

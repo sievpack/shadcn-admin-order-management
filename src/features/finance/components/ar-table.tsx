@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -13,10 +13,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useARList } from '@/queries/finance'
-import { Plus, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
-import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -25,11 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  DataTablePagination,
-  DataTableToolbar,
-  DataTableViewOptions,
-} from '@/components/data-table'
+import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import {
   accountsReceivableColumns,
   type AccountsReceivable,
@@ -43,8 +37,6 @@ interface ARTableProps {
   onView?: (row: AccountsReceivable) => void
   onEdit?: (row: AccountsReceivable) => void
   onDelete?: (row: AccountsReceivable) => void
-  onAutoClick?: () => void
-  onAddClick?: () => void
   refreshKey?: number
 }
 
@@ -52,13 +44,11 @@ export function ARTable({
   onView,
   onEdit,
   onDelete,
-  onAutoClick,
-  onAddClick,
   refreshKey = 0,
 }: ARTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [internalSorting, setInternalSorting] = useState<SortingState>([])
+  const [internalSorting] = useState<SortingState>([])
 
   const search = route.useSearch()
   const navigate = route.useNavigate()
@@ -70,7 +60,6 @@ export function ARTable({
     onColumnFiltersChange,
     pagination,
     onPaginationChange,
-    ensurePageInRange,
   } = useTableUrlState({
     search,
     navigate,
@@ -81,6 +70,9 @@ export function ARTable({
     ],
   })
 
+  const statusFilter = (search as Record<string, unknown>)?.status as
+    | string
+    | undefined
   const startDateParam = (search as Record<string, unknown>)?.start_date as
     | string
     | undefined
@@ -88,27 +80,20 @@ export function ARTable({
     | string
     | undefined
 
-  const statusFilterParam = (search as Record<string, unknown>)?.status as
-    | string[]
-    | undefined
-
   const { data: queryData, isLoading } = useARList({
     params: {
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
       query: globalFilter || undefined,
-      status: statusFilterParam,
+      status: statusFilter || undefined,
       start_date: startDateParam,
       end_date: endDateParam,
     },
+    refreshKey,
   })
 
   const tableData = queryData?.data?.code === 0 ? queryData.data.data : []
   const total = queryData?.data?.count || tableData.length
-
-  useEffect(() => {
-    ensurePageInRange(Math.ceil(total / pagination.pageSize))
-  }, [total, pagination.pageSize, ensurePageInRange])
 
   const columns = accountsReceivableColumns({ onView, onEdit, onDelete })
 
@@ -127,7 +112,7 @@ export function ARTable({
     manualPagination: true,
     pageCount: Math.ceil(total / pagination.pageSize),
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setInternalSorting,
+    onSortingChange: () => {},
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange,
@@ -147,79 +132,74 @@ export function ARTable({
         'flex flex-1 flex-col gap-4'
       )}
     >
-      <div className='flex items-center justify-between gap-4'>
-        <DataTableToolbar
-          table={table}
-          serverPaginationMode={true}
-          searchPlaceholder='搜索应收单号或客户名称...'
-          onSearch={(value) => {
-            onGlobalFilterChange?.(value)
-          }}
-          onFilterChange={(columnId, value) => {
-            const currentFilters = columnFilters || []
-            const otherFilters = currentFilters.filter((f) => f.id !== columnId)
-            const newFilters = value
-              ? [...otherFilters, { id: columnId, value: value.split(',') }]
-              : otherFilters
-            onColumnFiltersChange?.(newFilters)
-          }}
-          onDateRangeChange={(from, to) => {
-            const searchRecord = search as Record<string, unknown>
-            const newSearch = {
-              ...searchRecord,
-              start_date: from ? formatDate(from) : undefined,
-              end_date: to ? formatDate(to) : undefined,
-            }
-            navigate({ search: newSearch })
-          }}
-          onReset={() => {
-            navigate({ search: {} })
-          }}
-          dateRangeFilter={{
-            startColumnId: 'receivable_date',
-            endColumnId: 'receivable_date',
-            title: '应收日期',
-          }}
-          filters={[
-            {
-              columnId: '收款状态',
-              title: '收款状态',
-              options: [
-                { label: '未收款', value: '未收款' },
-                { label: '部分收款', value: '部分收款' },
-                { label: '已收款', value: '已收款' },
-              ],
-            },
-          ]}
-          hideViewOptions={true}
-        />
-        <div className='flex items-center gap-2'>
-          <Button variant='outline' size='sm' onClick={onAutoClick}>
-            <Wand2 className='mr-1 h-4 w-4' data-icon='inline-start' />
-            自动应收
-          </Button>
-          <Button size='sm' onClick={onAddClick}>
-            <Plus className='mr-1 h-4 w-4' data-icon='inline-start' />
-            新增应收
-          </Button>
-          <DataTableViewOptions table={table} />
-        </div>
-      </div>
+      <DataTableToolbar
+        table={table}
+        serverPaginationMode={true}
+        searchPlaceholder='搜索应收单号或客户名称...'
+        onSearch={(value) => {
+          onGlobalFilterChange?.(value)
+        }}
+        onFilterChange={(columnId, value) => {
+          const currentFilters = columnFilters || []
+          const otherFilters = currentFilters.filter((f) => f.id !== columnId)
+          const newFilters = value
+            ? [...otherFilters, { id: columnId, value: value.split(',') }]
+            : otherFilters
+          onColumnFiltersChange?.(newFilters)
+        }}
+        onDateRangeChange={(from, to) => {
+          const searchRecord = search as Record<string, unknown>
+          const newSearch = {
+            ...searchRecord,
+            start_date: from ? formatDate(from) : undefined,
+            end_date: to ? formatDate(to) : undefined,
+          }
+          navigate({ search: newSearch })
+        }}
+        onReset={() => {
+          navigate({})
+        }}
+        dateRangeFilter={{
+          startColumnId: 'receivable_date',
+          endColumnId: 'receivable_date',
+          title: '应收日期',
+        }}
+        filters={[
+          {
+            columnId: '收款状态',
+            title: '收款状态',
+            options: [
+              { label: '未收款', value: '未收款' },
+              { label: '部分收款', value: '部分收款' },
+              { label: '已收款', value: '已收款' },
+            ],
+          },
+        ]}
+      />
       <div className='overflow-hidden rounded-md border'>
         <Table className='min-w-xl'>
           <TableHeader className='bg-muted/50'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className={cn(
+                        header.column.columnDef.meta?.className,
+                        header.column.columnDef.meta?.thClassName
+                      )}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -240,7 +220,13 @@ export function ARTable({
                   data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        cell.column.columnDef.meta?.className,
+                        cell.column.columnDef.meta?.tdClassName
+                      )}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

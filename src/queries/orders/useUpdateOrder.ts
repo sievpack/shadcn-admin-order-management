@@ -12,7 +12,10 @@ export function useUpdateOrder() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: UpdateOrderData) => orderListAPI.updateOrder(data),
+    mutationFn: async (data: UpdateOrderData) => {
+      const response = await orderListAPI.updateOrder(data)
+      return response.data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
       toast.success('订单更新成功')

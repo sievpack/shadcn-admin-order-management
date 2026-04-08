@@ -24,5 +24,6 @@ export function useUsers({
     queryFn: () => userAPI.getUsers(params),
     enabled,
     placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
   })
 }

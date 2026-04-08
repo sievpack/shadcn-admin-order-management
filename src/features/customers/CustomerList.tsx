@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -13,8 +14,11 @@ import { CustomerTable } from './components/customer-table'
 
 function CustomerListContent() {
   const { setOpen } = useCustomer()
+  const queryClient = useQueryClient()
 
-  const handleRefresh = useCallback(() => {}, [])
+  const handleRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['customers'] })
+  }, [queryClient])
 
   return (
     <>

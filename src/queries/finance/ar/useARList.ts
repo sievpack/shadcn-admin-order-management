@@ -12,14 +12,16 @@ interface UseARListOptions {
     end_date?: string
   }
   enabled?: boolean
+  refreshKey?: number
 }
 
 export function useARList({
   params = {},
   enabled = true,
+  refreshKey = 0,
 }: UseARListOptions = {}) {
   return useQuery({
-    queryKey: financeARKeys.list(params),
+    queryKey: financeARKeys.list({ ...params, _refresh: refreshKey }),
     queryFn: () => financeARAPI.getList(params),
     enabled,
     placeholderData: (previousData) => previousData,

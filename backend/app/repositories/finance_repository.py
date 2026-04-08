@@ -25,20 +25,26 @@ class AccountsReceivableRepository(BaseRepository):
         应收单号: Optional[str] = None,
         客户名称: Optional[str] = None,
         收款状态: Optional[str] = None,
+        query: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[AccountsReceivable], int]:
-        query = db.query(AccountsReceivable)
+        query_obj = db.query(AccountsReceivable)
 
+        if query:
+            query_obj = query_obj.filter(
+                AccountsReceivable.应收单号.contains(query) |
+                AccountsReceivable.客户名称.contains(query)
+            )
         if 应收单号:
-            query = query.filter(AccountsReceivable.应收单号.contains(应收单号))
+            query_obj = query_obj.filter(AccountsReceivable.应收单号.contains(应收单号))
         if 客户名称:
-            query = query.filter(AccountsReceivable.客户名称.contains(客户名称))
+            query_obj = query_obj.filter(AccountsReceivable.客户名称.contains(客户名称))
         if 收款状态:
-            query = query.filter(AccountsReceivable.收款状态 == 收款状态)
+            query_obj = query_obj.filter(AccountsReceivable.收款状态 == 收款状态)
 
-        total = query.count()
-        items = query.order_by(desc(AccountsReceivable.id)).offset((page - 1) * page_size).limit(page_size).all()
+        total = query_obj.count()
+        items = query_obj.order_by(desc(AccountsReceivable.id)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
