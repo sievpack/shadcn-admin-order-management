@@ -169,3 +169,61 @@ async def add_shipping_items(
     except Exception as e:
         db.rollback()
         return {"code": 1, "msg": f"添加失败: {str(e)}", "data": {}}
+
+
+@router.put("/shipping/update-date")
+async def update_shipping_date(
+    request: dict,
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
+):
+    """更新发货日期"""
+    try:
+        发货单号 = request.get("发货单号")
+        发货日期 = request.get("发货日期")
+
+        if not 发货单号 or not 发货日期:
+            return {"code": 1, "msg": "缺少发货单号或发货日期", "data": {}}
+
+        success, error = ship_service.update_shipping_date(db, 发货单号, 发货日期)
+
+        if not success:
+            return {"code": 1, "msg": error, "data": {}}
+
+        db.commit()
+        return {"code": 0, "msg": "更新成功", "data": {}}
+    except Exception as e:
+        db.rollback()
+        return {"code": 1, "msg": f"更新失败: {str(e)}", "data": {}}
+
+
+@router.put("/shipping/update")
+async def update_shipping(
+    request: dict,
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
+):
+    """更新发货单"""
+    try:
+        发货单号 = request.get("发货单号")
+        快递单号 = request.get("快递单号")
+        快递公司 = request.get("快递公司")
+        发货日期 = request.get("发货日期")
+        快递费用 = request.get("快递费用", 0)
+        备注 = request.get("备注")
+
+        if not 发货单号 or not 快递单号:
+            return {"code": 1, "msg": "缺少发货单号或快递单号", "data": {}}
+
+        success, error = ship_service.update_shipping(
+            db, 发货单号, 快递单号, 快递公司, 发货日期, 快递费用, 备注
+        )
+
+        if not success:
+            return {"code": 1, "msg": error, "data": {}}
+
+        db.commit()
+        return {"code": 0, "msg": "更新成功", "data": {}}
+    except Exception as e:
+        db.rollback()
+        return {"code": 1, "msg": f"更新失败: {str(e)}", "data": {}}

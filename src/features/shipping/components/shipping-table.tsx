@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { ExpandedShippingItems } from './expanded-shipping-items'
+import { ShippingBulkActions } from './shipping-bulk-actions'
 import { shippingColumns } from './shipping-columns'
 import { type ShippingItem } from './shipping-provider'
 
@@ -195,6 +196,10 @@ export function ShippingTable({
   }
 
   const columns = shippingColumns({ onEditShipping, onAddItem })
+
+  const handleBulkDeleted = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['shipping', 'list'] })
+  }, [queryClient])
 
   const table = useReactTable({
     data,
@@ -381,6 +386,7 @@ export function ShippingTable({
         }}
         className='mt-auto'
       />
+      <ShippingBulkActions table={table} onDeleted={handleBulkDeleted} />
     </div>
   )
 }

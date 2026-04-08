@@ -12,7 +12,6 @@ import {
   ListChecks,
   Loader2,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import {
@@ -68,6 +67,7 @@ type ShippingViewDialogProps = {
   }
   onRefresh?: () => void
   onAddItems?: () => void
+  onEdit?: () => void
 }
 
 export function ShippingViewDialog({
@@ -76,6 +76,7 @@ export function ShippingViewDialog({
   currentRow,
   onRefresh,
   onAddItems,
+  onEdit,
 }: ShippingViewDialogProps) {
   const [detail, setDetail] = useState<ShippingDetail | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
@@ -167,11 +168,18 @@ export function ShippingViewDialog({
               <Eye className='h-5 w-5' />
               发货单详情
             </DialogTitle>
-            {onAddItems && (
-              <Button variant='outline' size='sm' onClick={onAddItems}>
-                添加分项
-              </Button>
-            )}
+            <div className='flex gap-2'>
+              {onAddItems && (
+                <Button variant='outline' size='sm' onClick={onAddItems}>
+                  添加分项
+                </Button>
+              )}
+              {onEdit && (
+                <Button variant='outline' size='sm' onClick={onEdit}>
+                  编辑
+                </Button>
+              )}
+            </div>
           </div>
           <DialogDescription>查看发货单的详细信息</DialogDescription>
         </DialogHeader>

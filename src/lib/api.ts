@@ -171,6 +171,19 @@ export const shippingAPI = {
   }) => {
     return api.post('/ship/shipping/add-items', data)
   },
+  updateShippingDate: (data: { 发货单号: string; 发货日期: string }) => {
+    return api.put('/ship/shipping/update-date', data)
+  },
+  updateShipping: (data: {
+    发货单号: string
+    快递单号: string
+    快递公司?: string
+    发货日期: string
+    快递费用?: number
+    备注?: string
+  }) => {
+    return api.put('/ship/shipping/update', data)
+  },
 }
 
 // 保持向后兼容

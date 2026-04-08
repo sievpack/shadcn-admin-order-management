@@ -170,6 +170,7 @@ class ShipService(BaseService[Ship]):
     def get_shipping_detail(self, db: Session, 发货单号: str) -> Tuple[Optional[dict], Optional[str]]:
         """获取发货单详情"""
         from app.models.order import OrderList
+        from app.models.customer import Customer
 
         results = db.query(Order, OrderList, Ship).outerjoin(
             OrderList, Order.oid == OrderList.id
@@ -183,11 +184,18 @@ class ShipService(BaseService[Ship]):
             return None, "未找到该发货单号的记录"
 
         first_order, first_order_list, first_ship = results[0]
+        customer_name = first_order_list.客户名称 if first_order_list else None
+        
+        customer = None
+        if customer_name:
+            customer = db.query(Customer).filter(Customer.客户名称 == customer_name).first()
+        
         shipping_info = {
             "发货单号": 发货单号,
             "快递单号": first_order.快递单号,
             "快递公司": first_ship.快递公司 if first_ship else None,
-            "客户名称": first_order_list.客户名称 if first_order_list else None,
+            "客户名称": customer_name,
+            "送货地址": customer.收货地址 if customer else None,
             "发货日期": first_ship.发货日期.strftime('%Y-%m-%d') if first_ship and first_ship.发货日期 else None,
             "快递费用": first_ship.快递费用 if first_ship else None,
             "备注": first_ship.备注 if first_ship else None
@@ -209,12 +217,66 @@ class ShipService(BaseService[Ship]):
                 "销售单价": float(order.销售单价) if order.销售单价 else 0,
                 "金额": item_amount,
                 "合同编号": order.合同编号,
+                "客户物料编号": order.客户物料编号,
                 "备注": order.备注
             })
 
         shipping_info["总金额"] = total_amount
         shipping_info["订单项目"] = order_items
         return shipping_info, None
+
+    def update_shipping_date(
+        self,
+        db: Session,
+        发货单号: str,
+        发货日期: str
+    ) -> Tuple[bool, Optional[str]]:
+        """更新发货日期"""
+        from datetime import datetime
+
+        ship = db.query(Ship).filter(Ship.发货单号 == 发货单号).first()
+        if not ship:
+            return False, "未找到发货单"
+
+        try:
+            ship.发货日期 = datetime.strptime(发货日期, '%Y-%m-%d')
+        except ValueError:
+            return False, "日期格式错误"
+
+        return True, None
+
+    def update_shipping(
+        self,
+        db: Session,
+        发货单号: str,
+        快递单号: str,
+        快递公司: str = None,
+        发货日期: str = None,
+        快递费用: float = 0,
+        备注: str = None
+    ) -> Tuple[bool, Optional[str]]:
+        """更新发货单"""
+        from datetime import datetime
+
+        ship = db.query(Ship).filter(Ship.发货单号 == 发货单号).first()
+        if not ship:
+            return False, "未找到发货单"
+
+        if 快递单号:
+            ship.快递单号 = 快递单号
+        if 快递公司 is not None:
+            ship.快递公司 = 快递公司
+        if 发货日期:
+            try:
+                ship.发货日期 = datetime.strptime(发货日期, '%Y-%m-%d')
+            except ValueError:
+                return False, "日期格式错误"
+        if 快递费用 is not None:
+            ship.快递费用 = 快递费用
+        if 备注 is not None:
+            ship.备注 = 备注
+
+        return True, None
 
 
 ship_service = ShipService()

@@ -1,14 +1,16 @@
 import { NewShip } from './new-ship'
 import { ShippingAddItemsDialog } from './shipping-add-items-dialog'
 import { ShippingDeleteDialog } from './shipping-delete-dialog'
+import { ShippingEditDialog } from './shipping-edit-dialog'
 import { useShipping } from './shipping-provider'
 import { ShippingViewDialog } from './shipping-view-dialog'
 
 type ShippingDialogsProps = {
   onRefresh?: () => void
+  onEdit?: () => void
 }
 
-export function ShippingDialogs({ onRefresh }: ShippingDialogsProps) {
+export function ShippingDialogs({ onRefresh, onEdit }: ShippingDialogsProps) {
   const { open, setOpen, currentRow, setCurrentRow } = useShipping()
 
   const handleNewShipCreated = (shipping: {
@@ -19,6 +21,10 @@ export function ShippingDialogs({ onRefresh }: ShippingDialogsProps) {
   }) => {
     setCurrentRow(shipping)
     setOpen('addItem')
+  }
+
+  const handleViewEdit = () => {
+    setOpen('edit')
   }
 
   return (
@@ -50,6 +56,20 @@ export function ShippingDialogs({ onRefresh }: ShippingDialogsProps) {
             currentRow={currentRow}
             onRefresh={onRefresh}
             onAddItems={() => setOpen('addItem')}
+            onEdit={onEdit ? handleViewEdit : undefined}
+          />
+
+          <ShippingEditDialog
+            key={`shipping-edit-${currentRow.id}`}
+            open={open === 'edit'}
+            onOpenChange={() => {
+              setOpen('edit')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            shipping={currentRow}
+            onRefresh={onRefresh}
           />
 
           <ShippingAddItemsDialog
