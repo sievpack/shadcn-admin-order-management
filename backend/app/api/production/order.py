@@ -113,6 +113,8 @@ async def create_order(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {
         "code": 0,
         "msg": "创建成功",
@@ -153,9 +155,34 @@ async def update_order(
     )
 
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "更新成功", "data": {}}
+    db.commit()
+
+    return {
+        "code": 0,
+        "msg": "更新成功",
+        "data": {
+            "id": order.id,
+            "工单编号": order.工单编号,
+            "计划编号": order.计划编号,
+            "产品类型": order.产品类型,
+            "产品型号": order.产品型号,
+            "规格": order.规格,
+            "工单数量": order.工单数量,
+            "已完成数量": order.已完成数量,
+            "单位": order.单位,
+            "产线": order.产线,
+            "工单状态": order.工单状态,
+            "计划开始": order.计划开始.strftime('%Y-%m-%d') if order.计划开始 else None,
+            "计划结束": order.计划结束.strftime('%Y-%m-%d') if order.计划结束 else None,
+            "实际开始": order.实际开始.strftime('%Y-%m-%d') if order.实际开始 else None,
+            "实际结束": order.实际结束.strftime('%Y-%m-%d') if order.实际结束 else None,
+            "工序": order.工序,
+            "总工序": order.总工序,
+            "报工备注": order.报工备注,
+        }
+    }
 
 
 @router.put("/start/{order_id}")
@@ -169,6 +196,8 @@ async def start_production(
 
     if not success:
         raise HTTPException(status_code=400, detail=error)
+
+    db.commit()
 
     return {"code": 0, "msg": "开始生产成功", "data": {}}
 
@@ -185,6 +214,8 @@ async def finish_production(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {"code": 0, "msg": "完工确认成功", "data": {}}
 
 
@@ -200,6 +231,8 @@ async def pause_production(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {"code": 0, "msg": "暂停成功", "data": {}}
 
 
@@ -214,5 +247,7 @@ async def delete_order(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
+
+    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

@@ -126,6 +126,8 @@ async def create_order(
     if error:
         return {"code": 1, "msg": error, "data": {}}
 
+    db.commit()
+
     return {"code": 0, "msg": "创建成功", "data": {"id": order.id}}
 
 
@@ -143,6 +145,8 @@ async def update_order(
     order, error = order_list_service.update_order(db, order_id, data)
     if error:
         return {"code": 1, "msg": error, "data": {}}
+
+    db.commit()
 
     return {"code": 0, "msg": "更新成功", "data": {
         "id": order.id,
@@ -166,6 +170,7 @@ async def delete_order(
         return {"code": 1, "msg": "订单不存在", "data": {}}
 
     order_list_service.delete(db, id)
+    db.commit()
     return {"code": 0, "msg": "删除成功", "data": {}}
 
 
@@ -198,5 +203,7 @@ async def mark_as_shipped(
 
     if error:
         return {"code": 1, "msg": error, "data": {}}
+
+    db.commit()
 
     return {"code": 0, "msg": f"成功标记 {updated} 条订单为已发货", "data": {"updated": updated}}

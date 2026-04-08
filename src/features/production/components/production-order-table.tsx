@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
+import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import {
   type SortingState,
@@ -52,7 +53,9 @@ export function ProductionOrderTable({
   onFinish,
   onPause,
   onPrint,
+  refreshKey = 0,
 }: ProductionOrderTableProps) {
+  const queryClient = useQueryClient()
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -143,6 +146,12 @@ export function ProductionOrderTable({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+
+  useEffect(() => {
+    if (refreshKey > 0) {
+      queryClient.invalidateQueries({ queryKey: ['production', 'orders'] })
+    }
+  }, [refreshKey, queryClient])
 
   return (
     <div

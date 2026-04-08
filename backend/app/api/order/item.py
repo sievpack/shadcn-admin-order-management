@@ -164,6 +164,7 @@ async def create_order_item(
             print(f"创建订单项失败: {error}")
             return {"code": 1, "msg": error, "data": {}}
 
+        db.commit()
         print(f"订单项创建成功，ID: {order.id}")
         return {"code": 0, "msg": "创建成功", "data": {"id": order.id}}
     except Exception as e:
@@ -201,9 +202,42 @@ async def update_order_item(
                 update_data[field] = data[field]
 
         if update_data:
-            order_service.update(db, item, update_data)
+            order_service.update(db, item_id, update_data)
+            db.commit()
+            # 验证更新是否成功
+            updated_item = order_service.get(db, item_id)
+            if not updated_item:
+                return {"code": 1, "msg": "更新后数据获取失败", "data": {}}
+            
+            # 返回更新后的数据
+            return {
+                "code": 0,
+                "msg": "更新成功",
+                "data": {
+                    "id": updated_item.id,
+                    "oid": updated_item.oid,
+                    "订单编号": updated_item.订单编号,
+                    "合同编号": updated_item.合同编号,
+                    "订单日期": updated_item.订单日期.strftime('%Y-%m-%d') if updated_item.订单日期 else None,
+                    "交货日期": updated_item.交货日期.strftime('%Y-%m-%d') if updated_item.交货日期 else None,
+                    "规格": updated_item.规格,
+                    "产品类型": updated_item.产品类型,
+                    "型号": updated_item.型号,
+                    "数量": updated_item.数量,
+                    "单位": updated_item.单位,
+                    "销售单价": float(updated_item.销售单价) if updated_item.销售单价 else 0,
+                    "金额": float(updated_item.金额) if updated_item.金额 else 0,
+                    "备注": updated_item.备注,
+                    "客户名称": updated_item.客户名称,
+                    "结算方式": updated_item.结算方式,
+                    "发货单号": updated_item.发货单号,
+                    "快递单号": updated_item.快递单号,
+                    "客户物料编号": updated_item.客户物料编号,
+                    "外购": updated_item.外购 if updated_item.外购 is not None else False
+                }
+            }
 
-        return {"code": 0, "msg": "更新成功", "data": {}}
+        return {"code": 0, "msg": "无更新内容", "data": {}}
     except Exception as e:
         db.rollback()
         return {"code": 1, "msg": f"更新失败: {str(e)}", "data": {}}
@@ -222,6 +256,7 @@ async def delete_order_item(
             return {"code": 1, "msg": "订单项不存在", "data": {}}
 
         order_service.delete(db, item_id)
+        db.commit()
         return {"code": 0, "msg": "删除成功", "data": {}}
     except Exception as e:
         db.rollback()

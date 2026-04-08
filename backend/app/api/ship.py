@@ -22,6 +22,7 @@ async def delete_shipping(
         updated, error = ship_service.delete_shipping(db, 发货单号, 快递单号)
         if error:
             return {"code": 1, "msg": error, "data": {}}
+        db.commit()
         return {"code": 0, "msg": "success", "data": {"updated": updated}}
     except Exception as e:
         db.rollback()
@@ -41,6 +42,7 @@ async def delete_shipping_item(
             return {"code": 1, "msg": error, "data": {}}
         if updated == 0:
             return {"code": 1, "msg": "未找到该订单记录", "data": {}}
+        db.commit()
         return {"code": 0, "msg": "success", "data": {"updated": updated}}
     except Exception as e:
         db.rollback()
@@ -130,6 +132,7 @@ async def create_shipping(
         )
         if error:
             return {"code": 1, "msg": error, "data": {}}
+        db.commit()
         return {"code": 0, "msg": "success", "data": {"ship_id": ship.id}}
     except Exception as e:
         db.rollback()

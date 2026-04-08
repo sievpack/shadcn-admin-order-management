@@ -135,6 +135,8 @@ async def create_qc(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {
         "code": 0,
         "msg": "创建成功",
@@ -166,9 +168,32 @@ async def update_qc(
     )
 
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "更新成功", "data": {}}
+    db.commit()
+
+    return {
+        "code": 0,
+        "msg": "更新成功",
+        "data": {
+            "id": qc.id,
+            "质检单号": qc.质检单号,
+            "关联报工": qc.关联报工,
+            "工单编号": qc.工单编号,
+            "产品类型": qc.产品类型,
+            "产品型号": qc.产品型号,
+            "批次号": qc.批次号,
+            "送检数量": qc.送检数量,
+            "合格数量": qc.合格数量,
+            "不良数量": qc.不良数量,
+            "质检结果": qc.质检结果,
+            "不良分类": qc.不良分类,
+            "不良描述": qc.不良描述,
+            "质检员": qc.质检员,
+            "质检日期": qc.质检日期.strftime('%Y-%m-%d %H:%M:%S') if qc.质检日期 else None,
+            "备注": qc.备注,
+        }
+    }
 
 
 @router.delete("/{qc_id}")
@@ -182,5 +207,7 @@ async def delete_qc(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
+
+    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

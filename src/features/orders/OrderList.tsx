@@ -144,6 +144,7 @@ export function OrderList() {
           await updateOrderItem.mutateAsync(item)
         }
         setShowEditModal(false)
+        setRefreshKey((k) => k + 1)
       }
     } catch (error) {
       console.error('更新订单失败:', error)
@@ -155,6 +156,7 @@ export function OrderList() {
     async (id: number) => {
       try {
         await deleteOrder.mutateAsync(id)
+        setRefreshKey((k) => k + 1)
       } catch (error) {
         console.error('删除订单失败:', error)
         toast.error('删除失败，请稍后重试')
@@ -233,6 +235,7 @@ export function OrderList() {
           await deleteOrder.mutateAsync(id)
         }
         toast.success(`成功删除 ${ids.length} 个订单`)
+        setRefreshKey((k) => k + 1)
       } catch (error) {
         console.error('批量删除订单失败:', error)
         toast.error('批量删除失败，请稍后重试')
@@ -290,6 +293,7 @@ export function OrderList() {
           }
 
           setShowAddModal(false)
+          setRefreshKey((k) => k + 1)
         }
       } catch (error) {
         console.error('创建订单失败:', error)

@@ -127,6 +127,8 @@ async def create_plan(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {
         "code": 0,
         "msg": "创建成功",
@@ -167,9 +169,34 @@ async def update_plan(
     )
 
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "更新成功", "data": {}}
+    db.commit()
+
+    return {
+        "code": 0,
+        "msg": "更新成功",
+        "data": {
+            "id": plan.id,
+            "计划编号": plan.计划编号,
+            "计划名称": plan.计划名称,
+            "关联订单": plan.关联订单,
+            "产品类型": plan.产品类型,
+            "产品型号": plan.产品型号,
+            "规格": plan.规格,
+            "计划数量": plan.计划数量,
+            "已排数量": plan.已排数量,
+            "单位": plan.单位,
+            "计划开始日期": plan.计划开始日期.strftime('%Y-%m-%d') if plan.计划开始日期 else None,
+            "计划完成日期": plan.计划完成日期.strftime('%Y-%m-%d') if plan.计划完成日期 else None,
+            "实际开始日期": plan.实际开始日期.strftime('%Y-%m-%d') if plan.实际开始日期 else None,
+            "实际完成日期": plan.实际完成日期.strftime('%Y-%m-%d') if plan.实际完成日期 else None,
+            "优先级": plan.优先级,
+            "计划状态": plan.计划状态,
+            "负责人": plan.负责人,
+            "备注": plan.备注,
+        }
+    }
 
 
 @router.put("/approve/{plan_id}")
@@ -183,6 +210,8 @@ async def approve_plan(
 
     if not success:
         raise HTTPException(status_code=400, detail=error)
+
+    db.commit()
 
     return {"code": 0, "msg": "审核成功", "data": {}}
 
@@ -199,6 +228,8 @@ async def reject_plan(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {"code": 0, "msg": "驳回成功", "data": {}}
 
 
@@ -213,5 +244,7 @@ async def delete_plan(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
+
+    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

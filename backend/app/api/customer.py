@@ -104,6 +104,7 @@ async def create_customer(
         customer, error = customer_service.create(db, data)
         if error:
             return {"code": 1, "msg": error, "data": {}}
+        db.commit()
         return {"code": 0, "msg": "创建成功", "data": {"id": customer.id}}
     except Exception as e:
         db.rollback()
@@ -125,7 +126,30 @@ async def update_customer(
         customer, error = customer_service.update_customer(db, customer_id, data)
         if error:
             return {"code": 1, "msg": error, "data": {}}
-        return {"code": 0, "msg": "更新成功", "data": {}}
+        
+        # 必须 commit 才能真正保存到数据库
+        db.commit()
+        
+        # 强制刷新确保获取最新数据
+        db.refresh(customer)
+        
+        return {
+            "code": 0,
+            "msg": "更新成功",
+            "data": {
+                "id": customer.id,
+                "客户名称": customer.客户名称,
+                "简称": customer.简称,
+                "联系人": customer.联系人,
+                "联系电话": customer.联系电话,
+                "手机": customer.手机,
+                "结算方式": customer.结算方式,
+                "是否含税": customer.是否含税,
+                "收货地址": customer.收货地址,
+                "备注": customer.备注,
+                "状态": customer.状态,
+            }
+        }
     except Exception as e:
         db.rollback()
         return {"code": 1, "msg": f"更新失败: {str(e)}", "data": {}}
@@ -143,6 +167,7 @@ async def delete_customer(
         if not customer:
             return {"code": 1, "msg": "客户不存在", "data": {}}
         customer_service.delete(db, id)
+        db.commit()
         return {"code": 0, "msg": "删除成功", "data": {}}
     except Exception as e:
         db.rollback()

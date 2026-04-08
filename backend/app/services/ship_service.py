@@ -83,9 +83,7 @@ class ShipService(BaseService[Ship]):
             'ship_id': None
         })
 
-        express_exists = db.query(Order).filter(Order.快递单号 == 快递单号).first()
-        if not express_exists:
-            self.repository.delete_by(db, {"快递单号": 快递单号})
+        db.query(Ship).filter(Ship.快递单号 == 快递单号).delete()
 
         return updated, None
 

@@ -129,6 +129,8 @@ async def create_inbound(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {
         "code": 0,
         "msg": "创建成功",
@@ -169,9 +171,35 @@ async def update_inbound(
     )
 
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "更新成功", "data": {}}
+    db.commit()
+
+    return {
+        "code": 0,
+        "msg": "更新成功",
+        "data": {
+            "id": inbound.id,
+            "入库单号": inbound.入库单号,
+            "质检单号": inbound.质检单号,
+            "工单编号": inbound.工单编号,
+            "产品类型": inbound.产品类型,
+            "产品型号": inbound.产品型号,
+            "规格": inbound.规格,
+            "入库数量": inbound.入库数量,
+            "单位": inbound.单位,
+            "批次号": inbound.批次号,
+            "仓库": inbound.仓库,
+            "库位": inbound.库位,
+            "入库类型": inbound.入库类型,
+            "入库状态": inbound.入库状态,
+            "入库日期": inbound.入库日期.strftime('%Y-%m-%d') if inbound.入库日期 else None,
+            "入库员": inbound.入库员,
+            "收货人": inbound.收货人,
+            "关联订单": inbound.关联订单,
+            "备注": inbound.备注,
+        }
+    }
 
 
 @router.delete("/{inbound_id}")
@@ -185,5 +213,7 @@ async def delete_inbound(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
+
+    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

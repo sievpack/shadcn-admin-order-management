@@ -81,6 +81,8 @@ async def create_quote(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
+    db.commit()
+
     return {
         "code": 0,
         "msg": "创建成功",
@@ -117,9 +119,30 @@ async def update_quote(
     )
 
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "更新成功", "data": {}}
+    db.commit()
+
+    return {
+        "code": 0,
+        "msg": "更新成功",
+        "data": {
+            "id": quote.id,
+            "客户名称": quote.客户名称,
+            "报价项目": quote.报价项目,
+            "报价单号": quote.报价单号,
+            "客户物料编码": quote.客户物料编码,
+            "客户物料名称": quote.客户物料名称,
+            "客户规格型号": quote.客户规格型号,
+            "嘉尼索规格": quote.嘉尼索规格,
+            "嘉尼索型号": quote.嘉尼索型号,
+            "单位": quote.单位,
+            "数量": quote.数量,
+            "未税单价": float(quote.未税单价) if quote.未税单价 else 0,
+            "含税单价": float(quote.含税单价) if quote.含税单价 else 0,
+            "备注": quote.备注,
+        }
+    }
 
 
 @router.delete("/delete/{id}")
@@ -133,5 +156,7 @@ async def delete_quote(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
+
+    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

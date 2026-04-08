@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import {
   type SortingState,
@@ -72,6 +73,7 @@ export function ShippingTable({
   onEditShipping,
   onAddItem,
 }: ShippingTableProps) {
+  const queryClient = useQueryClient()
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -132,10 +134,9 @@ export function ShippingTable({
 
   useEffect(() => {
     if (refreshKey > 0) {
-      // TanStack Query handles refetching via queryClient.invalidateQueries
-      // This is kept for backward compatibility with parent components
+      queryClient.invalidateQueries({ queryKey: ['shipping', 'list'] })
     }
-  }, [refreshKey])
+  }, [refreshKey, queryClient])
 
   // 当 refreshKey 变化时，清除子数据缓存并重新获取
   useEffect(() => {
