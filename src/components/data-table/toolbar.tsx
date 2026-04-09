@@ -60,6 +60,8 @@ export function DataTableToolbar<TData>({
     Record<string, string>
   >({})
   const [clearFiltersKey] = useState(0)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const isComposingRef = useRef(false)
 
   const globalFilterFromTable = table.getState().globalFilter
   const prevGlobalFilterRef = useRef(globalFilterFromTable)
@@ -101,7 +103,9 @@ export function DataTableToolbar<TData>({
   const handleSearch = useCallback(
     (value: string) => {
       if (serverPaginationMode) {
-        setLocalSearchValue(value)
+        if (isComposingRef.current) {
+          return
+        }
         if (onSearch) {
           onSearch(value)
         }
@@ -114,6 +118,18 @@ export function DataTableToolbar<TData>({
       }
     },
     [serverPaginationMode, onSearch, searchKey]
+  )
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter' && serverPaginationMode) {
+        const value = (event.target as HTMLInputElement).value
+        if (onSearch) {
+          onSearch(value)
+        }
+      }
+    },
+    [serverPaginationMode, onSearch]
   )
 
   const handleFilterChange = useCallback(
@@ -206,7 +222,38 @@ export function DataTableToolbar<TData>({
                 : ((table.getColumn(searchKey)?.getFilterValue() as string) ??
                   '')
             }
-            onChange={(event) => handleSearch(event.target.value)}
+            onChange={(event) => {
+              if (serverPaginationMode) {
+                const value = event.target.value
+                setLocalSearchValue(value)
+                if (isComposingRef.current) {
+                  return
+                }
+                onSearch?.(value)
+              } else {
+                handleSearch(event.target.value)
+              }
+            }}
+            onCompositionStart={() => {
+              isComposingRef.current = true
+            }}
+            onCompositionEnd={(event) => {
+              isComposingRef.current = false
+              if (serverPaginationMode) {
+                const value = event.target.value
+                setLocalSearchValue(value)
+                onSearch?.(value)
+              }
+            }}
+            onKeyDown={
+              serverPaginationMode
+                ? (event) => {
+                    if (event.key === 'Enter') {
+                      handleSearch((event.target as HTMLInputElement).value)
+                    }
+                  }
+                : undefined
+            }
             className='h-8 w-[150px] lg:w-[250px]'
           />
         ) : (
@@ -218,8 +265,37 @@ export function DataTableToolbar<TData>({
                 : (table.getState().globalFilter ?? '')
             }
             onChange={(event) => {
-              handleSearch(event.target.value)
+              if (serverPaginationMode) {
+                const value = event.target.value
+                setLocalSearchValue(value)
+                if (isComposingRef.current) {
+                  return
+                }
+                onSearch?.(value)
+              } else {
+                handleSearch(event.target.value)
+              }
             }}
+            onCompositionStart={() => {
+              isComposingRef.current = true
+            }}
+            onCompositionEnd={(event) => {
+              isComposingRef.current = false
+              if (serverPaginationMode) {
+                const value = event.target.value
+                setLocalSearchValue(value)
+                onSearch?.(value)
+              }
+            }}
+            onKeyDown={
+              serverPaginationMode
+                ? (event) => {
+                    if (event.key === 'Enter') {
+                      handleSearch((event.target as HTMLInputElement).value)
+                    }
+                  }
+                : undefined
+            }
             className='h-8 w-[150px] lg:w-[250px]'
           />
         )}
