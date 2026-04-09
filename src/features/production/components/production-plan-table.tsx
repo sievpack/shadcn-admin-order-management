@@ -39,6 +39,7 @@ interface ProductionPlanTableProps {
   onDelete?: (row: ProductionPlan) => void
   onApprove?: (row: ProductionPlan) => void
   onReject?: (row: ProductionPlan) => void
+  onGenerateOrder?: (row: ProductionPlan) => void
   refreshKey?: number
 }
 
@@ -48,6 +49,7 @@ export function ProductionPlanTable({
   onDelete,
   onApprove,
   onReject,
+  onGenerateOrder,
   refreshKey = 0,
 }: ProductionPlanTableProps) {
   const [data, setData] = useState<ProductionPlan[]>([])
@@ -141,6 +143,7 @@ export function ProductionPlanTable({
     onDelete,
     onApprove,
     onReject,
+    onGenerateOrder,
   })
 
   const table = useReactTable({

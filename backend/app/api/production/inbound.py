@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/list")
 async def get_inbound_list(
+    query: Optional[str] = None,
     入库单号: Optional[str] = None,
     工单编号: Optional[str] = None,
     质检单号: Optional[str] = None,
@@ -26,7 +27,7 @@ async def get_inbound_list(
 ):
     """获取成品入库列表"""
     items, total = product_inbound_service.search(
-        db, 入库单号=入库单号, 工单编号=工单编号, 质检单号=质检单号,
+        db, query=query, 入库单号=入库单号, 工单编号=工单编号, 质检单号=质检单号,
         仓库=仓库, 入库状态=入库状态, start_date=start_date, end_date=end_date,
         page=page, page_size=limit
     )
@@ -129,8 +130,6 @@ async def create_inbound(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {
         "code": 0,
         "msg": "创建成功",
@@ -173,8 +172,6 @@ async def update_inbound(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {
         "code": 0,
         "msg": "更新成功",
@@ -213,7 +210,5 @@ async def delete_inbound(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
-
-    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

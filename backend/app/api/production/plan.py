@@ -5,13 +5,14 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
-from app.services.production_service import production_plan_service
+from app.services.production_service import production_plan_service, production_order_service
 
 router = APIRouter()
 
 
 @router.get("/list")
 async def get_plan_list(
+    query: Optional[str] = None,
     计划编号: Optional[str] = None,
     计划名称: Optional[str] = None,
     产品型号: Optional[str] = None,
@@ -24,7 +25,7 @@ async def get_plan_list(
 ):
     """获取生产计划列表"""
     items, total = production_plan_service.search(
-        db, 计划编号=计划编号, 计划名称=计划名称, 产品型号=产品型号,
+        db, query=query, 计划编号=计划编号, 计划名称=计划名称, 产品型号=产品型号,
         计划状态=计划状态, 优先级=优先级, page=page, page_size=limit
     )
     data = [production_plan_service.to_dict(item) for item in items]
@@ -95,6 +96,28 @@ async def get_plan_detail(
     }
 
 
+@router.get("/{plan_id}/orders")
+async def get_plan_orders(
+    plan_id: int,
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
+):
+    """获取生产计划关联的工单列表"""
+    plan = production_plan_service.get_by_id(db, plan_id)
+    if not plan:
+        return {"code": 1, "msg": "生产计划不存在", "count": 0, "data": []}
+
+    orders, total = production_plan_service.get_orders_by_plan(db, plan_id)
+    data = [production_order_service.to_dict(order) for order in orders]
+
+    return {
+        "code": 0,
+        "msg": "success",
+        "count": total,
+        "data": data
+    }
+
+
 @router.post("/create")
 async def create_plan(
     data: dict,
@@ -126,8 +149,6 @@ async def create_plan(
 
     if error:
         raise HTTPException(status_code=400, detail=error)
-
-    db.commit()
 
     return {
         "code": 0,
@@ -171,8 +192,6 @@ async def update_plan(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {
         "code": 0,
         "msg": "更新成功",
@@ -211,8 +230,6 @@ async def approve_plan(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {"code": 0, "msg": "审核成功", "data": {}}
 
 
@@ -228,8 +245,6 @@ async def reject_plan(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {"code": 0, "msg": "驳回成功", "data": {}}
 
 
@@ -244,7 +259,5 @@ async def delete_plan(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
-
-    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

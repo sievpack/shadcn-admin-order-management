@@ -20,7 +20,7 @@ const PAGE_HEIGHT = 140
 const MARGIN = 5
 const FONT_SIZE = 9
 
-const TABLE_ROW_HEIGHT = 10
+const TABLE_ROW_HEIGHT = 12
 
 const COLUMNS_CONFIG = {
   合同编号: { width: 50, maxChars: 20 },
@@ -32,24 +32,7 @@ const COLUMNS_CONFIG = {
   备注: { width: 0, maxChars: 20 },
 }
 
-const DEFAULT_CELL_FONT_SIZE = 4
-
-function calculateFontSize(
-  content: string,
-  columnWidth: number,
-  padding: number = 2.5
-): number {
-  const availableWidth = columnWidth - padding * 2
-  const charWidth = 2
-  const maxCharsPerLine = availableWidth / charWidth
-
-  if (content.length <= maxCharsPerLine) {
-    return DEFAULT_CELL_FONT_SIZE
-  }
-
-  const newSize = (availableWidth / content.length) * 1.2
-  return Math.max(3, Math.floor(newSize))
-}
+const DEFAULT_CELL_FONT_SIZE = 5
 
 const styles = StyleSheet.create({
   page: {
@@ -224,19 +207,19 @@ function Cell({
   value,
   columnKey,
   columnWidth,
+  fontSize = DEFAULT_CELL_FONT_SIZE,
 }: {
   value: string
   columnKey: keyof typeof COLUMNS_CONFIG
   columnWidth: number
+  fontSize?: number
 }) {
-  const fontSize = calculateFontSize(value, columnWidth)
-
   return (
     <View
       style={{
         width: columnWidth || undefined,
         flex: columnWidth === 0 ? 1 : undefined,
-        height: TABLE_ROW_HEIGHT,
+        minHeight: TABLE_ROW_HEIGHT,
         justifyContent: 'center',
         alignItems: 'center',
       }}

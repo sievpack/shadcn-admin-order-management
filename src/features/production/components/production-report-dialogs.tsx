@@ -143,6 +143,7 @@ interface ProductionReportAddDialogProps {
   loading: boolean
   orderOptions: string[]
   workerOptions: string[]
+  orderReadOnly?: boolean
 }
 
 export function ProductionReportAddDialog({
@@ -154,6 +155,7 @@ export function ProductionReportAddDialog({
   loading,
   orderOptions,
   workerOptions,
+  orderReadOnly = false,
 }: ProductionReportAddDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -172,28 +174,33 @@ export function ProductionReportAddDialog({
                 onChange={(e) =>
                   onAddFormChange({ ...addForm, 报工编号: e.target.value })
                 }
-                placeholder='自动生成或手动输入'
+                placeholder='自动生成'
+                disabled
               />
             </div>
             <div className='flex flex-col gap-2'>
               <Label htmlFor='工单编号'>工单编号</Label>
-              <Select
-                value={addForm.工单编号}
-                onValueChange={(v) =>
-                  onAddFormChange({ ...addForm, 工单编号: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='选择工单编号' />
-                </SelectTrigger>
-                <SelectContent>
-                  {orderOptions.map((o) => (
-                    <SelectItem key={o} value={o}>
-                      {o}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {orderReadOnly ? (
+                <p className='font-medium'>{addForm.工单编号}</p>
+              ) : (
+                <Select
+                  value={addForm.工单编号}
+                  onValueChange={(v) =>
+                    onAddFormChange({ ...addForm, 工单编号: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder='选择工单编号' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {orderOptions.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className='flex flex-col gap-2'>
               <Label htmlFor='报工数量'>报工数量</Label>
@@ -201,28 +208,29 @@ export function ProductionReportAddDialog({
                 id='报工数量'
                 type='number'
                 value={addForm.报工数量 || 0}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const 报工数量 = Number(e.target.value)
+                  const 不良数量 = addForm.不良数量 || 0
+                  const 合格数量 = Math.max(0, 报工数量 - 不良数量)
                   onAddFormChange({
                     ...addForm,
-                    报工数量: Number(e.target.value),
+                    报工数量,
+                    合格数量,
                   })
-                }
+                }}
                 placeholder='输入报工数量'
               />
             </div>
             <div className='flex flex-col gap-2'>
-              <Label htmlFor='合格数量'>合格数量</Label>
+              <Label htmlFor='合格数量' className='text-muted-foreground'>
+                合格数量
+              </Label>
               <Input
                 id='合格数量'
                 type='number'
                 value={addForm.合格数量 || 0}
-                onChange={(e) =>
-                  onAddFormChange({
-                    ...addForm,
-                    合格数量: Number(e.target.value),
-                  })
-                }
-                placeholder='输入合格数量'
+                readOnly
+                className='bg-muted'
               />
             </div>
             <div className='flex flex-col gap-2'>
@@ -231,12 +239,18 @@ export function ProductionReportAddDialog({
                 id='不良数量'
                 type='number'
                 value={addForm.不良数量 || 0}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const 不良数量 = Number(e.target.value)
+                  const 合格数量 = Math.max(
+                    0,
+                    (addForm.报工数量 || 0) - 不良数量
+                  )
                   onAddFormChange({
                     ...addForm,
-                    不良数量: Number(e.target.value),
+                    不良数量,
+                    合格数量,
                   })
-                }
+                }}
                 placeholder='输入不良数量'
               />
             </div>
@@ -307,10 +321,14 @@ export function ProductionReportAddDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant='outline' onClick={() => onOpenChange(false)}>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={() => onOpenChange(false)}
+          >
             取消
           </Button>
-          <Button onClick={onSave} disabled={loading}>
+          <Button type='button' onClick={onSave} disabled={loading}>
             {loading ? '创建中...' : '创建'}
           </Button>
         </DialogFooter>

@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/list")
 async def get_order_list(
+    query: Optional[str] = None,
     工单编号: Optional[str] = None,
     计划编号: Optional[str] = None,
     产品型号: Optional[str] = None,
@@ -24,7 +25,7 @@ async def get_order_list(
 ):
     """获取生产工单列表"""
     items, total = production_order_service.search(
-        db, 工单编号=工单编号, 计划编号=计划编号, 产品型号=产品型号,
+        db, query=query, 工单编号=工单编号, 计划编号=计划编号, 产品型号=产品型号,
         产线=产线, 工单状态=工单状态, page=page, page_size=limit
     )
     data = [production_order_service.to_dict(item) for item in items]
@@ -113,12 +114,42 @@ async def create_order(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {
         "code": 0,
         "msg": "创建成功",
         "data": {"id": order.id, "工单编号": order.工单编号}
+    }
+
+
+@router.post("/create-from-plan")
+async def create_order_from_plan(
+    data: dict,
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
+):
+    """从生产计划创建工单"""
+    plan_id = data.get("plan_id")
+    工单数量 = data.get("工单数量")
+    产线 = data.get("产线")
+
+    if not plan_id:
+        return {"code": 1, "msg": "缺少计划ID", "data": {}}
+    if not 工单数量 or 工单数量 <= 0:
+        return {"code": 1, "msg": "工单数量必须大于0", "data": {}}
+    if not 产线:
+        return {"code": 1, "msg": "请选择产线", "data": {}}
+
+    order, error = production_order_service.create_from_plan(
+        db, plan_id=plan_id, 工单数量=工单数量, 产线=产线
+    )
+
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    return {
+        "code": 0,
+        "msg": "创建成功",
+        "data": {"id": order.id, "工单编号": order.工单编号, "计划编号": order.计划编号}
     }
 
 
@@ -156,8 +187,6 @@ async def update_order(
 
     if error:
         raise HTTPException(status_code=400, detail=error)
-
-    db.commit()
 
     return {
         "code": 0,
@@ -197,8 +226,6 @@ async def start_production(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {"code": 0, "msg": "开始生产成功", "data": {}}
 
 
@@ -213,8 +240,6 @@ async def finish_production(
 
     if not success:
         raise HTTPException(status_code=400, detail=error)
-
-    db.commit()
 
     return {"code": 0, "msg": "完工确认成功", "data": {}}
 
@@ -231,8 +256,6 @@ async def pause_production(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {"code": 0, "msg": "暂停成功", "data": {}}
 
 
@@ -247,7 +270,5 @@ async def delete_order(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
-
-    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

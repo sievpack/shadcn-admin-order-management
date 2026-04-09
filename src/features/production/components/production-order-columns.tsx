@@ -35,6 +35,7 @@ export const productionOrderColumns = ({
   onFinish,
   onPause,
   onPrint,
+  onReport,
 }: {
   onView?: (row: ProductionOrder) => void
   onEdit?: (row: ProductionOrder) => void
@@ -43,6 +44,7 @@ export const productionOrderColumns = ({
   onFinish?: (row: ProductionOrder) => void
   onPause?: (row: ProductionOrder) => void
   onPrint?: (row: ProductionOrder) => void
+  onReport?: (row: ProductionOrder) => void
 }): ColumnDef<ProductionOrder>[] => [
   {
     id: 'select',
@@ -188,6 +190,7 @@ export const productionOrderColumns = ({
         onFinish={onFinish}
         onPause={onPause}
         onPrint={onPrint}
+        onReport={onReport}
       />
     ),
   },

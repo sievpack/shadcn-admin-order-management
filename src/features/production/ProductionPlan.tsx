@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
-import { productionPlanAPI, codeAPI } from '@/lib/production-api'
+import {
+  productionPlanAPI,
+  productionOrderAPI,
+  codeAPI,
+} from '@/lib/production-api'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -15,6 +19,7 @@ import {
   ProductionPlanDeleteDialog,
   ProductionPlanEditDialog,
   ProductionPlanAddDialog,
+  GenerateOrderDialog,
 } from './components/production-plan-dialogs'
 import { ProductionPlanTable } from './components/production-plan-table'
 
@@ -33,6 +38,14 @@ export function ProductionPlanList() {
   })
   const [addLoading, setAddLoading] = useState(false)
   const [planCodeGenerated, setPlanCodeGenerated] = useState(false)
+
+  const [showGenerateOrderDialog, setShowGenerateOrderDialog] = useState(false)
+  const [generateOrderForm, setGenerateOrderForm] = useState({
+    工单数量: 0,
+    产线: '',
+  })
+  const [lines, setLines] = useState<{ label: string; value: string }[]>([])
+  const [generateLoading, setGenerateLoading] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -58,6 +71,27 @@ export function ProductionPlanList() {
     }
     generatePlanCode()
   }, [showAddDialog, planCodeGenerated])
+
+  useEffect(() => {
+    const fetchLines = async () => {
+      if (showGenerateOrderDialog) {
+        try {
+          const res = await productionOrderAPI.getLines()
+          if (res.data.code === 0) {
+            setLines(
+              res.data.data.map((line: string) => ({
+                label: line,
+                value: line,
+              }))
+            )
+          }
+        } catch (error) {
+          console.error('获取产线列表失败:', error)
+        }
+      }
+    }
+    fetchLines()
+  }, [showGenerateOrderDialog])
 
   const handleView = (row: ProductionPlan) => {
     setSelectedRow(row)
@@ -100,6 +134,39 @@ export function ProductionPlanList() {
       }
     } catch (error) {
       toast.error('驳回失败')
+    }
+  }
+
+  const handleGenerateOrder = (row: ProductionPlan) => {
+    setSelectedRow(row)
+    const remainingQty = row.计划数量 - row.已排数量
+    setGenerateOrderForm({
+      工单数量: remainingQty,
+      产线: '',
+    })
+    setShowGenerateOrderDialog(true)
+  }
+
+  const handleConfirmGenerateOrder = async () => {
+    if (!selectedRow) return
+    try {
+      setGenerateLoading(true)
+      const response = await productionOrderAPI.createFromPlan({
+        plan_id: selectedRow.id,
+        工单数量: generateOrderForm.工单数量,
+        产线: generateOrderForm.产线,
+      })
+      if (response.data.code === 0) {
+        toast.success(`工单 ${response.data.data.工单编号} 创建成功`)
+        setShowGenerateOrderDialog(false)
+        setRefreshKey((k) => k + 1)
+      } else {
+        toast.error(response.data.msg)
+      }
+    } catch (error) {
+      toast.error('创建工单失败')
+    } finally {
+      setGenerateLoading(false)
     }
   }
 
@@ -190,6 +257,7 @@ export function ProductionPlanList() {
           onDelete={handleDelete}
           onApprove={handleApprove}
           onReject={handleReject}
+          onGenerateOrder={handleGenerateOrder}
           refreshKey={refreshKey}
         />
       </Main>
@@ -198,6 +266,7 @@ export function ProductionPlanList() {
         open={showDetailDialog}
         onOpenChange={setShowDetailDialog}
         plan={selectedRow}
+        refreshKey={refreshKey}
       />
 
       <ProductionPlanEditDialog
@@ -223,6 +292,17 @@ export function ProductionPlanList() {
         onAddFormChange={setAddForm}
         onSave={handleAdd}
         loading={addLoading}
+      />
+
+      <GenerateOrderDialog
+        open={showGenerateOrderDialog}
+        onOpenChange={setShowGenerateOrderDialog}
+        plan={selectedRow}
+        lines={lines}
+        formData={generateOrderForm}
+        onFormChange={setGenerateOrderForm}
+        onSave={handleConfirmGenerateOrder}
+        loading={generateLoading}
       />
     </>
   )

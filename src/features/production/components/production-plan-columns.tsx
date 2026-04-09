@@ -33,12 +33,14 @@ export const productionPlanColumns = ({
   onDelete,
   onApprove,
   onReject,
+  onGenerateOrder,
 }: {
   onView?: (row: ProductionPlan) => void
   onEdit?: (row: ProductionPlan) => void
   onDelete?: (row: ProductionPlan) => void
   onApprove?: (row: ProductionPlan) => void
   onReject?: (row: ProductionPlan) => void
+  onGenerateOrder?: (row: ProductionPlan) => void
 }): ColumnDef<ProductionPlan>[] => [
   {
     id: 'select',
@@ -185,6 +187,7 @@ export const productionPlanColumns = ({
         onDelete={onDelete}
         onApprove={onApprove}
         onReject={onReject}
+        onGenerateOrder={onGenerateOrder}
       />
     ),
   },

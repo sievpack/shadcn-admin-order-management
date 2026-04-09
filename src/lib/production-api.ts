@@ -10,6 +10,7 @@ export const codeAPI = {
 export const productionPlanAPI = {
   getList: (params?: any) => api.get('/production/plan/list', { params }),
   getDetail: (id: number) => api.get(`/production/plan/${id}`),
+  getOrders: (planId: number) => api.get(`/production/plan/${planId}/orders`),
   create: (data: any) => api.post('/production/plan/create', data),
   update: (data: any) => api.put('/production/plan/update', data),
   approve: (id: number) => api.put(`/production/plan/approve/${id}`),
@@ -24,6 +25,8 @@ export const productionOrderAPI = {
   getList: (params?: any) => api.get('/production/order/list', { params }),
   getDetail: (id: number) => api.get(`/production/order/${id}`),
   create: (data: any) => api.post('/production/order/create', data),
+  createFromPlan: (data: any) =>
+    api.post('/production/order/create-from-plan', data),
   update: (data: any) => api.put('/production/order/update', data),
   start: (id: number) => api.put(`/production/order/start/${id}`),
   finish: (id: number) => api.put(`/production/order/finish/${id}`),

@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Pause,
   Printer,
+  ClipboardList,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,6 +29,7 @@ type ProductionOrderRowActionsProps = {
   onFinish?: (row: ProductionOrder) => void
   onPause?: (row: ProductionOrder) => void
   onPrint?: (row: ProductionOrder) => void
+  onReport?: (row: ProductionOrder) => void
 }
 
 export function ProductionOrderRowActions({
@@ -39,6 +41,7 @@ export function ProductionOrderRowActions({
   onFinish,
   onPause,
   onPrint,
+  onReport,
 }: ProductionOrderRowActionsProps) {
   return (
     <DropdownMenu modal={false}>
@@ -68,23 +71,35 @@ export function ProductionOrderRowActions({
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         )}
-        {row.工单状态 === '待生产' && onStart && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onStart(row)}
-              className='text-green-600'
-            >
-              开始生产
-              <DropdownMenuShortcut>
-                <Play size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </>
-        )}
+        {(row.工单状态 === '待生产' || row.工单状态 === '已暂停') &&
+          onStart && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onStart(row)}
+                className='text-green-600'
+              >
+                开始生产
+                <DropdownMenuShortcut>
+                  <Play size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </>
+          )}
         {row.工单状态 === '生产中' && (
           <>
             <DropdownMenuSeparator />
+            {onReport && (
+              <DropdownMenuItem
+                onClick={() => onReport(row)}
+                className='text-cyan-600'
+              >
+                报工
+                <DropdownMenuShortcut>
+                  <ClipboardList size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
             {onFinish && (
               <DropdownMenuItem
                 onClick={() => onFinish(row)}
@@ -109,7 +124,6 @@ export function ProductionOrderRowActions({
             )}
           </>
         )}
-        {/* 添加打印选项 */}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => onPrint?.(row)}

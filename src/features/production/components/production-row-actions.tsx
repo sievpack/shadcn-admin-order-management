@@ -1,5 +1,5 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
-import { Eye, Edit, Trash2, Check, X } from 'lucide-react'
+import { Eye, Edit, Trash2, Check, X, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -39,6 +39,7 @@ type DataTableRowActionsProps = {
   onDelete?: (row: ProductionPlan) => void
   onApprove?: (row: ProductionPlan) => void
   onReject?: (row: ProductionPlan) => void
+  onGenerateOrder?: (row: ProductionPlan) => void
 }
 
 export function ProductionPlanRowActions({
@@ -48,6 +49,7 @@ export function ProductionPlanRowActions({
   onDelete,
   onApprove,
   onReject,
+  onGenerateOrder,
 }: DataTableRowActionsProps) {
   return (
     <DropdownMenu modal={false}>
@@ -77,6 +79,19 @@ export function ProductionPlanRowActions({
             </DropdownMenuShortcut>
           </DropdownMenuItem>
         )}
+        {row.计划状态 !== '待审核' &&
+          onGenerateOrder &&
+          row.计划数量 > row.已排数量 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onGenerateOrder(row)}>
+                生成工单
+                <DropdownMenuShortcut>
+                  <ClipboardList size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </>
+          )}
         {row.计划状态 === '待审核' && onApprove && (
           <>
             <DropdownMenuSeparator />

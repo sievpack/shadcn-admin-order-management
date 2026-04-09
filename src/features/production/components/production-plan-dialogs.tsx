@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
+import { productionPlanAPI } from '@/lib/production-api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,103 +13,217 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DatePicker } from '@/components/date-picker'
 import { type ProductionPlan } from './production-plan-columns'
+
+interface ProductionOrder {
+  id: number
+  工单编号: string
+  产品型号: string
+  工单数量: number
+  已完成数量: number
+  产线: string
+  工单状态: string
+  计划编号: string
+  create_at: string
+}
 
 interface ProductionPlanDetailDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   plan: ProductionPlan | null
+  refreshKey?: number
 }
 
 export function ProductionPlanDetailDialog({
   open,
   onOpenChange,
   plan,
+  refreshKey = 0,
 }: ProductionPlanDetailDialogProps) {
+  const [tab, setTab] = useState<'basic' | 'orders'>('basic')
+  const [orders, setOrders] = useState<ProductionOrder[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+
+  useEffect(() => {
+    if (open && plan?.id) {
+      setTab('basic')
+      setOrders([])
+    }
+  }, [open, plan])
+
+  useEffect(() => {
+    if (tab === 'orders' && plan?.id) {
+      fetchOrders()
+    }
+  }, [tab, plan, refreshKey])
+
+  const fetchOrders = async () => {
+    if (!plan?.id) return
+    setOrdersLoading(true)
+    try {
+      const res = await productionPlanAPI.getOrders(plan.id)
+      if (res.data.code === 0) {
+        setOrders(res.data.data || [])
+      }
+    } catch (error) {
+      console.error('获取工单列表失败:', error)
+    } finally {
+      setOrdersLoading(false)
+    }
+  }
+
   if (!plan) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-2xl'>
+      <DialogContent className='sm:max-w-3xl'>
         <DialogHeader>
           <DialogTitle>生产计划详情</DialogTitle>
           <DialogDescription>
             查看生产计划 {plan.计划编号} 的详细信息
           </DialogDescription>
         </DialogHeader>
-        <div className='grid grid-cols-2 gap-4 py-4'>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>计划编号</Label>
-            <p className='font-medium'>{plan.计划编号}</p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>计划名称</Label>
-            <p>{plan.计划名称}</p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>关联订单</Label>
-            <p>{plan.关联订单 || '-'}</p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>产品型号</Label>
-            <p>{plan.产品型号}</p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>计划数量</Label>
-            <p>
-              {plan.计划数量} {plan.单位}
-            </p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>已排数量</Label>
-            <p>{plan.已排数量}</p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>计划开始</Label>
-            <p>{plan.计划开始日期}</p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>计划完成</Label>
-            <p>{plan.计划完成日期}</p>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>优先级</Label>
-            <Badge
-              variant={
-                plan.优先级 === '紧急'
-                  ? 'destructive'
-                  : plan.优先级 === '高'
-                    ? 'default'
-                    : 'secondary'
-              }
-            >
-              {plan.优先级}
-            </Badge>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>状态</Label>
-            <Badge
-              variant={
-                plan.计划状态 === '待审核'
-                  ? 'outline'
-                  : plan.计划状态 === '生产中'
-                    ? 'default'
-                    : 'secondary'
-              }
-            >
-              {plan.计划状态}
-            </Badge>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>负责人</Label>
-            <p>{plan.负责人 || '-'}</p>
-          </div>
-          <div className='col-span-2 flex flex-col gap-2'>
-            <Label className='text-muted-foreground'>备注</Label>
-            <p>{plan.备注 || '-'}</p>
-          </div>
-        </div>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <TabsList>
+            <TabsTrigger value='basic'>基本信息</TabsTrigger>
+            <TabsTrigger value='orders'>
+              关联工单 {orders.length > 0 && `(${orders.length})`}
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value='basic' className='py-4'>
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>计划编号</Label>
+                <p className='font-medium'>{plan.计划编号}</p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>计划名称</Label>
+                <p>{plan.计划名称}</p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>关联订单</Label>
+                <p>{plan.关联订单 || '-'}</p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>产品型号</Label>
+                <p>{plan.产品型号}</p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>计划数量</Label>
+                <p>
+                  {plan.计划数量} {plan.单位}
+                </p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>已排数量</Label>
+                <p>{plan.已排数量}</p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>计划开始</Label>
+                <p>{plan.计划开始日期}</p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>计划完成</Label>
+                <p>{plan.计划完成日期}</p>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>优先级</Label>
+                <Badge
+                  variant={
+                    plan.优先级 === '紧急'
+                      ? 'destructive'
+                      : plan.优先级 === '高'
+                        ? 'default'
+                        : 'secondary'
+                  }
+                >
+                  {plan.优先级}
+                </Badge>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>状态</Label>
+                <Badge
+                  variant={
+                    plan.计划状态 === '待审核'
+                      ? 'outline'
+                      : plan.计划状态 === '生产中'
+                        ? 'default'
+                        : 'secondary'
+                  }
+                >
+                  {plan.计划状态}
+                </Badge>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>负责人</Label>
+                <p>{plan.负责人 || '-'}</p>
+              </div>
+              <div className='col-span-2 flex flex-col gap-2'>
+                <Label className='text-muted-foreground'>备注</Label>
+                <p>{plan.备注 || '-'}</p>
+              </div>
+            </div>
+          </TabsContent>
+          <TabsContent value='orders' className='py-4'>
+            {ordersLoading ? (
+              <div className='flex items-center justify-center py-8'>
+                <Loader2 className='h-5 w-5 animate-spin' />
+                <span className='ml-2'>加载中...</span>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className='py-8 text-center text-muted-foreground'>
+                暂无关联工单
+              </div>
+            ) : (
+              <div className='rounded-md border'>
+                <table className='w-full text-sm'>
+                  <thead className='bg-muted/50'>
+                    <tr>
+                      <th className='px-3 py-2 text-left font-medium'>
+                        工单编号
+                      </th>
+                      <th className='px-3 py-2 text-left font-medium'>
+                        产品型号
+                      </th>
+                      <th className='px-3 py-2 text-left font-medium'>产线</th>
+                      <th className='px-3 py-2 text-left font-medium'>数量</th>
+                      <th className='px-3 py-2 text-left font-medium'>
+                        已完成
+                      </th>
+                      <th className='px-3 py-2 text-left font-medium'>状态</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order.id} className='border-t'>
+                        <td className='px-3 py-2'>{order.工单编号}</td>
+                        <td className='px-3 py-2'>{order.产品型号}</td>
+                        <td className='px-3 py-2'>{order.产线}</td>
+                        <td className='px-3 py-2'>{order.工单数量}</td>
+                        <td className='px-3 py-2'>{order.已完成数量}</td>
+                        <td className='px-3 py-2'>
+                          <Badge
+                            variant={
+                              order.工单状态 === '生产中'
+                                ? 'default'
+                                : order.工单状态 === '已完成'
+                                  ? 'secondary'
+                                  : 'outline'
+                            }
+                          >
+                            {order.工单状态}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
         <DialogFooter>
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             关闭
@@ -504,6 +621,119 @@ export function ProductionPlanAddDialog({
           </Button>
           <Button onClick={onSave} disabled={loading}>
             {loading ? '创建中...' : '创建'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface GenerateOrderDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  plan: ProductionPlan | null
+  lines: { label: string; value: string }[]
+  formData: { 工单数量: number; 产线: string }
+  onFormChange: (data: { 工单数量: number; 产线: string }) => void
+  onSave: () => void
+  loading: boolean
+}
+
+export function GenerateOrderDialog({
+  open,
+  onOpenChange,
+  plan,
+  lines,
+  formData,
+  onFormChange,
+  onSave,
+  loading,
+}: GenerateOrderDialogProps) {
+  if (!plan) return null
+
+  const remainingQty = plan.计划数量 - plan.已排数量
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='sm:max-w-md'>
+        <DialogHeader>
+          <DialogTitle>生成工单</DialogTitle>
+          <DialogDescription>
+            从生产计划 {plan.计划编号} 生成新的生产工单
+          </DialogDescription>
+        </DialogHeader>
+        <div className='grid gap-4 py-4'>
+          <div className='flex flex-col gap-2'>
+            <Label className='text-muted-foreground'>计划编号</Label>
+            <p className='font-medium'>{plan.计划编号}</p>
+          </div>
+          <div className='flex flex-col gap-2'>
+            <Label className='text-muted-foreground'>产品型号</Label>
+            <p>{plan.产品型号}</p>
+          </div>
+          <div className='flex flex-col gap-2'>
+            <Label className='text-muted-foreground'>计划数量 / 已排数量</Label>
+            <p>
+              {plan.计划数量} {plan.单位} / {plan.已排数量} {plan.单位}
+            </p>
+          </div>
+          <div className='flex flex-col gap-2'>
+            <Label className='text-muted-foreground'>剩余可排数量</Label>
+            <p className='font-medium text-primary'>
+              {remainingQty} {plan.单位}
+            </p>
+          </div>
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='工单数量'>工单数量</Label>
+            <Input
+              id='工单数量'
+              type='number'
+              min={1}
+              max={remainingQty}
+              value={formData.工单数量 || remainingQty}
+              onChange={(e) =>
+                onFormChange({
+                  ...formData,
+                  工单数量: Number(e.target.value),
+                })
+              }
+            />
+          </div>
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='产线'>产线</Label>
+            <select
+              id='产线'
+              className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none'
+              value={formData.产线}
+              onChange={(e) =>
+                onFormChange({
+                  ...formData,
+                  产线: e.target.value,
+                })
+              }
+            >
+              <option value=''>请选择产线</option>
+              {lines.map((line) => (
+                <option key={line.value} value={line.value}>
+                  {line.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant='outline' onClick={() => onOpenChange(false)}>
+            取消
+          </Button>
+          <Button onClick={onSave} disabled={loading || !formData.产线}>
+            {loading ? (
+              <>
+                <Loader2 className='animate-spin' data-icon='inline-start' />
+                创建中...
+              </>
+            ) : (
+              '创建工单'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

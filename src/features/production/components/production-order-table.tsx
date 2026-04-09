@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useProductionOrders } from '@/queries/production'
+import { useProductionOrders, productionOrderKeys } from '@/queries/production'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -42,6 +42,7 @@ interface ProductionOrderTableProps {
   onFinish?: (row: ProductionOrder) => void
   onPause?: (row: ProductionOrder) => void
   onPrint?: (row: ProductionOrder) => void
+  onReport?: (row: ProductionOrder) => void
   refreshKey?: number
 }
 
@@ -53,6 +54,7 @@ export function ProductionOrderTable({
   onFinish,
   onPause,
   onPrint,
+  onReport,
   refreshKey = 0,
 }: ProductionOrderTableProps) {
   const queryClient = useQueryClient()
@@ -117,6 +119,7 @@ export function ProductionOrderTable({
     onFinish,
     onPause,
     onPrint,
+    onReport,
   })
 
   const table = useReactTable({
@@ -149,7 +152,7 @@ export function ProductionOrderTable({
 
   useEffect(() => {
     if (refreshKey > 0) {
-      queryClient.invalidateQueries({ queryKey: ['production', 'orders'] })
+      queryClient.invalidateQueries({ queryKey: productionOrderKeys.lists() })
     }
   }, [refreshKey, queryClient])
 

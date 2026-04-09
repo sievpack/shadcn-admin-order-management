@@ -7,6 +7,7 @@ from app.repositories.production_repository import (
     material_consumption_repository, production_report_repository
 )
 from app.models.production import ProductionPlan, ProductionOrder, ProductionReport, QualityInspection, ProductInbound, MaterialConsumption
+from app.api.code import generate_code
 
 
 class ProductionPlanService:
@@ -19,6 +20,7 @@ class ProductionPlanService:
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         计划编号: Optional[str] = None,
         计划名称: Optional[str] = None,
         产品型号: Optional[str] = None,
@@ -28,7 +30,7 @@ class ProductionPlanService:
         page_size: int = 20
     ) -> Tuple[List[ProductionPlan], int]:
         return self.repo.search(
-            db, 计划编号=计划编号, 计划名称=计划名称, 产品型号=产品型号,
+            db, query=query, 计划编号=计划编号, 计划名称=计划名称, 产品型号=产品型号,
             计划状态=计划状态, 优先级=优先级, page=page, page_size=page_size
         )
 
@@ -44,6 +46,12 @@ class ProductionPlanService:
 
     def get_all_产品型号(self, db: Session) -> List[str]:
         return self.repo.get_all_产品型号(db)
+
+    def get_orders_by_plan(self, db: Session, plan_id: int) -> Tuple[List[ProductionOrder], int]:
+        plan = self.repo.get_by_id(db, plan_id)
+        if not plan:
+            return [], 0
+        return production_order_repository.get_all_by_计划编号(db, plan.计划编号), 0
 
     def create(self, db: Session, **kwargs) -> Tuple[Optional[ProductionPlan], Optional[str]]:
         try:
@@ -110,6 +118,7 @@ class ProductionOrderService:
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         工单编号: Optional[str] = None,
         计划编号: Optional[str] = None,
         产品型号: Optional[str] = None,
@@ -119,7 +128,7 @@ class ProductionOrderService:
         page_size: int = 20
     ) -> Tuple[List[ProductionOrder], int]:
         return self.repo.search(
-            db, 工单编号=工单编号, 计划编号=计划编号, 产品型号=产品型号,
+            db, query=query, 工单编号=工单编号, 计划编号=计划编号, 产品型号=产品型号,
             产线=产线, 工单状态=工单状态, page=page, page_size=page_size
         )
 
@@ -140,12 +149,72 @@ class ProductionOrderService:
         except Exception as e:
             return None, str(e)
 
+    def create_from_plan(self, db: Session, plan_id: int, 工单数量: int, 产线: str) -> Tuple[Optional[ProductionOrder], Optional[str]]:
+        plan = production_plan_repository.get_by_id(db, plan_id)
+        if not plan:
+            return None, "生产计划不存在"
+        
+        if plan.计划状态 not in ['已审核', '生产中']:
+            return None, "计划状态不允许生成工单"
+        
+        remaining = plan.计划数量 - plan.已排数量
+        if 工单数量 > remaining:
+            return None, f"工单数量超过剩余可排数量，剩余: {remaining}"
+        
+        try:
+            order = self.repo.create(db,
+                工单编号=generate_code('WO'),
+                计划编号=plan.计划编号,
+                产品类型=plan.产品类型,
+                产品型号=plan.产品型号,
+                规格=plan.规格,
+                工单数量=工单数量,
+                已完成数量=0,
+                单位=plan.单位,
+                产线=产线,
+                工单状态='待生产',
+                计划开始=plan.计划开始日期,
+                计划结束=plan.计划完成日期,
+                工序='1',
+                总工序='1',
+            )
+            
+            plan.已排数量 += 工单数量
+            if plan.计划状态 not in ['生产中']:
+                plan.计划状态 = '生产中'
+            plan.update_at = datetime.now()
+            
+            db.flush()
+            return order, None
+        except Exception as e:
+            db.rollback()
+            return None, str(e)
+
     def update(self, db: Session, id: int, **kwargs) -> Tuple[Optional[ProductionOrder], Optional[str]]:
         order = self.repo.get_by_id(db, id)
         if not order:
             return None, "生产工单不存在"
+        
+        new_工单数量 = kwargs.get('工单数量')
+        new_已完成数量 = kwargs.get('已完成数量')
+        effective_工单数量 = new_工单数量 if new_工单数量 is not None else order.工单数量
+        
+        if new_工单数量 is not None and new_工单数量 != order.工单数量:
+            plan = production_plan_repository.get_by_计划编号(db, order.计划编号)
+            if plan:
+                diff = new_工单数量 - order.工单数量
+                plan.已排数量 += diff
+                plan.update_at = datetime.now()
+            
+            if new_已完成数量 is not None and new_已完成数量 > new_工单数量:
+                return None, f"已完成数量不能超过工单数量（{new_工单数量}）"
+        
+        if new_已完成数量 is not None and new_工单数量 is None and new_已完成数量 > order.工单数量:
+            return None, f"已完成数量不能超过工单数量（{order.工单数量}）"
+        
         try:
             updated = self.repo.update(db, order, **kwargs)
+            db.commit()
             return updated, None
         except Exception as e:
             return None, str(e)
@@ -156,10 +225,25 @@ class ProductionOrderService:
             return False, "生产工单不存在"
         if order.工单状态 not in ['待生产', '已暂停']:
             return False, "当前状态不允许开始生产"
+        
+        plan = production_plan_repository.get_by_计划编号(db, order.计划编号)
+        if not plan:
+            return False, "关联的生产计划不存在"
+        if plan.计划状态 not in ['已审核', '生产中', '待生产', '暂停中']:
+            return False, "计划状态不允许开始生产"
+        
         try:
             order.工单状态 = '生产中'
             order.实际开始 = datetime.now()
             order.update_at = datetime.now()
+            
+            # 如果计划还在暂停中，改为生产中
+            if plan.计划状态 == '暂停中':
+                plan.计划状态 = '生产中'
+            if not plan.实际开始日期:
+                plan.实际开始日期 = datetime.now().date()
+            plan.update_at = datetime.now()
+            
             db.commit()
             return True, None
         except Exception as e:
@@ -171,10 +255,28 @@ class ProductionOrderService:
             return False, "生产工单不存在"
         if order.工单状态 != '生产中':
             return False, "当前状态不允许完工"
+        
+        plan = production_plan_repository.get_by_计划编号(db, order.计划编号)
+        if not plan:
+            return False, "关联的生产计划不存在"
+        
         try:
             order.工单状态 = '已完工'
             order.实际结束 = datetime.now()
             order.update_at = datetime.now()
+            
+            # 累加已完成数量到计划
+            plan.已完成数量 += order.工单数量
+            if not plan.实际完成日期:
+                plan.实际完成日期 = datetime.now().date()
+            plan.update_at = datetime.now()
+            
+            # 检查是否所有工单都已完工
+            all_orders = production_order_repository.get_all_by_计划编号(db, order.计划编号)
+            all_finished = all(o.工单状态 == '已完工' for o in all_orders)
+            if all_finished:
+                plan.计划状态 = '已完成'
+            
             db.commit()
             return True, None
         except Exception as e:
@@ -186,9 +288,27 @@ class ProductionOrderService:
             return False, "生产工单不存在"
         if order.工单状态 != '生产中':
             return False, "当前状态不允许暂停"
+        
+        plan = production_plan_repository.get_by_计划编号(db, order.计划编号)
+        if not plan:
+            return False, "关联的生产计划不存在"
+        
         try:
             order.工单状态 = '已暂停'
             order.update_at = datetime.now()
+            
+            # 只有所有生产中的工单都暂停了，才将计划设为暂停
+            all_orders = production_order_repository.get_all_by_计划编号(db, order.计划编号)
+            running_orders = [o for o in all_orders if o.工单状态 == '生产中']
+            if len(running_orders) == 0:
+                # 没有正在生产的工单了，检查是否有已完工的
+                finished_orders = [o for o in all_orders if o.工单状态 == '已完工']
+                if len(finished_orders) == len(all_orders):
+                    plan.计划状态 = '已完成'
+                else:
+                    plan.计划状态 = '暂停中'
+                plan.update_at = datetime.now()
+            
             db.commit()
             return True, None
         except Exception as e:
@@ -198,7 +318,11 @@ class ProductionOrderService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "生产工单不存在"
-        return True, None
+        try:
+            db.commit()
+            return True, None
+        except Exception as e:
+            return False, str(e)
 
     def to_dict(self, order: ProductionOrder) -> Dict[str, Any]:
         return self.repo.to_dict(order)
@@ -218,6 +342,7 @@ class QualityInspectionService:
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         质检单号: Optional[str] = None,
         工单编号: Optional[str] = None,
         质检结果: Optional[str] = None,
@@ -228,7 +353,7 @@ class QualityInspectionService:
         page_size: int = 20
     ) -> Tuple[List[QualityInspection], int]:
         return self.repo.search(
-            db, 质检单号=质检单号, 工单编号=工单编号, 质检结果=质检结果,
+            db, query=query, 质检单号=质检单号, 工单编号=工单编号, 质检结果=质检结果,
             质检员=质检员, start_date=start_date, end_date=end_date,
             page=page, page_size=page_size
         )
@@ -277,6 +402,7 @@ class ProductInboundService:
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         入库单号: Optional[str] = None,
         工单编号: Optional[str] = None,
         质检单号: Optional[str] = None,
@@ -288,8 +414,9 @@ class ProductInboundService:
         page_size: int = 20
     ) -> Tuple[List[ProductInbound], int]:
         return self.repo.search(
-            db, 入库单号=入库单号, 工单编号=工单编号,
-            仓库=仓库, page=page, page_size=page_size
+            db, query=query, 入库单号=入库单号, 工单编号=工单编号, 质检单号=质检单号,
+            仓库=仓库, 入库状态=入库状态, start_date=start_date, end_date=end_date,
+            page=page, page_size=page_size
         )
 
     def search_dict(self, db: Session, **kwargs) -> Tuple[List[Dict[str, Any]], int]:
@@ -336,6 +463,7 @@ class MaterialConsumptionService:
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         工单编号: Optional[str] = None,
         物料编码: Optional[str] = None,
         物料名称: Optional[str] = None,
@@ -345,7 +473,8 @@ class MaterialConsumptionService:
         page_size: int = 20
     ) -> Tuple[List[MaterialConsumption], int]:
         return self.repo.search(
-            db, 工单编号=工单编号, page=page, page_size=page_size
+            db, query=query, 工单编号=工单编号, 物料编码=物料编码, 物料名称=物料名称,
+            start_date=start_date, end_date=end_date, page=page, page_size=page_size
         )
 
     def search_dict(self, db: Session, **kwargs) -> Tuple[List[Dict[str, Any]], int]:
@@ -382,6 +511,7 @@ class ProductionReportService:
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         工单编号: Optional[str] = None,
         报工编号: Optional[str] = None,
         报工人: Optional[str] = None,
@@ -391,7 +521,7 @@ class ProductionReportService:
         page_size: int = 20
     ) -> Tuple[List[ProductionReport], int]:
         return self.repo.search(
-            db, 工单编号=工单编号, 报工编号=报工编号, 报工人=报工人,
+            db, query=query, 工单编号=工单编号, 报工编号=报工编号, 报工人=报工人,
             start_date=start_date, end_date=end_date, page=page, page_size=page_size
         )
 
@@ -402,17 +532,63 @@ class ProductionReportService:
     def get_all_报工人(self, db: Session) -> List[str]:
         return self.repo.get_all_报工人(db)
 
-    def create(self, db: Session, **kwargs) -> Tuple[Optional[ProductionReport], Optional[str]]:
+    def create(self, db: Session, **kwargs) -> Tuple[Optional[ProductionReport], Optional[str], Optional[dict]]:
+        from app.models.production import ProductionOrder
+        from datetime import datetime
+        
         try:
             report = self.repo.create(db, **kwargs)
-            return report, None
+            
+            order = db.query(ProductionOrder).filter(
+                ProductionOrder.工单编号 == report.工单编号
+            ).first()
+            
+            result_info = None
+            if order:
+                order.已完成数量 = (order.已完成数量 or 0) + report.合格数量
+                order.update_at = datetime.now()
+                
+                remaining = order.工单数量 - order.已完成数量
+                result_info = {
+                    "工单编号": order.工单编号,
+                    "已完成数量": order.已完成数量,
+                    "工单数量": order.工单数量,
+                    "remaining": remaining,
+                    "is_completed": remaining <= 0
+                }
+            
+            db.commit()
+            return report, None, result_info
         except Exception as e:
-            return None, str(e)
+            return None, str(e), None
 
     def delete(self, db: Session, id: int) -> Tuple[bool, Optional[str]]:
+        from app.models.production import ProductionOrder
+        from datetime import datetime
+        
+        report = self.repo.get_by_id(db, id)
+        if not report:
+            return False, "报工记录不存在"
+        
+        order = db.query(ProductionOrder).filter(
+            ProductionOrder.工单编号 == report.工单编号
+        ).first()
+        if order:
+            order.已完成数量 = max(0, (order.已完成数量 or 0) - report.合格数量)
+            order.update_at = datetime.now()
+        
         success = self.repo.delete(db, id)
         if not success:
             return False, "报工记录不存在"
+        
+        db.commit()
+        return True, None
+        
+        success = self.repo.delete(db, id)
+        if not success:
+            return False, "报工记录不存在"
+        
+        db.commit()
         return True, None
 
     def to_dict(self, report: ProductionReport) -> Dict[str, Any]:

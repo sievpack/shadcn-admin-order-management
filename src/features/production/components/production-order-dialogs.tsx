@@ -167,6 +167,70 @@ export function ProductionOrderDeleteDialog({
   )
 }
 
+interface ProductionOrderFinishDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  order: ProductionOrder | null
+  onConfirm: (order: ProductionOrder) => void
+}
+
+export function ProductionOrderFinishDialog({
+  open,
+  onOpenChange,
+  order,
+  onConfirm,
+}: ProductionOrderFinishDialogProps) {
+  if (!order) return null
+
+  const remaining = order.工单数量 - order.已完成数量
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>完工确认</DialogTitle>
+          <DialogDescription>
+            确定要将工单 &quot;{order.工单编号}&quot; 标记为已完成吗？
+          </DialogDescription>
+        </DialogHeader>
+        <div className='space-y-4 py-4'>
+          <div className='rounded-md bg-muted p-4'>
+            <div className='grid grid-cols-2 gap-2 text-sm'>
+              <div>
+                <span className='text-muted-foreground'>工单数量：</span>
+                <span className='font-medium'>{order.工单数量}</span>
+              </div>
+              <div>
+                <span className='text-muted-foreground'>已完成：</span>
+                <span className='font-medium'>{order.已完成数量}</span>
+              </div>
+              <div>
+                <span className='text-muted-foreground'>剩余：</span>
+                <span className='font-medium text-orange-500'>{remaining}</span>
+              </div>
+              <div>
+                <span className='text-muted-foreground'>产线：</span>
+                <span className='font-medium'>{order.产线 || '-'}</span>
+              </div>
+            </div>
+          </div>
+          {remaining > 0 && (
+            <div className='rounded border border-yellow-500 bg-yellow-50 p-3 text-sm text-yellow-700 dark:bg-yellow-900/20'>
+              警告：还有 {remaining} 件未报工，确认完工后将无法继续报工。
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant='outline' onClick={() => onOpenChange(false)}>
+            取消
+          </Button>
+          <Button onClick={() => onConfirm(order)}>确认完工</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 interface ProductionOrderEditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -174,6 +238,7 @@ interface ProductionOrderEditDialogProps {
   editForm: Partial<ProductionOrder>
   onEditFormChange: (data: Partial<ProductionOrder>) => void
   onSave: () => void
+  lineOptions: string[]
 }
 
 export function ProductionOrderEditDialog({
@@ -183,12 +248,13 @@ export function ProductionOrderEditDialog({
   editForm,
   onEditFormChange,
   onSave,
+  lineOptions,
 }: ProductionOrderEditDialogProps) {
   if (!order) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className='sm:max-w-2xl'>
         <DialogHeader>
           <DialogTitle>编辑生产工单</DialogTitle>
           <DialogDescription>
@@ -198,47 +264,63 @@ export function ProductionOrderEditDialog({
         <div className='grid gap-4 py-4'>
           <div className='grid grid-cols-2 gap-4'>
             <div className='flex flex-col gap-2'>
-              <Label htmlFor='产线'>产线</Label>
+              <Label htmlFor='工单数量'>工单数量</Label>
               <Input
-                id='产线'
-                value={editForm.产线 || ''}
+                id='工单数量'
+                type='number'
+                value={editForm.工单数量 || 0}
                 onChange={(e) =>
-                  onEditFormChange({ ...editForm, 产线: e.target.value })
+                  onEditFormChange({
+                    ...editForm,
+                    工单数量: Number(e.target.value),
+                  })
                 }
-                placeholder='输入产线'
+                placeholder='输入工单数量'
               />
             </div>
             <div className='flex flex-col gap-2'>
-              <Label htmlFor='工单状态'>工单状态</Label>
+              <Label htmlFor='产线'>产线</Label>
               <Select
-                value={editForm.工单状态}
+                value={editForm.产线}
                 onValueChange={(v) =>
-                  onEditFormChange({ ...editForm, 工单状态: v })
+                  onEditFormChange({ ...editForm, 产线: v })
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder='选择状态' />
+                  <SelectValue placeholder='选择产线' />
                 </SelectTrigger>
                 <SelectContent>
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
+                  {lineOptions.map((l) => (
+                    <SelectItem key={l} value={l}>
+                      {l}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className='col-span-2 flex flex-col gap-2'>
-              <Label htmlFor='报工备注'>报工备注</Label>
-              <Input
-                id='报工备注'
-                value={editForm.报工备注 || ''}
-                onChange={(e) =>
-                  onEditFormChange({ ...editForm, 报工备注: e.target.value })
-                }
-                placeholder='输入报工备注'
-              />
+            <div className='flex flex-col gap-2'>
+              <Label className='text-muted-foreground'>产品型号</Label>
+              <p className='font-medium'>{order.产品型号}</p>
             </div>
+            <div className='flex flex-col gap-2'>
+              <Label className='text-muted-foreground'>产品类型</Label>
+              <p className='font-medium'>{order.产品类型 || '-'}</p>
+            </div>
+            <div className='col-span-2 flex flex-col gap-2'>
+              <Label className='text-muted-foreground'>规格</Label>
+              <p className='font-medium'>{order.规格 || '-'}</p>
+            </div>
+          </div>
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor='报工备注'>报工备注</Label>
+            <Input
+              id='报工备注'
+              value={editForm.报工备注 || ''}
+              onChange={(e) =>
+                onEditFormChange({ ...editForm, 报工备注: e.target.value })
+              }
+              placeholder='输入报工备注'
+            />
           </div>
         </div>
         <DialogFooter>

@@ -6,13 +6,13 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.production_service import production_report_service
-from datetime import datetime
 
 router = APIRouter()
 
 
 @router.get("/list")
 async def get_report_list(
+    query: Optional[str] = None,
     工单编号: Optional[str] = None,
     报工编号: Optional[str] = None,
     报工人: Optional[str] = None,
@@ -25,7 +25,7 @@ async def get_report_list(
 ):
     """获取报工记录列表"""
     items, total = production_report_service.search(
-        db, 工单编号=工单编号, 报工编号=报工编号, 报工人=报工人,
+        db, query=query, 工单编号=工单编号, 报工编号=报工编号, 报工人=报工人,
         start_date=start_date, end_date=end_date, page=page, page_size=limit
     )
     data = [production_report_service.to_dict(item) for item in items]
@@ -88,9 +88,7 @@ async def create_report(
     current_user: User = Depends(get_current_active_user)
 ):
     """创建报工记录"""
-    from app.models.production import ProductionOrder
-    
-    report, error = production_report_service.create(
+    report, error, result_info = production_report_service.create(
         db,
         工单编号=data.get("工单编号"),
         报工编号=data.get("报工编号"),
@@ -107,19 +105,19 @@ async def create_report(
 
     if error:
         raise HTTPException(status_code=400, detail=error)
-    
-    order = db.query(ProductionOrder).filter(
-        ProductionOrder.工单编号 == data.get("工单编号")
-    ).first()
-    if order:
-        order.已完成数量 = (order.已完成数量 or 0) + data.get("合格数量", 0)
-        order.update_at = datetime.now()
-        db.commit()
 
+    response_data = {"id": report.id, "报工编号": report.报工编号}
+    if result_info:
+        response_data.update(result_info)
+    
+    msg = "创建成功"
+    if result_info and result_info.get("is_completed"):
+        msg = "创建成功，工单已完成"
+    
     return {
         "code": 0,
-        "msg": "创建成功",
-        "data": {"id": report.id, "报工编号": report.报工编号}
+        "msg": msg,
+        "data": response_data
     }
 
 
@@ -130,19 +128,6 @@ async def delete_report(
     current_user: User = Depends(get_current_active_user)
 ):
     """删除报工记录"""
-    from app.models.production import ProductionOrder
-    
-    report = production_report_service.get_by_id(db, report_id)
-    if not report:
-        raise HTTPException(status_code=404, detail="报工记录不存在")
-    
-    order = db.query(ProductionOrder).filter(
-        ProductionOrder.工单编号 == report.工单编号
-    ).first()
-    if order:
-        order.已完成数量 = max(0, (order.已完成数量 or 0) - report.合格数量)
-        order.update_at = datetime.now()
-    
     success, error = production_report_service.delete(db, report_id)
     if not success:
         raise HTTPException(status_code=404, detail=error)

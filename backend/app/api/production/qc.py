@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/list")
 async def get_qc_list(
+    query: Optional[str] = None,
     质检单号: Optional[str] = None,
     工单编号: Optional[str] = None,
     质检结果: Optional[str] = None,
@@ -25,7 +26,7 @@ async def get_qc_list(
 ):
     """获取质检记录列表"""
     items, total = quality_inspection_service.search(
-        db, 质检单号=质检单号, 工单编号=工单编号, 质检结果=质检结果,
+        db, query=query, 质检单号=质检单号, 工单编号=工单编号, 质检结果=质检结果,
         质检员=质检员, start_date=start_date, end_date=end_date,
         page=page, page_size=limit
     )
@@ -135,8 +136,6 @@ async def create_qc(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {
         "code": 0,
         "msg": "创建成功",
@@ -169,8 +168,6 @@ async def update_qc(
 
     if error:
         raise HTTPException(status_code=400, detail=error)
-
-    db.commit()
 
     return {
         "code": 0,
@@ -207,7 +204,5 @@ async def delete_qc(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
-
-    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

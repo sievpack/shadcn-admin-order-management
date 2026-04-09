@@ -17,6 +17,7 @@ class ProductionPlan(Base):
     规格 = Column(String(50))
     计划数量 = Column(Integer, nullable=False)
     已排数量 = Column(Integer, default=0)
+    已完成数量 = Column(Integer, default=0)
     单位 = Column(String(10), nullable=False)
     计划开始日期 = Column(Date, nullable=False)
     计划完成日期 = Column(Date, nullable=False)

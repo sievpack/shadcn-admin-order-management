@@ -19,6 +19,7 @@ class ProductionPlanRepository(BaseRepository):
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         计划编号: Optional[str] = None,
         计划名称: Optional[str] = None,
         产品型号: Optional[str] = None,
@@ -27,21 +28,27 @@ class ProductionPlanRepository(BaseRepository):
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[ProductionPlan], int]:
-        query = db.query(ProductionPlan)
+        query_obj = db.query(ProductionPlan)
 
+        if query:
+            query_obj = query_obj.filter(
+                (ProductionPlan.计划编号.contains(query)) |
+                (ProductionPlan.计划名称.contains(query)) |
+                (ProductionPlan.产品型号.contains(query))
+            )
         if 计划编号:
-            query = query.filter(ProductionPlan.计划编号.contains(计划编号))
+            query_obj = query_obj.filter(ProductionPlan.计划编号.contains(计划编号))
         if 计划名称:
-            query = query.filter(ProductionPlan.计划名称.contains(计划名称))
+            query_obj = query_obj.filter(ProductionPlan.计划名称.contains(计划名称))
         if 产品型号:
-            query = query.filter(ProductionPlan.产品型号.contains(产品型号))
+            query_obj = query_obj.filter(ProductionPlan.产品型号.contains(产品型号))
         if 计划状态:
-            query = query.filter(ProductionPlan.计划状态 == 计划状态)
+            query_obj = query_obj.filter(ProductionPlan.计划状态 == 计划状态)
         if 优先级:
-            query = query.filter(ProductionPlan.优先级 == 优先级)
+            query_obj = query_obj.filter(ProductionPlan.优先级 == 优先级)
 
-        total = query.count()
-        items = query.order_by(desc(ProductionPlan.id)).offset((page - 1) * page_size).limit(page_size).all()
+        total = query_obj.count()
+        items = query_obj.order_by(desc(ProductionPlan.id)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
@@ -122,6 +129,7 @@ class ProductionOrderRepository(BaseRepository):
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         工单编号: Optional[str] = None,
         计划编号: Optional[str] = None,
         产品型号: Optional[str] = None,
@@ -130,21 +138,27 @@ class ProductionOrderRepository(BaseRepository):
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[ProductionOrder], int]:
-        query = db.query(ProductionOrder)
+        query_obj = db.query(ProductionOrder)
 
+        if query:
+            query_obj = query_obj.filter(
+                (ProductionOrder.工单编号.contains(query)) |
+                (ProductionOrder.计划编号.contains(query)) |
+                (ProductionOrder.产品型号.contains(query))
+            )
         if 工单编号:
-            query = query.filter(ProductionOrder.工单编号.contains(工单编号))
+            query_obj = query_obj.filter(ProductionOrder.工单编号.contains(工单编号))
         if 计划编号:
-            query = query.filter(ProductionOrder.计划编号.contains(计划编号))
+            query_obj = query_obj.filter(ProductionOrder.计划编号.contains(计划编号))
         if 产品型号:
-            query = query.filter(ProductionOrder.产品型号.contains(产品型号))
+            query_obj = query_obj.filter(ProductionOrder.产品型号.contains(产品型号))
         if 产线:
-            query = query.filter(ProductionOrder.产线 == 产线)
+            query_obj = query_obj.filter(ProductionOrder.产线 == 产线)
         if 工单状态:
-            query = query.filter(ProductionOrder.工单状态 == 工单状态)
+            query_obj = query_obj.filter(ProductionOrder.工单状态 == 工单状态)
 
-        total = query.count()
-        items = query.order_by(desc(ProductionOrder.id)).offset((page - 1) * page_size).limit(page_size).all()
+        total = query_obj.count()
+        items = query_obj.order_by(desc(ProductionOrder.id)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
@@ -160,10 +174,15 @@ class ProductionOrderRepository(BaseRepository):
         ).distinct().all()
         return [r[0] for r in results if r[0]]
 
+    def get_all_by_计划编号(self, db: Session, 计划编号: str) -> List[ProductionOrder]:
+        return db.query(ProductionOrder).filter(
+            ProductionOrder.计划编号 == 计划编号
+        ).order_by(desc(ProductionOrder.id)).all()
+
     def create(self, db: Session, **kwargs) -> ProductionOrder:
         order = ProductionOrder(**kwargs)
         db.add(order)
-        db.commit()
+        db.flush()
         db.refresh(order)
         return order
 
@@ -171,7 +190,7 @@ class ProductionOrderRepository(BaseRepository):
         for key, value in kwargs.items():
             if value is not None:
                 setattr(order, key, value)
-        db.commit()
+        db.flush()
         db.refresh(order)
         return order
 
@@ -218,6 +237,7 @@ class QualityInspectionRepository(BaseRepository):
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         质检单号: Optional[str] = None,
         工单编号: Optional[str] = None,
         质检结果: Optional[str] = None,
@@ -227,19 +247,24 @@ class QualityInspectionRepository(BaseRepository):
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[QualityInspection], int]:
-        query = db.query(QualityInspection)
+        query_obj = db.query(QualityInspection)
 
+        if query:
+            query_obj = query_obj.filter(
+                (QualityInspection.质检单号.contains(query)) |
+                (QualityInspection.工单编号.contains(query))
+            )
         if 质检单号:
-            query = query.filter(QualityInspection.质检单号.contains(质检单号))
+            query_obj = query_obj.filter(QualityInspection.质检单号.contains(质检单号))
         if 工单编号:
-            query = query.filter(QualityInspection.工单编号.contains(工单编号))
+            query_obj = query_obj.filter(QualityInspection.工单编号.contains(工单编号))
         if 质检结果:
-            query = query.filter(QualityInspection.质检结果 == 质检结果)
+            query_obj = query_obj.filter(QualityInspection.质检结果 == 质检结果)
         if 质检员:
-            query = query.filter(QualityInspection.质检员.contains(质检员))
+            query_obj = query_obj.filter(QualityInspection.质检员.contains(质检员))
 
-        total = query.count()
-        items = query.order_by(desc(QualityInspection.id)).offset((page - 1) * page_size).limit(page_size).all()
+        total = query_obj.count()
+        items = query_obj.order_by(desc(QualityInspection.id)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
@@ -306,23 +331,38 @@ class ProductInboundRepository(BaseRepository):
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         入库单号: Optional[str] = None,
         工单编号: Optional[str] = None,
+        质检单号: Optional[str] = None,
         仓库: Optional[str] = None,
+        入库状态: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[ProductInbound], int]:
-        query = db.query(ProductInbound)
+        query_obj = db.query(ProductInbound)
 
+        if query:
+            query_obj = query_obj.filter(
+                (ProductInbound.入库单号.contains(query)) |
+                (ProductInbound.工单编号.contains(query)) |
+                (ProductInbound.质检单号.contains(query))
+            )
         if 入库单号:
-            query = query.filter(ProductInbound.入库单号.contains(入库单号))
+            query_obj = query_obj.filter(ProductInbound.入库单号.contains(入库单号))
         if 工单编号:
-            query = query.filter(ProductInbound.工单编号.contains(工单编号))
+            query_obj = query_obj.filter(ProductInbound.工单编号.contains(工单编号))
+        if 质检单号:
+            query_obj = query_obj.filter(ProductInbound.质检单号.contains(质检单号))
         if 仓库:
-            query = query.filter(ProductInbound.仓库 == 仓库)
+            query_obj = query_obj.filter(ProductInbound.仓库 == 仓库)
+        if 入库状态:
+            query_obj = query_obj.filter(ProductInbound.入库状态 == 入库状态)
 
-        total = query.count()
-        items = query.order_by(desc(ProductInbound.id)).offset((page - 1) * page_size).limit(page_size).all()
+        total = query_obj.count()
+        items = query_obj.order_by(desc(ProductInbound.id)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
@@ -391,17 +431,32 @@ class MaterialConsumptionRepository(BaseRepository):
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         工单编号: Optional[str] = None,
+        物料编码: Optional[str] = None,
+        物料名称: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[MaterialConsumption], int]:
-        query = db.query(MaterialConsumption)
+        query_obj = db.query(MaterialConsumption)
 
+        if query:
+            query_obj = query_obj.filter(
+                (MaterialConsumption.工单编号.contains(query)) |
+                (MaterialConsumption.物料编码.contains(query)) |
+                (MaterialConsumption.物料名称.contains(query))
+            )
         if 工单编号:
-            query = query.filter(MaterialConsumption.工单编号.contains(工单编号))
+            query_obj = query_obj.filter(MaterialConsumption.工单编号.contains(工单编号))
+        if 物料编码:
+            query_obj = query_obj.filter(MaterialConsumption.物料编码.contains(物料编码))
+        if 物料名称:
+            query_obj = query_obj.filter(MaterialConsumption.物料名称.contains(物料名称))
 
-        total = query.count()
-        items = query.order_by(desc(MaterialConsumption.id)).offset((page - 1) * page_size).limit(page_size).all()
+        total = query_obj.count()
+        items = query_obj.order_by(desc(MaterialConsumption.id)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
@@ -452,6 +507,7 @@ class ProductionReportRepository(BaseRepository):
     def search(
         self,
         db: Session,
+        query: Optional[str] = None,
         工单编号: Optional[str] = None,
         报工编号: Optional[str] = None,
         报工人: Optional[str] = None,
@@ -460,17 +516,22 @@ class ProductionReportRepository(BaseRepository):
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[List[ProductionReport], int]:
-        query = db.query(ProductionReport)
+        query_obj = db.query(ProductionReport)
 
+        if query:
+            query_obj = query_obj.filter(
+                (ProductionReport.工单编号.contains(query)) |
+                (ProductionReport.报工编号.contains(query))
+            )
         if 工单编号:
-            query = query.filter(ProductionReport.工单编号.contains(工单编号))
+            query_obj = query_obj.filter(ProductionReport.工单编号.contains(工单编号))
         if 报工编号:
-            query = query.filter(ProductionReport.报工编号.contains(报工编号))
+            query_obj = query_obj.filter(ProductionReport.报工编号.contains(报工编号))
         if 报工人:
-            query = query.filter(ProductionReport.报工人.contains(报工人))
+            query_obj = query_obj.filter(ProductionReport.报工人.contains(报工人))
 
-        total = query.count()
-        items = query.order_by(desc(ProductionReport.id)).offset((page - 1) * page_size).limit(page_size).all()
+        total = query_obj.count()
+        items = query_obj.order_by(desc(ProductionReport.id)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
