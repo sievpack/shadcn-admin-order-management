@@ -17,17 +17,17 @@ Font.register({
 
 const PAGE_WIDTH = 230
 const PAGE_HEIGHT = 140
-const MARGIN = 8
+const MARGIN = 10
 const FONT_SIZE = 9
 
 const TABLE_ROW_HEIGHT = 12
 
 const COLUMNS_CONFIG = {
-  合同编号: { flex: 1.2, maxChars: 15 },
-  客户物料编号: { flex: 1.4, maxChars: 16 },
+  样品单号: { flex: 1.5, maxChars: 15 },
   规格: { flex: 1.3, maxChars: 14 },
-  型号: { flex: 1.2, maxChars: 14 },
-  单位: { flex: 0.6, maxChars: 3 },
+  产品类型: { flex: 1, maxChars: 10 },
+  型号: { flex: 1.2, maxChars: 12 },
+  单位: { flex: 0.6, maxChars: 4 },
   数量: { flex: 0.8, maxChars: 6 },
 }
 
@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: '#000',
-    paddingVertical: 1,
-    marginVertical: 1,
+    paddingVertical: 2,
+    marginVertical: 2,
   },
   titleRowTop: {
     flexDirection: 'row',
@@ -86,23 +86,23 @@ const styles = StyleSheet.create({
   titleInfo: {
     fontSize: 4,
     textAlign: 'right',
-    width: 70,
+    width: 60,
   },
   infoRow: {
     flexDirection: 'row',
     marginBottom: 0,
   },
   label: {
-    fontSize: 5,
+    fontSize: 4,
     fontWeight: 'bold',
   },
   value: {
-    fontSize: 5,
+    fontSize: 4,
   },
   table: {
     borderWidth: 1,
     borderColor: '#000',
-    marginTop: 1,
+    marginTop: 2,
   },
   tableHeader: {
     flexDirection: 'row',
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerCell: {
-    fontSize: 5,
+    fontSize: 4,
     fontWeight: 'bold',
     textAlign: 'center',
     padding: 1,
@@ -137,49 +137,67 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 4,
   },
+  remarksSection: {
+    marginTop: 2,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  remarksTitle: {
+    fontSize: 4,
+    fontWeight: 'bold',
+    marginBottom: 1,
+  },
+  remarksText: {
+    fontSize: 3,
+  },
 })
 
-interface ShippingOrderItem {
-  订单编号: string
-  合同编号?: string
-  客户物料编号?: string
+interface CustomerSampleItem {
+  样品单号: string
+  客户名称: string
+  下单日期: string
+  需求日期?: string
   规格: string
+  产品类型: string
   型号: string
   单位: string
   数量: number
+  齿形?: string
+  材料?: string
+  喷码要求?: string
+  钢丝?: string
   备注?: string
 }
 
-interface ShippingPrintData {
-  发货单号: string
-  发货日期: string
-  客户名称: string
-  送货地址?: string
-  订单项目: ShippingOrderItem[]
+interface CustomerSamplePrintData {
+  items: CustomerSampleItem[]
+  title?: string
   制单人?: string
 }
 
 interface PageData {
-  items: ShippingOrderItem[]
+  items: CustomerSampleItem[]
   pageNum: number
   totalPages: number
   pageTotal: number
 }
 
-const HEADER_BLOCK_HEIGHT = 35
-const TITLE_BLOCK_HEIGHT = 18
-const FOOTER_HEIGHT = 10
+const HEADER_BLOCK_HEIGHT = 18
+const TITLE_BLOCK_HEIGHT = 16
+const FOOTER_HEIGHT = 8
+const REMARKS_HEIGHT = 12
 
-function calculateLayout(items: ShippingOrderItem[]): PageData[] {
+function calculateLayout(items: CustomerSampleItem[]): PageData[] {
   const contentArea =
     PAGE_HEIGHT -
     MARGIN * 2 -
     HEADER_BLOCK_HEIGHT -
     TITLE_BLOCK_HEIGHT -
-    FOOTER_HEIGHT
-  const tableRowHeight = TABLE_ROW_HEIGHT
+    FOOTER_HEIGHT -
+    REMARKS_HEIGHT
 
-  const rowsPerPage = Math.floor(contentArea / tableRowHeight)
+  const rowsPerPage = Math.floor(contentArea / TABLE_ROW_HEIGHT)
 
   const pages: PageData[] = []
   let remaining = [...items]
@@ -205,18 +223,9 @@ function calculateLayout(items: ShippingOrderItem[]): PageData[] {
 }
 
 function truncateText(text: string, maxChars: number): string {
+  if (!text) return '-'
   if (text.length <= maxChars) return text
   return text.slice(0, Math.max(0, maxChars - 1)) + '…'
-}
-
-function calculateFontSize(text: string, width: number): number {
-  if (!text || width <= 0) return BASE_FONT_SIZE
-
-  const maxChars = Math.floor(width * CHAR_WIDTH_RATIO)
-  if (text.length <= maxChars) return BASE_FONT_SIZE
-
-  const scale = maxChars / text.length
-  return Math.max(MIN_FONT_SIZE, Math.floor(BASE_FONT_SIZE * scale * 10) / 10)
 }
 
 function Cell({
@@ -230,7 +239,7 @@ function Cell({
   flex: number
   maxChars?: number
 }) {
-  const displayValue = maxChars ? truncateText(value, maxChars) : value
+  const displayValue = maxChars ? truncateText(value, maxChars) : value || '-'
 
   return (
     <View
@@ -253,8 +262,12 @@ function Cell({
   )
 }
 
-export function ShippingPdfDocument({ data }: { data: ShippingPrintData }) {
-  const items = data.订单项目 || []
+export function CustomerSamplePdfDocument({
+  data,
+}: {
+  data: CustomerSamplePrintData
+}) {
+  const items = data.items || []
   const pages = calculateLayout(items)
 
   return (
@@ -279,20 +292,20 @@ export function ShippingPdfDocument({ data }: { data: ShippingPrintData }) {
             <View style={styles.titleRowTop}>
               <View style={styles.infoRow}>
                 <Text style={styles.label}>客户名称：</Text>
-                <Text style={styles.value}>{data.客户名称 || '-'}</Text>
+                <Text style={styles.value}>{items[0]?.客户名称 || '-'}</Text>
               </View>
-              <Text style={styles.title}>送 货 单</Text>
+              <Text style={styles.title}>客户样品单</Text>
               <View style={styles.titleInfo}>
-                <Text>单号：{data.发货单号 || '-'}</Text>
+                <Text>单号：{items[0]?.样品单号 || '-'}</Text>
               </View>
             </View>
             <View style={styles.titleRowBottom}>
               <View style={styles.infoRow}>
-                <Text style={styles.label}>收货地址：</Text>
-                <Text style={styles.value}>{data.送货地址 || '-'}</Text>
+                <Text style={styles.label}>下单日期：</Text>
+                <Text style={styles.value}>{items[0]?.下单日期 || '-'}</Text>
               </View>
               <View style={styles.titleInfo}>
-                <Text>日期：{data.发货日期 || '-'}</Text>
+                <Text>需求日期：{items[0]?.需求日期 || '-'}</Text>
               </View>
             </View>
           </View>
@@ -302,23 +315,23 @@ export function ShippingPdfDocument({ data }: { data: ShippingPrintData }) {
               <Text
                 style={[
                   styles.headerCell,
-                  { flex: COLUMNS_CONFIG.合同编号.flex },
+                  { flex: COLUMNS_CONFIG.样品单号.flex },
                 ]}
               >
-                合同编号
-              </Text>
-              <Text
-                style={[
-                  styles.headerCell,
-                  { flex: COLUMNS_CONFIG.客户物料编号.flex },
-                ]}
-              >
-                客户物料编号
+                样品单号
               </Text>
               <Text
                 style={[styles.headerCell, { flex: COLUMNS_CONFIG.规格.flex }]}
               >
                 规格
+              </Text>
+              <Text
+                style={[
+                  styles.headerCell,
+                  { flex: COLUMNS_CONFIG.产品类型.flex },
+                ]}
+              >
+                产品类型
               </Text>
               <Text
                 style={[styles.headerCell, { flex: COLUMNS_CONFIG.型号.flex }]}
@@ -340,22 +353,22 @@ export function ShippingPdfDocument({ data }: { data: ShippingPrintData }) {
             {pageData.items.map((item, idx) => (
               <View key={idx} style={styles.tableRow}>
                 <Cell
-                  value={item.合同编号 || '-'}
-                  columnKey='合同编号'
-                  flex={COLUMNS_CONFIG.合同编号.flex}
-                  maxChars={COLUMNS_CONFIG.合同编号.maxChars}
-                />
-                <Cell
-                  value={item.客户物料编号 || '-'}
-                  columnKey='客户物料编号'
-                  flex={COLUMNS_CONFIG.客户物料编号.flex}
-                  maxChars={COLUMNS_CONFIG.客户物料编号.maxChars}
+                  value={item.样品单号 || '-'}
+                  columnKey='样品单号'
+                  flex={COLUMNS_CONFIG.样品单号.flex}
+                  maxChars={COLUMNS_CONFIG.样品单号.maxChars}
                 />
                 <Cell
                   value={item.规格 || '-'}
                   columnKey='规格'
                   flex={COLUMNS_CONFIG.规格.flex}
                   maxChars={COLUMNS_CONFIG.规格.maxChars}
+                />
+                <Cell
+                  value={item.产品类型 || '-'}
+                  columnKey='产品类型'
+                  flex={COLUMNS_CONFIG.产品类型.flex}
+                  maxChars={COLUMNS_CONFIG.产品类型.maxChars}
                 />
                 <Cell
                   value={item.型号 || '-'}
@@ -377,6 +390,18 @@ export function ShippingPdfDocument({ data }: { data: ShippingPrintData }) {
                 />
               </View>
             ))}
+          </View>
+
+          <View style={styles.remarksSection}>
+            <Text style={styles.remarksTitle}>备注信息</Text>
+            <Text style={styles.remarksText}>
+              齿形：{items[0]?.齿形 || '-'} | 材料：{items[0]?.材料 || '-'} |
+              钢丝：{items[0]?.钢丝 || '-'} | 喷码要求：
+              {items[0]?.喷码要求 || '-'}
+            </Text>
+            <Text style={styles.remarksText}>
+              备注：{items[0]?.备注 || '-'}
+            </Text>
           </View>
 
           <View style={styles.footer}>

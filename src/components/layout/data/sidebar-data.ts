@@ -75,6 +75,10 @@ export const sidebarData: SidebarData = {
               url: '/customerlist',
             },
             {
+              title: '客户样品',
+              url: '/customer-sample',
+            },
+            {
               title: '客户报价单',
               url: '/quotelist',
             },

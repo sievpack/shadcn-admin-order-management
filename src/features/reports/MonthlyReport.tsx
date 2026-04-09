@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react'
-import { getYear, getMonth, format, startOfMonth } from 'date-fns'
+import {
+  getYear,
+  getMonth,
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+} from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { Truck, ShoppingCart, Percent, ArrowLeftRight } from 'lucide-react'
-import { type DateRange } from 'react-day-picker'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { reportAPI } from '@/lib/api'
-import { Calendar } from '@/components/ui/calendar'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -13,9 +25,29 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search as SearchComponent } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 
+const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+interface DailyStat {
+  date: string
+  order_count: number
+  order_amount: number
+  ship_amount: number
+}
+
+interface MonthlyData {
+  daily_stats: DailyStat[]
+  summary: {
+    total_order_count: number
+    total_order_amount: number
+    total_ship_amount: number
+    jiebodai_percentage: number
+    kaikoudai_percentage: number
+  }
+}
+
 export function MonthlyReport() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [monthlyData, setMonthlyData] = useState<any>({
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [monthlyData, setMonthlyData] = useState<MonthlyData>({
     daily_stats: [],
     summary: {
       total_order_count: 0,
@@ -29,22 +61,10 @@ export function MonthlyReport() {
   const [error, setError] = useState<string>('')
 
   const today = new Date()
-  const firstDayOfMonth = startOfMonth(today)
-  const [calendarRange] = useState<DateRange>({
-    from: firstDayOfMonth,
-    to: today,
-  })
 
-  const isDateInRange = (date: Date) => {
-    return date >= firstDayOfMonth && date <= today
-  }
-
-  const getDayData = (date: Date) => {
+  const getDayData = (date: Date): DailyStat | null => {
     const dateStr = format(date, 'yyyy-MM-dd')
-    return (
-      monthlyData.daily_stats?.find((stat: any) => stat.date === dateStr) ||
-      null
-    )
+    return monthlyData.daily_stats.find((stat) => stat.date === dateStr) || null
   }
 
   useEffect(() => {
@@ -52,30 +72,40 @@ export function MonthlyReport() {
       setLoading(true)
       setError('')
       try {
-        const year = getYear(selectedDate)
-        const month = getMonth(selectedDate) + 1
-        const params = {
-          year,
-          month,
-          customer: 'all',
-        }
-
+        const year = getYear(currentMonth)
+        const month = getMonth(currentMonth) + 1
+        const params = { year, month, customer: 'all' }
         const response = await reportAPI.getMonthlyReport(params)
         if (response.data.code === 0) {
           setMonthlyData(response.data.data)
         } else {
           setError('API返回错误: ' + response.data.msg)
         }
-      } catch (error: any) {
-        console.error('获取月度统计数据失败:', error)
-        setError('获取数据失败: ' + error.message)
+      } catch (err: any) {
+        setError('获取数据失败: ' + err.message)
       } finally {
         setLoading(false)
       }
     }
-
     fetchMonthlyReport()
-  }, [selectedDate])
+  }, [currentMonth])
+
+  const calendarDays = () => {
+    const monthStart = startOfMonth(currentMonth)
+    const monthEnd = endOfMonth(monthStart)
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
+
+    const days: Date[] = []
+    let day = calendarStart
+    while (day <= calendarEnd) {
+      days.push(day)
+      day = addDays(day, 1)
+    }
+    return days
+  }
+
+  const days = calendarDays()
 
   return (
     <>
@@ -94,116 +124,128 @@ export function MonthlyReport() {
         </div>
 
         <div className='flex flex-col gap-6'>
-          {/* 统计卡片 */}
           <div className='grid grid-cols-2 gap-4 md:grid-cols-4'>
-            <div className='rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm'>
-              <div className='mb-2 flex items-center justify-between'>
-                <p className='text-sm font-medium text-muted-foreground'>
-                  本月发货金额
+            <Card>
+              <CardContent className='p-4'>
+                <div className='mb-2 flex items-center justify-between'>
+                  <p className='text-sm font-medium text-muted-foreground'>
+                    本月发货金额
+                  </p>
+                </div>
+                <p className='text-2xl font-bold text-primary'>
+                  ¥
+                  {(Number(monthlyData.summary.total_ship_amount) || 0).toFixed(
+                    2
+                  )}
                 </p>
-                <Truck className='h-4 w-4 text-muted-foreground' />
-              </div>
-              <p className='text-2xl font-bold text-primary'>
-                ¥
-                {(typeof monthlyData.summary.total_ship_amount === 'number'
-                  ? monthlyData.summary.total_ship_amount
-                  : parseFloat(monthlyData.summary.total_ship_amount || 0)
-                ).toFixed(2)}
-              </p>
-            </div>
-            <div className='rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm'>
-              <div className='mb-2 flex items-center justify-between'>
-                <p className='text-sm font-medium text-muted-foreground'>
-                  本月订单金额
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='mb-2 flex items-center justify-between'>
+                  <p className='text-sm font-medium text-muted-foreground'>
+                    本月订单金额
+                  </p>
+                </div>
+                <p className='text-2xl font-bold text-green-600'>
+                  ¥
+                  {(
+                    Number(monthlyData.summary.total_order_amount) || 0
+                  ).toFixed(2)}
                 </p>
-                <ShoppingCart className='h-4 w-4 text-muted-foreground' />
-              </div>
-              <p className='text-2xl font-bold text-green-600'>
-                ¥
-                {(typeof monthlyData.summary.total_order_amount === 'number'
-                  ? monthlyData.summary.total_order_amount
-                  : parseFloat(monthlyData.summary.total_order_amount || 0)
-                ).toFixed(2)}
-              </p>
-            </div>
-            <div className='rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm'>
-              <div className='mb-2 flex items-center justify-between'>
-                <p className='text-sm font-medium text-muted-foreground'>
-                  接驳带
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='mb-2 flex items-center justify-between'>
+                  <p className='text-sm font-medium text-muted-foreground'>
+                    接驳带
+                  </p>
+                </div>
+                <p className='text-2xl font-bold text-yellow-600'>
+                  {Number(monthlyData.summary.jiebodai_percentage) || 0}%
                 </p>
-                <ArrowLeftRight className='h-4 w-4 text-muted-foreground' />
-              </div>
-              <p className='text-2xl font-bold text-yellow-600'>
-                {typeof monthlyData.summary.jiebodai_percentage === 'number'
-                  ? monthlyData.summary.jiebodai_percentage
-                  : parseFloat(monthlyData.summary.jiebodai_percentage || 0)}
-                %
-              </p>
-            </div>
-            <div className='rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm'>
-              <div className='mb-2 flex items-center justify-between'>
-                <p className='text-sm font-medium text-muted-foreground'>
-                  开口带
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className='p-4'>
+                <div className='mb-2 flex items-center justify-between'>
+                  <p className='text-sm font-medium text-muted-foreground'>
+                    开口带
+                  </p>
+                </div>
+                <p className='text-2xl font-bold text-blue-600'>
+                  {Number(monthlyData.summary.kaikoudai_percentage) || 0}%
                 </p>
-                <Percent className='h-4 w-4 text-muted-foreground' />
-              </div>
-              <p className='text-2xl font-bold text-blue-600'>
-                {typeof monthlyData.summary.kaikoudai_percentage === 'number'
-                  ? monthlyData.summary.kaikoudai_percentage
-                  : parseFloat(monthlyData.summary.kaikoudai_percentage || 0)}
-                %
-              </p>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* 日历 */}
-          <Card className='mx-auto max-w-5xl p-0'>
-            <CardContent className='p-0'>
-              <Calendar
-                mode='range'
-                selected={calendarRange}
-                onSelect={() => {}}
-                onMonthChange={setSelectedDate}
-                numberOfMonths={1}
-                captionLayout='dropdown'
-                locale={zhCN}
-                className='w-full [--cell-size:3.2rem] md:[--cell-size:4rem]'
-                modifiers={{
-                  inRange: (date) => isDateInRange(date),
-                }}
-                modifiersClassNames={{
-                  inRange: '!bg-primary/10 !text-primary rounded-none',
-                }}
-                components={{
-                  DayButton: ({ children, modifiers, day, ...props }) => {
-                    const dayData = getDayData(day.date)
-                    const isInValidRange = isDateInRange(day.date)
-                    const isToday =
-                      day.date.getDate() === today.getDate() &&
-                      day.date.getMonth() === today.getMonth() &&
-                      day.date.getFullYear() === today.getFullYear()
+          <Card>
+            <CardContent className='p-4'>
+              <div className='mb-4 flex items-center justify-between'>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                >
+                  <ChevronLeft className='h-4 w-4' />
+                </Button>
+                <h2 className='text-lg font-semibold'>
+                  {format(currentMonth, 'yyyy年MM月', { locale: zhCN })}
+                </h2>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                >
+                  <ChevronRight className='h-4 w-4' />
+                </Button>
+              </div>
 
-                    return (
-                      <button
-                        {...props}
-                        className={`relative flex h-full w-full flex-col items-center justify-center p-1 text-lg ${!isInValidRange && modifiers.outside ? 'text-muted-foreground opacity-30' : ''} ${isInValidRange && !modifiers.outside ? 'font-medium text-foreground' : ''} ${isToday ? 'rounded-md bg-primary text-primary-foreground' : ''} ${modifiers.outside && !isInValidRange ? 'text-muted-foreground/40' : ''} transition-colors hover:bg-accent/50`}
-                      >
-                        <span className='text-base leading-none'>
-                          {children}
+              <div className='grid h-[600px] grid-cols-7 grid-rows-[auto_repeat(7,1fr)] gap-px overflow-hidden rounded-lg border bg-border'>
+                {WEEKDAYS.map((weekday) => (
+                  <div
+                    key={weekday}
+                    className='flex items-center justify-center bg-muted p-2 text-sm font-medium'
+                  >
+                    {weekday}
+                  </div>
+                ))}
+                {days.map((day, index) => {
+                  const dayData = getDayData(day)
+                  const isCurrentMonth = isSameMonth(day, currentMonth)
+                  const isToday = isSameDay(day, today)
+                  const isFuture = day > today
+                  return (
+                    <div
+                      key={index}
+                      className={`flex flex-col items-center justify-center overflow-hidden bg-background p-2 ${
+                        !isCurrentMonth ? 'text-muted-foreground/40' : ''
+                      } ${isToday ? 'bg-primary text-primary-foreground' : ''} ${
+                        isFuture && isCurrentMonth
+                          ? 'text-muted-foreground/30'
+                          : ''
+                      }`}
+                    >
+                      <span className='text-xl font-medium'>
+                        {format(day, 'd')}
+                      </span>
+                      {isCurrentMonth && !isFuture && dayData && (
+                        <span
+                          className={`mt-1 text-sm ${isToday ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}
+                        >
+                          ¥{Number(dayData.order_amount || 0).toFixed(0)}
                         </span>
-                        {isInValidRange && !modifiers.outside && dayData && (
-                          <span className='mt-0.5 w-full truncate text-center text-sm leading-none text-muted-foreground'>
-                            ¥{Number(dayData.order_amount || 0).toFixed(0)}
-                          </span>
-                        )}
-                      </button>
-                    )
-                  },
-                }}
-              />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>
+
         {error && (
           <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
             <p className='text-destructive'>{error}</p>

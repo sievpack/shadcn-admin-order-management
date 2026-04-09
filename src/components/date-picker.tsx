@@ -28,6 +28,7 @@ type DatePickerProps = {
   selected?: Date | undefined
   onSelect?: (date: Date | undefined) => void
   placeholder?: string
+  className?: string
 }
 
 export function DatePicker({
@@ -36,6 +37,7 @@ export function DatePicker({
   selected: selectedProp,
   onSelect: onSelectProp,
   placeholder = '选择日期',
+  className,
 }: DatePickerProps) {
   const isStringMode = value !== undefined || onChange !== undefined
   const selected = isStringMode
@@ -58,7 +60,11 @@ export function DatePicker({
         <Button
           variant='outline'
           data-empty={!selected}
-          className='w-[240px] justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+          className={
+            className
+              ? `${className} justify-start text-start font-normal data-[empty=true]:text-muted-foreground`
+              : 'w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+          }
         >
           {selected ? (
             format(selected, 'yyyy年MM月dd日', { locale: zhCN })

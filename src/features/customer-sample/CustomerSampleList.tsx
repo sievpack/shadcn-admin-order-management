@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useQuotes } from '@/queries/quotes/useQuotes'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -8,27 +7,19 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search as SearchComponent } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { QuoteDialogs } from './components/quote-dialogs'
-import { QuoteProvider, useQuote } from './components/quote-provider'
-import { QuoteTable } from './components/quote-table'
+import { CustomerSampleDialogs } from './components/customer-sample-dialogs'
+import {
+  CustomerSampleProvider,
+  useCustomerSample,
+} from './components/customer-sample-provider'
+import { CustomerSampleTable } from './components/customer-sample-table'
 
-function QuoteListContent() {
-  const { setOpen } = useQuote()
+function CustomerSampleListContent() {
+  const { setOpen } = useCustomerSample()
   const [refreshKey, setRefreshKey] = useState(0)
-
-  const {
-    data: quotesResponse,
-    isLoading,
-    refetch,
-  } = useQuotes({
-    params: { query: 'list', page: 1, limit: 100 },
-  })
-
-  const quotes = quotesResponse?.data?.data || []
 
   const handleRefresh = () => {
     setRefreshKey((k) => k + 1)
-    refetch()
   }
 
   return (
@@ -45,27 +36,27 @@ function QuoteListContent() {
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>
-            <h2 className='text-2xl font-bold tracking-tight'>客户报价单</h2>
-            <p className='text-muted-foreground'>查看和管理客户报价单</p>
+            <h2 className='text-2xl font-bold tracking-tight'>客户样品</h2>
+            <p className='text-muted-foreground'>查看和管理客户样品信息</p>
           </div>
           <Button onClick={() => setOpen('add')}>
             <Plus data-icon='inline-start' />
-            新增报价单
+            新增样品
           </Button>
         </div>
 
-        <QuoteTable data={quotes} loading={isLoading} />
+        <CustomerSampleTable refreshKey={refreshKey} />
       </Main>
 
-      <QuoteDialogs onRefresh={handleRefresh} />
+      <CustomerSampleDialogs onRefresh={handleRefresh} />
     </>
   )
 }
 
-export function QuoteList() {
+export function CustomerSampleList() {
   return (
-    <QuoteProvider>
-      <QuoteListContent />
-    </QuoteProvider>
+    <CustomerSampleProvider>
+      <CustomerSampleListContent />
+    </CustomerSampleProvider>
   )
 }

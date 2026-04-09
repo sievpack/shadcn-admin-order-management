@@ -23,7 +23,7 @@ async def get_quote_data(
 ):
     """获取报价单数据"""
     if query == "list":
-        items, total = quote_service.search(
+        items, total = quote_service.search_distinct(
             db, 客户名称=客户名称, 报价单号=报价单号,
             page=page, page_size=limit
         )
@@ -43,11 +43,14 @@ async def get_quote_data(
         if not quote:
             return {"code": 1, "msg": "报价单不存在", "count": 0, "data": []}
 
+        items, total = quote_service.search(db, 报价单号=quote.报价单号, page=1, page_size=1000)
+        quote_dict = quote_service.to_dict(quote)
+        quote_dict['items'] = [quote_service.to_item_dict(item) for item in items]
         return {
             "code": 0,
             "msg": "success",
             "count": 1,
-            "data": [quote_service.to_dict(quote)]
+            "data": [quote_dict]
         }
 
     else:

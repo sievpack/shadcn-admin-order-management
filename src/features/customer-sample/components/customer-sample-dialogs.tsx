@@ -1,19 +1,20 @@
-import { QuoteAddDialog } from './quote-add-dialog'
-import { QuoteDeleteDialog } from './quote-delete-dialog'
-import { QuoteEditDialog } from './quote-edit-dialog'
-import { useQuote } from './quote-provider'
-import { QuoteViewDialog } from './quote-view-dialog'
+import { CustomerSampleDeleteDialog } from './customer-sample-delete-dialog'
+import { CustomerSampleDetailDialog } from './customer-sample-detail-dialog'
+import { CustomerSampleFormDialog } from './customer-sample-form-dialog'
+import { useCustomerSample } from './customer-sample-provider'
 
-type QuoteDialogsProps = {
+type CustomerSampleDialogsProps = {
   onRefresh: () => void
 }
 
-export function QuoteDialogs({ onRefresh }: QuoteDialogsProps) {
-  const { open, setOpen, currentRow, setCurrentRow } = useQuote()
+export function CustomerSampleDialogs({
+  onRefresh,
+}: CustomerSampleDialogsProps) {
+  const { open, setOpen, currentRow, setCurrentRow } = useCustomerSample()
 
   return (
     <>
-      <QuoteViewDialog
+      <CustomerSampleDetailDialog
         open={open === 'view'}
         onOpenChange={(val) => {
           if (!val) {
@@ -21,10 +22,11 @@ export function QuoteDialogs({ onRefresh }: QuoteDialogsProps) {
             setCurrentRow(null)
           }
         }}
-        quote={currentRow}
+        data={currentRow}
       />
 
-      <QuoteAddDialog
+      <CustomerSampleFormDialog
+        mode='add'
         open={open === 'add'}
         onOpenChange={(val) => {
           if (!val) {
@@ -32,12 +34,14 @@ export function QuoteDialogs({ onRefresh }: QuoteDialogsProps) {
             setCurrentRow(null)
           }
         }}
+        data={null}
         onSuccess={onRefresh}
       />
 
       {currentRow && (
         <>
-          <QuoteEditDialog
+          <CustomerSampleFormDialog
+            mode='edit'
             key={`edit-${currentRow.id}`}
             open={open === 'edit'}
             onOpenChange={(val) => {
@@ -46,11 +50,11 @@ export function QuoteDialogs({ onRefresh }: QuoteDialogsProps) {
                 setTimeout(() => setCurrentRow(null), 300)
               }
             }}
-            quote={currentRow}
+            data={currentRow}
             onSuccess={onRefresh}
           />
 
-          <QuoteDeleteDialog
+          <CustomerSampleDeleteDialog
             key={`delete-${currentRow.id}`}
             open={open === 'delete'}
             onOpenChange={(val) => {
@@ -59,7 +63,7 @@ export function QuoteDialogs({ onRefresh }: QuoteDialogsProps) {
                 setTimeout(() => setCurrentRow(null), 300)
               }
             }}
-            quote={currentRow}
+            data={currentRow}
             onDeleteSuccess={onRefresh}
           />
         </>

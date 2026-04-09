@@ -21,13 +21,22 @@ class QuoteService:
     ) -> Tuple[List[Quote], int]:
         return self.repo.search(db, 客户名称=客户名称, 报价单号=报价单号, page=page, page_size=page_size)
 
+    def search_distinct(
+        self,
+        db: Session,
+        客户名称: Optional[str] = None,
+        报价单号: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[List[Quote], int]:
+        return self.repo.search_distinct(db, 客户名称=客户名称, 报价单号=报价单号, page=page, page_size=page_size)
+
     def search_dict(self, db: Session, **kwargs) -> Tuple[List[Dict[str, Any]], int]:
         items, total = self.search(db, **kwargs)
         return [self.to_dict(item) for item in items], total
 
     def create(self, db: Session, **kwargs) -> Tuple[Optional[Quote], Optional[str]]:
         try:
-            # 排除含税总价，因为它是计算列
             if '含税总价' in kwargs:
                 del kwargs['含税总价']
             quote = self.repo.create(db, **kwargs)
@@ -40,7 +49,6 @@ class QuoteService:
         if not quote:
             return None, "报价单不存在"
         try:
-            # 排除含税总价，因为它是计算列
             if '含税总价' in kwargs:
                 del kwargs['含税总价']
             updated = self.repo.update(db, quote, **kwargs)
@@ -61,6 +69,22 @@ class QuoteService:
             '报价项目': quote.报价项目,
             '报价单号': quote.报价单号,
             '报价日期': quote.报价日期.strftime('%Y-%m-%d') if quote.报价日期 else None,
+            '客户物料编码': quote.客户物料编码,
+            '客户物料名称': quote.客户物料名称,
+            '客户规格型号': quote.客户规格型号,
+            '嘉尼索规格': quote.嘉尼索规格,
+            '嘉尼索型号': quote.嘉尼索型号,
+            '单位': quote.单位,
+            '数量': quote.数量,
+            '未税单价': quote.未税单价,
+            '含税单价': quote.含税单价,
+            '含税总价': quote.含税总价,
+            '备注': quote.备注
+        }
+
+    def to_item_dict(self, quote: Quote) -> Dict[str, Any]:
+        return {
+            'id': quote.id,
             '客户物料编码': quote.客户物料编码,
             '客户物料名称': quote.客户物料名称,
             '客户规格型号': quote.客户规格型号,
