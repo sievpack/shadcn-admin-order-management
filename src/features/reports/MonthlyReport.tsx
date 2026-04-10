@@ -17,13 +17,8 @@ import { zhCN } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { reportAPI } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { Header } from '@/components/layout/header'
+import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
-import { NotificationIcon } from '@/components/notifications/notification-icon'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search as SearchComponent } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 
 const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
@@ -109,15 +104,7 @@ export function MonthlyReport() {
 
   return (
     <>
-      <Header>
-        <SearchComponent />
-        <div className='ms-auto flex items-center space-x-4'>
-          <NotificationIcon />
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
-        </div>
-      </Header>
+      <AppHeader />
 
       <Main>
         <div className='mb-2 flex items-center justify-between'>

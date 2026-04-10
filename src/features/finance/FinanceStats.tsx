@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react'
 import { financeStatsAPI } from '@/lib/finance-api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { Header } from '@/components/layout/header'
+import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
-import { NotificationIcon } from '@/components/notifications/notification-icon'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search as SearchComponent } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 
 interface IncomeStats {
   月份: string
@@ -40,15 +35,7 @@ export function FinanceStats() {
 
   return (
     <>
-      <Header>
-        <SearchComponent />
-        <div className='ms-auto flex items-center space-x-4'>
-          <NotificationIcon />
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
-        </div>
-      </Header>
+      <AppHeader />
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div>
           <h2 className='text-2xl font-bold tracking-tight'>财务报表</h2>

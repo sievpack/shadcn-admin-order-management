@@ -38,13 +38,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { Header } from '@/components/layout/header'
+import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
-import { NotificationIcon } from '@/components/notifications/notification-icon'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search as SearchComponent } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { ProductPdfDocument } from './components/pdf/ProductPdfDocument'
 
 const formatNumber = (num: number): string => {
@@ -330,15 +325,7 @@ export function ProductReport() {
 
   return (
     <>
-      <Header>
-        <SearchComponent />
-        <div className='ms-auto flex items-center gap-4'>
-          <NotificationIcon />
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
-        </div>
-      </Header>
+      <AppHeader />
 
       <Main>
         <div className='mb-2 flex items-center justify-between gap-2'>

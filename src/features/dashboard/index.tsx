@@ -2,14 +2,9 @@ import { useState, useEffect } from 'react'
 import { Send } from 'lucide-react'
 import { orderStatsAPI } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { Header } from '@/components/layout/header'
+import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
 import { TopNav } from '@/components/layout/top-nav'
-import { NotificationIcon } from '@/components/notifications/notification-icon'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { RecentOrders } from './components/recent-orders'
 import { RecentShipments } from './components/recent-shipments'
 import { SalesTrend } from './components/sales-trend'
@@ -85,16 +80,15 @@ export function Dashboard() {
 
   return (
     <>
-      <Header>
+      <AppHeader>
         <TopNav links={topNav} />
         <div className='ms-auto flex items-center space-x-4'>
-          <Search />
           <NotificationIcon />
           <ThemeSwitch />
           <ConfigDrawer />
           <ProfileDropdown />
         </div>
-      </Header>
+      </AppHeader>
 
       <Main>
         <div className='mb-2 flex items-center justify-between'>

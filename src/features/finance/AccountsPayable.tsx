@@ -3,13 +3,8 @@ import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { financeAPAPI } from '@/lib/finance-api'
 import { Button } from '@/components/ui/button'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { Header } from '@/components/layout/header'
+import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
-import { NotificationIcon } from '@/components/notifications/notification-icon'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search as SearchComponent } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { type AccountsPayable } from './components/ap-columns'
 import {
   APAddDialog,
@@ -90,15 +85,7 @@ export function AccountsPayableList() {
 
   return (
     <>
-      <Header>
-        <SearchComponent />
-        <div className='ms-auto flex items-center space-x-4'>
-          <NotificationIcon />
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
-        </div>
-      </Header>
+      <AppHeader />
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>
