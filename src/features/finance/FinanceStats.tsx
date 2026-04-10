@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { NotificationIcon } from '@/components/notifications/notification-icon'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search as SearchComponent } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
@@ -42,6 +43,7 @@ export function FinanceStats() {
       <Header>
         <SearchComponent />
         <div className='ms-auto flex items-center space-x-4'>
+          <NotificationIcon />
           <ThemeSwitch />
           <ConfigDrawer />
           <ProfileDropdown />

@@ -1,5 +1,5 @@
-import { toast } from 'sonner'
 import { orderAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,15 +32,27 @@ export function ShippingDeleteDialog({
         currentRow.快递单号
       )
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { 发货单号: currentRow.发货单号 },
+        })
         onDeleted?.()
         onOpenChange(false)
       } else {
-        toast.error(response.data.msg || '删除失败')
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('删除失败:', error)
-      toast.error('删除失败，请稍后重试')
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     }
   }
 

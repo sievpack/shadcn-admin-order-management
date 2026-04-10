@@ -129,6 +129,7 @@ export function UnshippedTable({
 
   useEffect(() => {
     if (refreshKey > 0) {
+      setRowSelection({})
       fetchData()
     }
   }, [refreshKey])

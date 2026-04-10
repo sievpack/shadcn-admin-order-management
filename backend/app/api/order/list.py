@@ -20,8 +20,7 @@ async def get_orders(
     query: Optional[str] = None,
     items: bool = False,
     id: Optional[int] = None,
-    status: Optional[str] = None,
-    发货状态: int = Query(2, description="0:未发货, 1:已发货, 2:全部"),
+    发货状态: Optional[str] = Query(None, description="pending:未发货, partial:部分发货, shipped:已发货，多个用逗号分隔"),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db_jns),
@@ -33,8 +32,16 @@ async def get_orders(
             start = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
             end = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
 
+            # 转换发货状态为整数
+            ship_status = None
+            if 发货状态 is not None:
+                try:
+                    ship_status = int(发货状态)
+                except (ValueError, TypeError):
+                    pass
+
             results, total = order_list_service.get_with_items(
-                db, query=query, 发货状态=发货状态,
+                db, query=query, 发货状态=ship_status,
                 start_date=start, end_date=end,
                 page=page, limit=limit if limit > 0 else page_size
             )
@@ -65,15 +72,18 @@ async def get_orders(
         start = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
         end = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
 
-        status_bool = None
-        if status is not None:
-            status_bool = status.lower() == 'true'
-
         orders, total = order_list_service.search(
-            db, query=query, status=status_bool,
+            db, query=query, 发货状态=发货状态,
             start_date=start, end_date=end,
             page=page, page_size=limit if limit > 0 else page_size
         )
+
+        def map_status(s: int) -> str:
+            if s == 2:
+                return 'shipped'
+            elif s == 1:
+                return 'partial'
+            return 'pending'
 
         return {"code": 0, "msg": "success", "total": total, "data": [
             {
@@ -82,7 +92,7 @@ async def get_orders(
                 "客户名称": item.客户名称,
                 "订单日期": item.订单日期.strftime('%Y-%m-%d') if item.订单日期 else None,
                 "交货日期": item.交货日期.strftime('%Y-%m-%d') if item.交货日期 else None,
-                "status": item.status
+                "发货状态": map_status(item.status)
             }
             for item in orders
         ]}
@@ -193,7 +203,7 @@ async def mark_as_shipped(
     if not isinstance(order_ids, list):
         order_ids = [order_ids] if order_ids else []
 
-    updated, error = order_list_service.mark_shipped(
+    updated, error, notification_msg = order_list_service.mark_shipped(
         db,
         order_ids=order_ids,
         发货单号=data.get('发货单号'),
@@ -205,5 +215,11 @@ async def mark_as_shipped(
         return {"code": 1, "msg": error, "data": {}}
 
     db.commit()
+
+    # 发送 WebSocket 通知
+    if notification_msg:
+        from app.services.notification_service import get_notification_manager
+        manager = get_notification_manager()
+        await manager.broadcast(notification_msg)
 
     return {"code": 0, "msg": f"成功标记 {updated} 条订单为已发货", "data": {"updated": updated}}

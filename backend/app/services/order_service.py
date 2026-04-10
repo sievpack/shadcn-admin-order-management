@@ -1,8 +1,12 @@
+import asyncio
+import logging
 import time
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, date
+
+logger = logging.getLogger(__name__)
 
 from app.models.order import Order, OrderList
 from app.repositories.order_repository import order_repository, order_list_repository
@@ -155,7 +159,7 @@ class OrderListService(BaseService[OrderList]):
         self,
         db: Session,
         query: str = None,
-        status: bool = None,
+        发货状态: str = None,
         start_date: date = None,
         end_date: date = None,
         page: int = 1,
@@ -163,11 +167,15 @@ class OrderListService(BaseService[OrderList]):
     ) -> Tuple[List[OrderList], int]:
         """搜索订单列表"""
         skip = (page - 1) * page_size
-        return self.repository.search(db, query, status, start_date, end_date, skip, page_size)
+        return self.repository.search(db, query, 发货状态, start_date, end_date, skip, page_size)
 
     def get_all(self, db: Session) -> List[OrderList]:
         """获取所有订单列表"""
         return self.repository.get_all(db)
+
+    def get_shipping_status_map(self, db: Session, order_ids: List[int]) -> dict:
+        """批量获取订单的发货状态"""
+        return self.repository.get_shipping_status_map(db, order_ids)
 
     def get_with_items(
         self,
@@ -239,31 +247,57 @@ class OrderListService(BaseService[OrderList]):
         发货单号: str, 
         快递单号: str, 
         快递公司: str = ''
-    ) -> Tuple[int, Optional[str]]:
+    ) -> Tuple[int, Optional[str], Optional[dict]]:
         """标记发货"""
         from app.models.ship import Ship
 
         if not order_ids:
-            return 0, "请指定要标记发货的订单ID"
+            return 0, "请指定要标记发货的订单ID", None
         if not 发货单号 or not 快递单号:
-            return 0, "发货单号和快递单号不能为空"
+            return 0, "发货单号和快递单号不能为空", None
+
+        orders = db.query(Order).filter(Order.id.in_(order_ids)).all()
+        if not orders:
+            return 0, "未找到要标记发货的订单", None
+        
+        客户名称 = orders[0].客户名称 if orders else ''
 
         ship_record = Ship(
             发货日期=datetime.now(),
+            发货单号=发货单号,
             快递单号=快递单号,
             快递公司=快递公司,
-            客户名称=''
+            客户名称=客户名称
         )
         db.add(ship_record)
         db.flush()
 
-        updated = db.query(Order).filter(Order.id.in_(order_ids)).update({
+        update_data = {
             'ship_id': ship_record.id,
             '发货单号': 发货单号,
             '快递单号': 快递单号
-        }, synchronize_session=False)
+        }
+        
+        updated = db.query(Order).filter(Order.id.in_(order_ids)).update(
+            update_data, 
+            synchronize_session=False
+        )
 
-        return updated, None
+        notification_msg = None
+        if updated > 0:
+            order_nums = [o.订单编号 for o in orders if o.订单编号]
+            if order_nums:
+                notification_msg = {
+                    "type": "notification",
+                    "payload": {
+                        "type": "order",
+                        "title": "订单已发货",
+                        "content": f"订单 {', '.join(order_nums)} 已发货，快递: {快递单号}",
+                        "timestamp": int(datetime.now().timestamp())
+                    }
+                }
+
+        return updated, None, notification_msg
 
 
 class OrderStatsService:
