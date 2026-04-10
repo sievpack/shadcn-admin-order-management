@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { printWorkOrder } from '@/lib/print'
 import {
   productionOrderAPI,
@@ -8,6 +7,7 @@ import {
   productionReportAPI,
   codeAPI,
 } from '@/lib/production-api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -133,14 +133,26 @@ export function ProductionOrderList() {
     try {
       const response = await productionOrderAPI.delete(row.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { 工单编号: row.工单编号 },
+        })
         setShowDeleteDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('删除失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -148,13 +160,25 @@ export function ProductionOrderList() {
     try {
       const response = await productionOrderAPI.start(row.id)
       if (response.data.code === 0) {
-        toast.success('开始生产成功')
+        showToastWithData({
+          type: 'success',
+          title: '开始生产成功',
+          data: { 工单编号: row.工单编号 },
+        })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '操作失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('操作失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '操作失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -168,14 +192,26 @@ export function ProductionOrderList() {
     try {
       const response = await productionOrderAPI.finish(selectedRow.id)
       if (response.data.code === 0) {
-        toast.success('完工确认成功')
+        showToastWithData({
+          type: 'success',
+          title: '完工确认成功',
+          data: { 工单编号: selectedRow.工单编号 },
+        })
         setShowFinishDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '操作失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('操作失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '操作失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -183,13 +219,25 @@ export function ProductionOrderList() {
     try {
       const response = await productionOrderAPI.pause(row.id)
       if (response.data.code === 0) {
-        toast.success('已暂停')
+        showToastWithData({
+          type: 'success',
+          title: '已暂停',
+          data: { 工单编号: row.工单编号 },
+        })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '操作失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('操作失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '操作失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -210,15 +258,15 @@ export function ProductionOrderList() {
     if (reportLoading) return
 
     if (!reportForm.报工数量 || reportForm.报工数量 <= 0) {
-      toast.error('报工数量必须大于0')
+      showToastWithData({ type: 'error', title: '报工数量必须大于0' })
       return
     }
     if (reportForm.不良数量 < 0) {
-      toast.error('不良数量不能为负数')
+      showToastWithData({ type: 'error', title: '不良数量不能为负数' })
       return
     }
     if (!reportForm.报工人) {
-      toast.error('请选择报工人')
+      showToastWithData({ type: 'error', title: '请选择报工人' })
       return
     }
     try {
@@ -233,18 +281,41 @@ export function ProductionOrderList() {
       if (response.data.code === 0) {
         const data = response.data.data
         if (data.is_completed) {
-          toast.success('报工成功，工单已完成！')
+          showToastWithData({
+            type: 'success',
+            title: '报工成功，工单已完成！',
+            data: {
+              工单编号: reportForm.工单编号,
+              报工数量: reportForm.报工数量,
+            },
+          })
         } else {
           const remaining = data.remaining || 0
-          toast.success(`报工成功，剩余 ${remaining} 件`)
+          showToastWithData({
+            type: 'success',
+            title: `报工成功，剩余 ${remaining} 件`,
+            data: {
+              工单编号: reportForm.工单编号,
+              报工数量: reportForm.报工数量,
+              剩余: remaining,
+            },
+          })
         }
         setShowReportDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '报工失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('报工失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '报工失败',
+        data: { error: error.message },
+      })
     } finally {
       setReportLoading(false)
     }
@@ -262,14 +333,26 @@ export function ProductionOrderList() {
         ...editForm,
       })
       if (response.data.code === 0) {
-        toast.success('更新成功')
+        showToastWithData({
+          type: 'success',
+          title: '更新成功',
+          data: { 工单编号: selectedRow.工单编号 },
+        })
         setShowEditDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '更新失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('更新失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '更新失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -278,7 +361,11 @@ export function ProductionOrderList() {
       setAddLoading(true)
       const response = await productionOrderAPI.create(addForm)
       if (response.data.code === 0) {
-        toast.success('创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data: { 工单编号: addForm.工单编号 },
+        })
         setShowAddDialog(false)
         setAddForm({
           工单状态: '待生产',
@@ -287,10 +374,18 @@ export function ProductionOrderList() {
         })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('创建失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '创建失败',
+        data: { error: error.message },
+      })
     } finally {
       setAddLoading(false)
     }

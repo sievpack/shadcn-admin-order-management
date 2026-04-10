@@ -72,7 +72,7 @@ async def get_orders(
         orders, total = order_list_service.search(
             db, query=query, status=status_bool,
             start_date=start, end_date=end,
-            page=page, page_size=page_size
+            page=page, page_size=limit if limit > 0 else page_size
         )
 
         return {"code": 0, "msg": "success", "total": total, "data": [

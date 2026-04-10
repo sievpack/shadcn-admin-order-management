@@ -1,11 +1,11 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, startTransition } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { useDictDataByType } from '@/queries/dict/useDictData'
 import { useAllOrderItems } from '@/queries/orders/useAllOrderItems'
 import { useDeleteOrderItem } from '@/queries/orders/useDeleteOrderItem'
 import { useUpdateOrderItem } from '@/queries/orders/useUpdateOrderItem'
-import { toast } from 'sonner'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -33,16 +33,14 @@ export function AllOrders() {
       globalFilter: { enabled: true, key: 'filter' },
     })
 
+  const syncBeltTypeParam = (search as Record<string, unknown>)
+    ?.sync_belt_type as string | undefined
   const specParam = (search as Record<string, unknown>)?.spec as
     | string
     | undefined
-  const modelParam = (search as Record<string, unknown>)?.model as
-    | string
-    | undefined
-  const syncBeltTypeParam = (search as Record<string, unknown>)
-    ?.sync_belt_type as string | undefined
 
   const { data: syncBeltTypeData } = useDictDataByType('sync_belt_pitch')
+  const { data: specData } = useDictDataByType('sync_belt_spec')
 
   const syncBeltTypeOptions = useMemo(() => {
     if (!syncBeltTypeData?.data?.data) return []
@@ -50,18 +48,27 @@ export function AllOrders() {
     if (!Array.isArray(data)) return []
     return data.map((item: any) => ({
       label: item.dict_label,
-      value: item.dict_label, // 使用 dict_label 作为 value，确保唯一性
+      value: item.dict_label,
     }))
   }, [syncBeltTypeData])
+
+  const specOptions = useMemo(() => {
+    if (!specData?.data?.data) return []
+    const data = specData.data.data
+    if (!Array.isArray(data)) return []
+    return data.map((item: any) => ({
+      label: item.dict_label,
+      value: item.dict_label,
+    }))
+  }, [specData])
 
   const { data: orderItemsResponse, isLoading } = useAllOrderItems({
     params: {
       page: pagination.pageIndex + 1,
       limit: pagination.pageSize,
       query: globalFilter || undefined,
-      规格: specParam || undefined,
-      型号: modelParam || undefined,
       产品类型: syncBeltTypeParam || undefined,
+      规格: specParam || undefined,
     },
   })
 
@@ -88,10 +95,21 @@ export function AllOrders() {
   const handleSaveItem = useCallback(
     async (data: Partial<OrderItem>) => {
       try {
-        await updateOrderItemMutation.mutateAsync(data as any)
+        const response = await updateOrderItemMutation.mutateAsync(data as any)
         queryClient.invalidateQueries({ queryKey: ['orderItems'] })
-      } catch (error) {
+        showToastWithData({
+          type: 'success',
+          title: '更新成功',
+          data,
+        })
+        return response
+      } catch (error: any) {
         console.error('更新订单分项失败:', error)
+        showToastWithData({
+          type: 'error',
+          title: '更新失败',
+          data: { error: error.message },
+        })
         throw error
       }
     },
@@ -102,8 +120,18 @@ export function AllOrders() {
     async (id: number) => {
       try {
         await deleteOrderItemMutation.mutateAsync(id)
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { id },
+        })
         return true
-      } catch {
+      } catch (error: any) {
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { error: error.message },
+        })
         return false
       }
     },
@@ -116,48 +144,47 @@ export function AllOrders() {
         for (const id of ids) {
           await deleteOrderItemMutation.mutateAsync(id)
         }
-        toast.success(`成功删除 ${ids.length} 条订单分项`)
-      } catch {
-        toast.error('批量删除失败，请稍后重试')
+        showToastWithData({
+          type: 'success',
+          title: `成功删除 ${ids.length} 条订单分项`,
+          data: { 删除数量: ids.length },
+        })
+      } catch (error: any) {
+        showToastWithData({
+          type: 'error',
+          title: '批量删除失败',
+          data: { error: error.message },
+        })
       }
     },
     [deleteOrderItemMutation]
   )
 
-  const handleSpecFilterChange = useCallback(
-    (value: string) => {
-      const currentSearch = search as Record<string, unknown>
-      navigate({
-        search: {
-          ...currentSearch,
-          spec: value || undefined,
-        },
-      })
-    },
-    [search, navigate]
-  )
-
-  const handleModelFilterChange = useCallback(
-    (value: string) => {
-      const currentSearch = search as Record<string, unknown>
-      navigate({
-        search: {
-          ...currentSearch,
-          model: value || undefined,
-        },
-      })
-    },
-    [search, navigate]
-  )
-
   const handleSyncBeltTypeFilterChange = useCallback(
     (value: string | undefined) => {
       const currentSearch = search as Record<string, unknown>
-      navigate({
-        search: {
-          ...currentSearch,
-          sync_belt_type: value || undefined,
-        },
+      startTransition(() => {
+        navigate({
+          search: {
+            ...currentSearch,
+            sync_belt_type: value || undefined,
+          },
+        })
+      })
+    },
+    [search, navigate]
+  )
+
+  const handleSpecFilterChange = useCallback(
+    (value: string | undefined) => {
+      const currentSearch = search as Record<string, unknown>
+      startTransition(() => {
+        navigate({
+          search: {
+            ...currentSearch,
+            spec: value || undefined,
+          },
+        })
       })
     },
     [search, navigate]
@@ -195,13 +222,15 @@ export function AllOrders() {
           onDeleteItem={handleDeleteOrderItem}
           onViewItem={handleViewItem}
           onEditItem={handleEditItem}
-          specFilter={specParam}
-          onSpecFilterChange={handleSpecFilterChange}
-          modelFilter={modelParam}
-          onModelFilterChange={handleModelFilterChange}
           syncBeltTypeOptions={syncBeltTypeOptions}
           syncBeltTypeFilter={syncBeltTypeParam}
           onSyncBeltTypeFilterChange={handleSyncBeltTypeFilterChange}
+          specOptions={specOptions}
+          specFilter={specParam}
+          onSpecFilterChange={handleSpecFilterChange}
+          onReset={() => {
+            navigate({ search: {} })
+          }}
         />
       </Main>
 

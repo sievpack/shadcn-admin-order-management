@@ -37,8 +37,10 @@ class QuoteService:
 
     def create(self, db: Session, **kwargs) -> Tuple[Optional[Quote], Optional[str]]:
         try:
-            if '含税总价' in kwargs:
-                del kwargs['含税总价']
+            if '含税总价' not in kwargs or kwargs['含税总价'] is None:
+                数量 = kwargs.get('数量') or 0
+                含税单价 = kwargs.get('含税单价') or 0
+                kwargs['含税总价'] = 数量 * 含税单价
             quote = self.repo.create(db, **kwargs)
             return quote, None
         except Exception as e:
@@ -49,8 +51,10 @@ class QuoteService:
         if not quote:
             return None, "报价单不存在"
         try:
-            if '含税总价' in kwargs:
-                del kwargs['含税总价']
+            if '含税总价' not in kwargs or kwargs['含税总价'] is None:
+                数量 = kwargs.get('数量') or 0
+                含税单价 = kwargs.get('含税单价') or 0
+                kwargs['含税总价'] = 数量 * 含税单价
             updated = self.repo.update(db, quote, **kwargs)
             return updated, None
         except Exception as e:

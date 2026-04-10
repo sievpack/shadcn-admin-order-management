@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
 import { customerAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -93,7 +93,7 @@ export function CustomerFormDialog({
 
   const handleSave = async () => {
     if (!formData.客户名称) {
-      toast.error('客户名称不能为空')
+      showToastWithData({ type: 'error', title: '客户名称不能为空' })
       return
     }
 
@@ -105,26 +105,46 @@ export function CustomerFormDialog({
           ...formData,
         })
         if (response.data.code === 0) {
-          toast.success('客户资料更新成功')
+          showToastWithData({
+            type: 'success',
+            title: '客户资料更新成功',
+            data: formData,
+          })
           onOpenChange(false)
           onRefresh()
           refreshData()
         } else {
-          toast.error('更新失败: ' + response.data.msg)
+          showToastWithData({
+            type: 'error',
+            title: '更新失败',
+            data: { msg: response.data.msg },
+          })
         }
       } else {
         const response = await customerAPI.createCustomer(formData)
         if (response.data.code === 0) {
-          toast.success('客户创建成功')
+          showToastWithData({
+            type: 'success',
+            title: '客户创建成功',
+            data: formData,
+          })
           onOpenChange(false)
           onRefresh()
           refreshData()
         } else {
-          toast.error('创建失败: ' + response.data.msg)
+          showToastWithData({
+            type: 'error',
+            title: '创建失败',
+            data: { msg: response.data.msg },
+          })
         }
       }
     } catch (error: any) {
-      toast.error('操作失败: ' + (error.message || '未知错误'))
+      showToastWithData({
+        type: 'error',
+        title: '操作失败',
+        data: { error: error.message || '未知错误' },
+      })
     } finally {
       setLoading(false)
     }

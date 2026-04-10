@@ -23,6 +23,7 @@ from app.repositories.finance_repository import (
     AccountsReceivableRepository, accounts_receivable_repository,
     AccountsPayableRepository, accounts_payable_repository
 )
+from app.repositories.customer_sample_repository import CustomerSampleRepository, customer_sample_repository
 
 __all__ = [
     "BaseRepository",
@@ -41,5 +42,6 @@ __all__ = [
     "MaterialConsumptionRepository", "material_consumption_repository",
     "ProductionReportRepository", "production_report_repository",
     "AccountsReceivableRepository", "accounts_receivable_repository",
-    "AccountsPayableRepository", "accounts_payable_repository"
+    "AccountsPayableRepository", "accounts_payable_repository",
+    "CustomerSampleRepository", "customer_sample_repository"
 ]

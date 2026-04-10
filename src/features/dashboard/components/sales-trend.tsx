@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts'
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { orderStatsAPI } from '@/lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import {
@@ -117,13 +117,13 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
       </CardHeader>
       <CardContent className='px-2 pt-4 sm:px-6 sm:pt-6'>
         {trendLoading ? (
-          <div className='flex h-[250px] items-center justify-center'>
+          <div className='flex h-[300px] items-center justify-center'>
             <Skeleton className='h-10 w-10 rounded-full' />
           </div>
         ) : salesTrendData.length > 0 ? (
           <ChartContainer
             config={chartConfig}
-            className='aspect-auto h-[250px] w-full'
+            className='aspect-auto h-[300px] w-full'
           >
             <AreaChart data={salesTrendData}>
               <defs>
@@ -153,12 +153,20 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => `¥${(value / 1000).toFixed(0)}k`}
+                width={50}
+              />
               <XAxis
                 dataKey='date'
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                minTickGap={32}
+                minTickGap={50}
+                padding={{ left: 20, right: 20 }}
                 tickFormatter={(value) => {
                   return `${value}`
                 }}
@@ -194,7 +202,7 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
             </AreaChart>
           </ChartContainer>
         ) : (
-          <div className='flex h-[250px] items-center justify-center'>
+          <div className='flex h-[300px] items-center justify-center'>
             <p className='text-muted-foreground'>暂无销售趋势数据</p>
           </div>
         )}

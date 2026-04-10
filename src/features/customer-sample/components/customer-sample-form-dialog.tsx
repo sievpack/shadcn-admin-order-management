@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
-import { customerSampleAPI } from '@/lib/api'
+import { customerSampleAPI, codeAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,8 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
 import { type CustomerSample } from './customer-sample-provider'
@@ -82,10 +89,11 @@ export function CustomerSampleFormDialog({
           需求日期: data.需求日期 || '',
         })
       } else {
+        const today = new Date().toISOString().slice(0, 10)
         form.reset({
           客户名称: '',
           样品单号: '',
-          下单日期: '',
+          下单日期: today,
           需求日期: '',
           规格: '',
           产品类型: '',
@@ -98,6 +106,17 @@ export function CustomerSampleFormDialog({
           备注: '',
           钢丝: '',
         })
+        const generateCode = async () => {
+          try {
+            const res = await codeAPI.generate({ prefix: 'YP' })
+            if (res.data.code === 0) {
+              form.setValue('样品单号', res.data.data.code)
+            }
+          } catch (error) {
+            console.error('生成样品单号失败:', error)
+          }
+        }
+        generateCode()
       }
     }
   }, [open, mode, data])
@@ -106,16 +125,49 @@ export function CustomerSampleFormDialog({
     setLoading(true)
     try {
       if (mode === 'add') {
-        await customerSampleAPI.create(formData)
-        toast.success('创建成功')
+        const response = await customerSampleAPI.create(formData)
+        if (response.data.code === 0) {
+          showToastWithData({
+            type: 'success',
+            title: '创建成功',
+            data: formData,
+          })
+          onOpenChange(false)
+          onSuccess()
+        } else {
+          showToastWithData({
+            type: 'error',
+            title: '创建失败',
+            data: { msg: response.data.msg },
+          })
+        }
       } else {
-        await customerSampleAPI.update({ id: data!.id, ...formData })
-        toast.success('更新成功')
+        const response = await customerSampleAPI.update({
+          id: data!.id,
+          ...formData,
+        })
+        if (response.data.code === 0) {
+          showToastWithData({
+            type: 'success',
+            title: '更新成功',
+            data: formData,
+          })
+          onOpenChange(false)
+          onSuccess()
+        } else {
+          showToastWithData({
+            type: 'error',
+            title: '更新失败',
+            data: { msg: response.data.msg },
+          })
+        }
       }
-      onOpenChange(false)
-      onSuccess()
-    } catch (error) {
-      toast.error('操作失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '操作失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }
@@ -130,109 +182,240 @@ export function CustomerSampleFormDialog({
             {mode === 'add' ? '创建新的客户样品' : '修改客户样品信息'}
           </DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={form.handleSubmit(handleSubmit)}
-          className='flex flex-col gap-4'
-        >
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='flex flex-col gap-2'>
-              <Label>客户名称</Label>
-              <Input {...form.register('客户名称')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>样品单号</Label>
-              <Input {...form.register('样品单号')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>下单日期</Label>
-              <DatePicker
-                selected={
-                  form.watch('下单日期')
-                    ? new Date(form.watch('下单日期'))
-                    : undefined
-                }
-                onSelect={(date) => {
-                  form.setValue(
-                    '下单日期',
-                    date ? date.toISOString().slice(0, 10) : ''
-                  )
-                }}
-                className='w-full'
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className='flex flex-col gap-4'
+          >
+            <div className='grid grid-cols-2 gap-4'>
+              <FormField
+                control={form.control}
+                name='客户名称'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>客户名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入客户名称' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='样品单号'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>样品单号</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        readOnly={mode === 'add'}
+                        className={mode === 'add' ? 'bg-muted' : ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='下单日期'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>下单日期</FormLabel>
+                    <FormControl>
+                      <DatePicker
+                        selected={
+                          field.value ? new Date(field.value) : undefined
+                        }
+                        onSelect={(date) => {
+                          field.onChange(
+                            date ? date.toISOString().slice(0, 10) : ''
+                          )
+                        }}
+                        className='w-full'
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='需求日期'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>需求日期</FormLabel>
+                    <FormControl>
+                      <DatePicker
+                        selected={
+                          field.value ? new Date(field.value) : undefined
+                        }
+                        onSelect={(date) => {
+                          field.onChange(
+                            date ? date.toISOString().slice(0, 10) : ''
+                          )
+                        }}
+                        className='w-full'
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='规格'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>规格</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入规格' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='产品类型'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>产品类型</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入产品类型' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='型号'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>型号</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入型号' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='单位'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>单位</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入单位' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='数量'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>数量</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        {...field}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          field.onChange(val === '' ? '' : Number(val))
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='齿形'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>齿形</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入齿形' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='材料'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>材料</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入材料' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='钢丝'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>钢丝</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入钢丝' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div className='flex flex-col gap-2'>
-              <Label>需求日期</Label>
-              <DatePicker
-                selected={
-                  form.watch('需求日期')
-                    ? new Date(form.watch('需求日期'))
-                    : undefined
-                }
-                onSelect={(date) => {
-                  form.setValue(
-                    '需求日期',
-                    date ? date.toISOString().slice(0, 10) : ''
-                  )
-                }}
-              />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>规格</Label>
-              <Input {...form.register('规格')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>产品类型</Label>
-              <Input {...form.register('产品类型')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>型号</Label>
-              <Input {...form.register('型号')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>单位</Label>
-              <Input {...form.register('单位')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>数量</Label>
-              <Input
-                type='number'
-                {...form.register('数量', { valueAsNumber: true })}
-              />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>齿形</Label>
-              <Input {...form.register('齿形')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>材料</Label>
-              <Input {...form.register('材料')} />
-            </div>
-            <div className='flex flex-col gap-2'>
-              <Label>钢丝</Label>
-              <Input {...form.register('钢丝')} />
-            </div>
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label>喷码要求</Label>
-            <Input {...form.register('喷码要求')} />
-          </div>
-          <div className='flex flex-col gap-2'>
-            <Label>备注</Label>
-            <Textarea {...form.register('备注')} rows={2} />
-          </div>
-          <DialogFooter>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => onOpenChange(false)}
-            >
-              取消
-            </Button>
-            <Button type='submit' disabled={loading}>
-              {loading ? '保存中...' : '保存'}
-            </Button>
-          </DialogFooter>
-        </form>
+            <FormField
+              control={form.control}
+              name='喷码要求'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>喷码要求</FormLabel>
+                  <FormControl>
+                    <Input placeholder='输入喷码要求' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='备注'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>备注</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder='输入备注' rows={2} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => onOpenChange(false)}
+              >
+                取消
+              </Button>
+              <Button type='submit' disabled={loading}>
+                {loading ? '保存中...' : '保存'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

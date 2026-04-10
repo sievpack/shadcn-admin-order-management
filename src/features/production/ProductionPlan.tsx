@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import {
   productionPlanAPI,
   productionOrderAPI,
   codeAPI,
 } from '@/lib/production-api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -113,13 +113,25 @@ export function ProductionPlanList() {
     try {
       const response = await productionPlanAPI.approve(row.id)
       if (response.data.code === 0) {
-        toast.success('审核通过')
+        showToastWithData({
+          type: 'success',
+          title: '审核通过',
+          data: { 计划编号: row.计划编号 },
+        })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '审核失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('审核失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '审核失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -127,13 +139,25 @@ export function ProductionPlanList() {
     try {
       const response = await productionPlanAPI.reject(row.id)
       if (response.data.code === 0) {
-        toast.success('已驳回')
+        showToastWithData({
+          type: 'success',
+          title: '已驳回',
+          data: { 计划编号: row.计划编号 },
+        })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '驳回失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('驳回失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '驳回失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -157,14 +181,29 @@ export function ProductionPlanList() {
         产线: generateOrderForm.产线,
       })
       if (response.data.code === 0) {
-        toast.success(`工单 ${response.data.data.工单编号} 创建成功`)
+        showToastWithData({
+          type: 'success',
+          title: `工单 ${response.data.data.工单编号} 创建成功`,
+          data: {
+            工单编号: response.data.data.工单编号,
+            数量: generateOrderForm.工单数量,
+          },
+        })
         setShowGenerateOrderDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建工单失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('创建工单失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '创建工单失败',
+        data: { error: error.message },
+      })
     } finally {
       setGenerateLoading(false)
     }
@@ -174,14 +213,26 @@ export function ProductionPlanList() {
     try {
       const response = await productionPlanAPI.delete(row.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { 计划编号: row.计划编号 },
+        })
         setShowDeleteDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('删除失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -193,14 +244,26 @@ export function ProductionPlanList() {
         ...editForm,
       })
       if (response.data.code === 0) {
-        toast.success('更新成功')
+        showToastWithData({
+          type: 'success',
+          title: '更新成功',
+          data: { 计划编号: selectedRow.计划编号 },
+        })
         setShowEditDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '更新失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('更新失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '更新失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -209,7 +272,11 @@ export function ProductionPlanList() {
       setAddLoading(true)
       const response = await productionPlanAPI.create(addForm)
       if (response.data.code === 0) {
-        toast.success('创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data: { 计划编号: addForm.计划编号 },
+        })
         setShowAddDialog(false)
         setAddForm({
           计划状态: '待审核',
@@ -219,10 +286,18 @@ export function ProductionPlanList() {
         })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('创建失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '创建失败',
+        data: { error: error.message },
+      })
     } finally {
       setAddLoading(false)
     }

@@ -701,12 +701,12 @@ export function IndustryReport() {
           onValueChange={(value) => setActiveTab(value)}
           className='flex flex-col gap-4'
         >
-          <TabsList className='w-full justify-start overflow-x-auto'>
+          <TabsList className='inline-flex h-9 w-fit justify-start overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground'>
             {industryTabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className='gap-1 px-3 py-1.5 text-xs'
+                className='gap-1 rounded-md px-3 py-1.5 text-xs data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm'
               >
                 <tab.icon className='h-3.5 w-3.5' />
                 {tab.label}

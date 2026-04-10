@@ -95,10 +95,11 @@ class OrderService(BaseService[Order]):
         query: str = None,
         规格: str = None,
         型号: str = None,
-        产品类型: str = None
+        产品类型: str = None,
+        客户名称: str = None
     ) -> List[Order]:
         """获取所有订单分项（不分页）"""
-        return self.repository.get_all_no_pagination(db, query, 规格, 型号, 产品类型)
+        return self.repository.get_all_no_pagination(db, query, 规格, 型号, 产品类型, 客户名称)
 
     def create_order_item(self, db: Session, data: dict) -> Tuple[Optional[Order], Optional[str]]:
         """创建订单分项"""

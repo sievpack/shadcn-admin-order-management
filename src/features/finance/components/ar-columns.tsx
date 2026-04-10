@@ -105,12 +105,6 @@ export const accountsReceivableColumns = ({
     ),
   },
   {
-    accessorKey: '账期类型',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='账期' />
-    ),
-  },
-  {
     accessorKey: '收款状态',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='状态' />
@@ -118,10 +112,10 @@ export const accountsReceivableColumns = ({
     cell: ({ row }) => {
       const status = row.getValue('收款状态') as string
       const variant =
-        status === '已结清'
-          ? 'default'
+        status === '已结清' || status === '已收款'
+          ? 'success'
           : status === '部分收款'
-            ? 'secondary'
+            ? 'warning'
             : 'destructive'
       return <Badge variant={variant}>{status}</Badge>
     },

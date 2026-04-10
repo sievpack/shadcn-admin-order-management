@@ -76,6 +76,7 @@ CODE_PREFIXES = {
     "SK": "收款记录",
     "FK": "付款记录",
     "PZ": "凭证管理",
+    "YP": "样品单",
 }
 
 
@@ -97,6 +98,7 @@ async def generate_code_api(prefix: str = "DD"):
         - SK: 收款记录
         - FK: 付款记录
         - PZ: 凭证管理
+        - YP: 样品单
         
     Returns:
         {

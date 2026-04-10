@@ -38,6 +38,7 @@ import { Route as AuthenticatedIndustryreportIndexRouteImport } from './routes/_
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedCustomeryearlyreportIndexRouteImport } from './routes/_authenticated/customeryearlyreport/index'
 import { Route as AuthenticatedCustomerlistIndexRouteImport } from './routes/_authenticated/customerlist/index'
+import { Route as AuthenticatedCustomerSampleIndexRouteImport } from './routes/_authenticated/customer-sample/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedAllordersIndexRouteImport } from './routes/_authenticated/allorders/index'
@@ -221,6 +222,12 @@ const AuthenticatedCustomerlistIndexRoute =
     path: '/customerlist/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCustomerSampleIndexRoute =
+  AuthenticatedCustomerSampleIndexRouteImport.update({
+    id: '/customer-sample/',
+    path: '/customer-sample/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   id: '/chats/',
   path: '/chats/',
@@ -390,6 +397,7 @@ export interface FileRoutesByFullPath {
   '/allorders/': typeof AuthenticatedAllordersIndexRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
+  '/customer-sample/': typeof AuthenticatedCustomerSampleIndexRoute
   '/customerlist/': typeof AuthenticatedCustomerlistIndexRoute
   '/customeryearlyreport/': typeof AuthenticatedCustomeryearlyreportIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
@@ -442,6 +450,7 @@ export interface FileRoutesByTo {
   '/allorders': typeof AuthenticatedAllordersIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/customer-sample': typeof AuthenticatedCustomerSampleIndexRoute
   '/customerlist': typeof AuthenticatedCustomerlistIndexRoute
   '/customeryearlyreport': typeof AuthenticatedCustomeryearlyreportIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
@@ -497,6 +506,7 @@ export interface FileRoutesById {
   '/_authenticated/allorders/': typeof AuthenticatedAllordersIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/customer-sample/': typeof AuthenticatedCustomerSampleIndexRoute
   '/_authenticated/customerlist/': typeof AuthenticatedCustomerlistIndexRoute
   '/_authenticated/customeryearlyreport/': typeof AuthenticatedCustomeryearlyreportIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/allorders/'
     | '/apps/'
     | '/chats/'
+    | '/customer-sample/'
     | '/customerlist/'
     | '/customeryearlyreport/'
     | '/help-center/'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/allorders'
     | '/apps'
     | '/chats'
+    | '/customer-sample'
     | '/customerlist'
     | '/customeryearlyreport'
     | '/help-center'
@@ -658,6 +670,7 @@ export interface FileRouteTypes {
     | '/_authenticated/allorders/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
+    | '/_authenticated/customer-sample/'
     | '/_authenticated/customerlist/'
     | '/_authenticated/customeryearlyreport/'
     | '/_authenticated/help-center/'
@@ -897,6 +910,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomerlistIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/customer-sample/': {
+      id: '/_authenticated/customer-sample/'
+      path: '/customer-sample'
+      fullPath: '/customer-sample/'
+      preLoaderRoute: typeof AuthenticatedCustomerSampleIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chats/': {
       id: '/_authenticated/chats/'
       path: '/chats'
@@ -1104,6 +1124,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAllordersIndexRoute: typeof AuthenticatedAllordersIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedCustomerSampleIndexRoute: typeof AuthenticatedCustomerSampleIndexRoute
   AuthenticatedCustomerlistIndexRoute: typeof AuthenticatedCustomerlistIndexRoute
   AuthenticatedCustomeryearlyreportIndexRoute: typeof AuthenticatedCustomeryearlyreportIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
@@ -1143,6 +1164,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAllordersIndexRoute: AuthenticatedAllordersIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedCustomerSampleIndexRoute: AuthenticatedCustomerSampleIndexRoute,
   AuthenticatedCustomerlistIndexRoute: AuthenticatedCustomerlistIndexRoute,
   AuthenticatedCustomeryearlyreportIndexRoute:
     AuthenticatedCustomeryearlyreportIndexRoute,

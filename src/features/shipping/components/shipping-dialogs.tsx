@@ -55,7 +55,6 @@ export function ShippingDialogs({ onRefresh, onEdit }: ShippingDialogsProps) {
             }}
             currentRow={currentRow}
             onRefresh={onRefresh}
-            onAddItems={() => setOpen('addItem')}
             onEdit={onEdit ? handleViewEdit : undefined}
           />
 

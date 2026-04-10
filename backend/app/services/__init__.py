@@ -23,6 +23,7 @@ from app.services.finance_service import (
     AccountsReceivableService, accounts_receivable_service,
     AccountsPayableService, accounts_payable_service
 )
+from app.services.customer_sample_service import CustomerSampleService, customer_sample_service
 
 __all__ = [
     "BaseService",
@@ -41,5 +42,6 @@ __all__ = [
     "MaterialConsumptionService", "material_consumption_service",
     "ProductionReportService", "production_report_service",
     "AccountsReceivableService", "accounts_receivable_service",
-    "AccountsPayableService", "accounts_payable_service"
+    "AccountsPayableService", "accounts_payable_service",
+    "CustomerSampleService", "customer_sample_service"
 ]

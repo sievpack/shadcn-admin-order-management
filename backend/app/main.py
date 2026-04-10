@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api import ship, auth, customer, quote, report, code, print_service, dict as dict_api
 from app.api.order import router as order_router
+from app.api.customer_sample import router as customer_sample_router
 from app.api.production import router as production_router
 from app.api.finance import router as finance_router
 from app.api import user
@@ -39,6 +40,7 @@ app.include_router(user.router, prefix="/api/user", tags=["用户管理"])
 app.include_router(code.router, prefix="/api/code", tags=["编号生成"])
 app.include_router(print_service.router, prefix="/api/print", tags=["打印管理"])
 app.include_router(dict_api.router, prefix="/api/dict", tags=["字典管理"])
+app.include_router(customer_sample_router, prefix="/api/customer-sample", tags=["客户样品"])
 
 
 @app.get("/")

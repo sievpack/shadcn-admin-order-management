@@ -388,7 +388,20 @@ export function OrderListTable({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} className='mt-auto' />
+      <DataTablePagination
+        table={table}
+        serverPaginationMode={true}
+        onPageChange={(page) => {
+          onPaginationChange?.({
+            pageIndex: page - 1,
+            pageSize: pagination.pageSize,
+          })
+        }}
+        onPageSizeChange={(pageSize) => {
+          onPaginationChange?.({ pageIndex: 0, pageSize })
+        }}
+        className='mt-auto'
+      />
       <DataTableBulkActions table={table} onBulkDelete={onBulkDelete!} />
     </div>
   )

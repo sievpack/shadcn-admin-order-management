@@ -6,10 +6,41 @@ export function showSubmittedData(
 ) {
   toast.message(title, {
     description: (
-      // w-[340px]
-      <pre className='mt-2 w-full overflow-x-auto rounded-md bg-slate-950 p-4'>
-        <code className='text-white'>{JSON.stringify(data, null, 2)}</code>
+      <pre className='mt-2 max-h-48 w-full overflow-auto rounded-md bg-slate-950 p-4'>
+        <code className='break-all whitespace-pre-wrap text-white'>
+          {JSON.stringify(data, null, 2)}
+        </code>
       </pre>
     ),
   })
+}
+
+interface ToastWithDataOptions {
+  type: 'success' | 'error'
+  title: string
+  data?: unknown
+}
+
+export function showToastWithData({ type, title, data }: ToastWithDataOptions) {
+  const jsonContent = data ? (
+    <pre className='mt-2 max-h-48 w-full overflow-auto rounded-md bg-slate-950 p-4'>
+      <code className='break-all whitespace-pre-wrap text-white'>
+        {JSON.stringify(data, null, 2)}
+      </code>
+    </pre>
+  ) : null
+
+  if (type === 'success') {
+    if (jsonContent) {
+      toast.success(title, { description: jsonContent })
+    } else {
+      toast.success(title)
+    }
+  } else {
+    if (jsonContent) {
+      toast.error(title, { description: jsonContent })
+    } else {
+      toast.error(title)
+    }
+  }
 }

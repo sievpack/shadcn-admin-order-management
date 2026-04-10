@@ -41,7 +41,12 @@ class AccountsReceivableRepository(BaseRepository):
         if 客户名称:
             query_obj = query_obj.filter(AccountsReceivable.客户名称.contains(客户名称))
         if 收款状态:
-            query_obj = query_obj.filter(AccountsReceivable.收款状态 == 收款状态)
+            # 支持多个状态，逗号分隔
+            status_list = 收款状态.split(',') if isinstance(收款状态, str) else [收款状态]
+            if len(status_list) == 1:
+                query_obj = query_obj.filter(AccountsReceivable.收款状态 == status_list[0])
+            else:
+                query_obj = query_obj.filter(AccountsReceivable.收款状态.in_(status_list))
 
         total = query_obj.count()
         items = query_obj.order_by(desc(AccountsReceivable.id)).offset((page - 1) * page_size).limit(page_size).all()
@@ -118,7 +123,12 @@ class AccountsPayableRepository(BaseRepository):
         if 供应商名称:
             query = query.filter(AccountsPayable.供应商名称.contains(供应商名称))
         if 付款状态:
-            query = query.filter(AccountsPayable.付款状态 == 付款状态)
+            # 支持多个状态，逗号分隔
+            status_list = 付款状态.split(',') if isinstance(付款状态, str) else [付款状态]
+            if len(status_list) == 1:
+                query = query.filter(AccountsPayable.付款状态 == status_list[0])
+            else:
+                query = query.filter(AccountsPayable.付款状态.in_(status_list))
 
         total = query.count()
         items = query.order_by(desc(AccountsPayable.id)).offset((page - 1) * page_size).limit(page_size).all()

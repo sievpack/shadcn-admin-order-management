@@ -90,10 +90,10 @@ export function ARDetailDialog({
             <Label className='text-muted-foreground'>状态</Label>
             <Badge
               variant={
-                ar.收款状态 === '已结清'
-                  ? 'default'
+                ar.收款状态 === '已结清' || ar.收款状态 === '已收款'
+                  ? 'success'
                   : ar.收款状态 === '部分收款'
-                    ? 'secondary'
+                    ? 'warning'
                     : 'destructive'
               }
             >

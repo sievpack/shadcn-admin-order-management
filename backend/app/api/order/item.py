@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/all")
 async def get_all_order_items(
     page: int = 1,
-    page_size: int = 10,
+    limit: int = 10,
     query: Optional[str] = None,
     规格: Optional[str] = None,
     型号: Optional[str] = None,
@@ -25,7 +25,7 @@ async def get_all_order_items(
     try:
         items, total = order_service.search(
             db, query=query, 规格=规格, 型号=型号, 产品类型=产品类型,
-            page=page, page_size=page_size
+            page=page, page_size=limit
         )
 
         return {"code": 0, "msg": "success", "total": total, "data": [
@@ -66,13 +66,14 @@ async def get_all_order_items_no_pagination(
     规格: Optional[str] = None,
     型号: Optional[str] = None,
     产品类型: Optional[str] = None,
+    客户名称: Optional[str] = None,
     db: Session = Depends(get_db_jns),
     current_user: User = Depends(get_current_active_user)
 ):
     """获取所有订单分项数据（不分页，返回全部）"""
     try:
         items = order_service.get_all_no_pagination(
-            db, query=query, 规格=规格, 型号=型号, 产品类型=产品类型
+            db, query=query, 规格=规格, 型号=型号, 产品类型=产品类型, 客户名称=客户名称
         )
 
         return {"code": 0, "msg": "success", "total": len(items), "data": [

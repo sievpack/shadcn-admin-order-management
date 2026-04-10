@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
 import { quoteAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -83,7 +83,7 @@ export function QuoteEditDialog({
 
   const handleSubmit = async () => {
     if (!formData.客户名称 || !formData.报价单号) {
-      toast.error('请填写必填字段')
+      showToastWithData({ type: 'error', title: '请填写必填字段' })
       return
     }
 
@@ -94,14 +94,26 @@ export function QuoteEditDialog({
         ...formData,
       })
       if (response.data.code === 0) {
-        toast.success('更新成功')
+        showToastWithData({
+          type: 'success',
+          title: '更新成功',
+          data: formData,
+        })
         onOpenChange(false)
         onSuccess()
       } else {
-        toast.error(response.data.msg || '更新失败')
+        showToastWithData({
+          type: 'error',
+          title: '更新失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('更新失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '更新失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }

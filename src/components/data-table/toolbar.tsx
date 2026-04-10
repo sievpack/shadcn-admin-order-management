@@ -21,6 +21,13 @@ type DataTableToolbarProps<TData> = {
       icon?: React.ComponentType<{ className?: string }>
     }[]
   }[]
+  /** 文本过滤器 - 简单的输入框过滤 */
+  textFilters?: {
+    columnId: string
+    placeholder: string
+    value?: string
+    onChange?: (value: string) => void
+  }[]
   dateRangeFilter?: {
     startColumnId: string
     endColumnId: string
@@ -43,6 +50,7 @@ export function DataTableToolbar<TData>({
   searchPlaceholder = '搜索...',
   searchKey,
   filters = [],
+  textFilters = [],
   dateRangeFilter,
   onSearch,
   onFilterChange,
@@ -318,6 +326,25 @@ export function DataTableToolbar<TData>({
               />
             )
           })}
+          {textFilters?.map((textFilter) => (
+            <Input
+              key={textFilter.columnId}
+              placeholder={textFilter.placeholder}
+              value={textFilter.value ?? ''}
+              onChange={(e) => {
+                if (isComposingRef.current) return
+                textFilter.onChange?.(e.target.value)
+              }}
+              onCompositionStart={() => {
+                isComposingRef.current = true
+              }}
+              onCompositionEnd={(e) => {
+                isComposingRef.current = false
+                textFilter.onChange?.(e.target.value)
+              }}
+              className='h-8 w-[100px]'
+            />
+          ))}
           {dateRangeFilter && (
             <div className='flex items-center gap-2'>
               <DateRangePicker

@@ -1,6 +1,6 @@
 import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { quoteAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,13 +31,25 @@ export function QuoteDeleteDialog({
     try {
       const response = await quoteAPI.deleteQuote(quote.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { 报价单号: quote.报价单号, id: quote.id },
+        })
         onDeleteSuccess()
       } else {
-        toast.error('删除失败: ' + response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('删除失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     } finally {
       onOpenChange(false)
     }

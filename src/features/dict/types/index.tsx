@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { dictTypeAPI, dictDataAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -67,11 +67,19 @@ export function DictTypePage() {
   const handleMultiDelete = async (rows: DictType[]) => {
     try {
       await Promise.all(rows.map((row) => dictTypeAPI.deleteType(row.id)))
-      toast.success(`成功删除 ${rows.length} 条记录`)
+      showToastWithData({
+        type: 'success',
+        title: `成功删除 ${rows.length} 条记录`,
+        data: { 删除数量: rows.length },
+      })
       setRefreshKey((k) => k + 1)
-    } catch (error) {
+    } catch (error: any) {
       console.error('批量删除失败:', error)
-      toast.error('批量删除失败')
+      showToastWithData({
+        type: 'error',
+        title: '批量删除失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -84,11 +92,19 @@ export function DictTypePage() {
   const handleDeleteData = async (row: DictData) => {
     try {
       await dictDataAPI.deleteData(row.id)
-      toast.success('删除成功')
+      showToastWithData({
+        type: 'success',
+        title: '删除成功',
+        data: { dict_label: row.dict_label },
+      })
       setRefreshKey((k) => k + 1)
-    } catch (error) {
+    } catch (error: any) {
       console.error('删除失败:', error)
-      toast.error('删除失败')
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -119,7 +135,6 @@ export function DictTypePage() {
           </Button>
         </div>
         <DictTypeTable
-          key={refreshKey}
           search={search as Record<string, unknown>}
           navigate={navigate}
           onView={handleView}
@@ -129,6 +144,7 @@ export function DictTypePage() {
           onMultiDelete={handleMultiDelete}
           onEditData={handleEditData}
           onDeleteData={handleDeleteData}
+          refreshKey={refreshKey}
         />
 
         <DictTypeDialogs

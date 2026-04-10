@@ -157,6 +157,7 @@ async def get_dict_data_by_type(
 
     data = [{
         'id': item.id,
+        'dict_sort': item.dict_sort,
         'dict_label': item.dict_label,
         'dict_value': item.dict_value,
         'dict_type': item.dict_type,

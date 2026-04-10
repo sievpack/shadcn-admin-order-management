@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus, Wand2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { financeARAPI } from '@/lib/finance-api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -60,14 +60,26 @@ export function AccountsReceivableList() {
     try {
       const response = await financeARAPI.delete(selectedRow.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { id: selectedRow.id },
+        })
         setShowDeleteDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('删除失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -83,14 +95,26 @@ export function AccountsReceivableList() {
         ...updateData,
       })
       if (response.data.code === 0) {
-        toast.success('更新成功')
+        showToastWithData({
+          type: 'success',
+          title: '更新成功',
+          data: updateData,
+        })
         setShowEditDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '更新失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('更新失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '更新失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -103,7 +127,11 @@ export function AccountsReceivableList() {
       }
       const response = await financeARAPI.create(formData)
       if (response.data.code === 0) {
-        toast.success('创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data: formData,
+        })
         setShowAddDialog(false)
         setAddForm({
           收款状态: '未收款',
@@ -114,10 +142,18 @@ export function AccountsReceivableList() {
         })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('创建失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '创建失败',
+        data: { error: error.message },
+      })
     } finally {
       setSaveLoading(false)
     }

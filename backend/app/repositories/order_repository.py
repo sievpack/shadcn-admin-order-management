@@ -43,7 +43,12 @@ class OrderRepository(BaseRepository[Order]):
             )
 
         if 规格:
-            q = q.filter(Order.规格.like(f"%{规格}%"))
+            spec_values = [s.strip() for s in 规格.split(',') if s.strip()]
+            spec_filters = [Order.规格.like(f"%{spec_val}%") for spec_val in spec_values]
+            if len(spec_filters) == 1:
+                q = q.filter(spec_filters[0])
+            elif len(spec_filters) > 1:
+                q = q.filter(or_(*spec_filters))
 
         if 型号:
             q = q.filter(Order.型号.like(f"%{型号}%"))
@@ -76,7 +81,8 @@ class OrderRepository(BaseRepository[Order]):
         query: str = None,
         规格: str = None,
         型号: str = None,
-        产品类型: str = None
+        产品类型: str = None,
+        客户名称: str = None
     ) -> List[Order]:
         """获取所有订单分项（不分页）"""
         q = db.query(Order)
@@ -94,7 +100,12 @@ class OrderRepository(BaseRepository[Order]):
             )
 
         if 规格:
-            q = q.filter(Order.规格.like(f"%{规格}%"))
+            spec_values = [s.strip() for s in 规格.split(',') if s.strip()]
+            spec_filters = [Order.规格.like(f"%{spec_val}%") for spec_val in spec_values]
+            if len(spec_filters) == 1:
+                q = q.filter(spec_filters[0])
+            elif len(spec_filters) > 1:
+                q = q.filter(or_(*spec_filters))
 
         if 型号:
             q = q.filter(Order.型号.like(f"%{型号}%"))
@@ -106,6 +117,11 @@ class OrderRepository(BaseRepository[Order]):
                 q = q.filter(filters[0])
             elif len(filters) > 1:
                 q = q.filter(or_(*filters))
+
+        if 客户名称:
+            q = q.filter(Order.客户名称.like(f"%{客户名称}%"))
+
+        q = q.filter(Order.ship_id == None)
 
         return q.order_by(desc(Order.id)).all()
 

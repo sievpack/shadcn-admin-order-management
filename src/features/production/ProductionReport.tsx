@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import {
   productionReportAPI,
   productionOrderAPI,
   codeAPI,
 } from '@/lib/production-api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -97,14 +97,26 @@ export function ProductionReportList() {
     try {
       const response = await productionReportAPI.delete(row.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { 报工编号: row.报工编号 },
+        })
         setShowDeleteDialog(false)
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('删除失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     }
   }
 
@@ -113,7 +125,11 @@ export function ProductionReportList() {
       setAddLoading(true)
       const response = await productionReportAPI.create(addForm)
       if (response.data.code === 0) {
-        toast.success('创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data: { 报工编号: addForm.报工编号 },
+        })
         setShowAddDialog(false)
         setAddForm({
           报工数量: 0,
@@ -122,10 +138,18 @@ export function ProductionReportList() {
         })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: { msg: response.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('创建失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '创建失败',
+        data: { error: error.message },
+      })
     } finally {
       setAddLoading(false)
     }

@@ -10,8 +10,8 @@ import {
   FileText,
   Loader2,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -36,6 +36,17 @@ type ShippingItem = {
   备注?: string
 }
 
+type ShippingDetail = {
+  发货单号: string
+  快递单号: string
+  快递公司: string
+  客户名称: string
+  发货日期: string
+  快递费用: number
+  备注: string
+  [key: string]: any
+}
+
 type ShippingEditDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -50,6 +61,7 @@ export function ShippingEditDialog({
   onRefresh,
 }: ShippingEditDialogProps) {
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(false)
   const [formData, setFormData] = useState({
     发货单号: '',
     快递单号: '',
@@ -71,8 +83,34 @@ export function ShippingEditDialog({
         快递费用: shipping.快递费用 || 0,
         备注: shipping.备注 || '',
       })
+      fetchDetail()
     }
   }, [open, shipping])
+
+  const fetchDetail = async () => {
+    if (!shipping?.发货单号) return
+    setFetching(true)
+    try {
+      const response = await shippingAPI.getShippingDetail(shipping.发货单号)
+      if (response.data.code === 0) {
+        const detail: ShippingDetail = response.data.data
+        setFormData((prev) => ({
+          ...prev,
+          发货单号: detail.发货单号 || prev.发货单号,
+          快递单号: detail.快递单号 || prev.快递单号,
+          快递公司: detail.快递公司 || '',
+          客户名称: detail.客户名称 || prev.客户名称,
+          发货日期: detail.发货日期 ? new Date(detail.发货日期) : prev.发货日期,
+          快递费用: detail.快递费用 ?? 0,
+          备注: detail.备注 || '',
+        }))
+      }
+    } catch (error) {
+      console.error('获取发货单详情失败:', error)
+    } finally {
+      setFetching(false)
+    }
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -89,7 +127,7 @@ export function ShippingEditDialog({
 
   const handleSave = async () => {
     if (!formData.发货单号 || !formData.快递单号) {
-      toast.error('请填写发货单号和快递单号')
+      showToastWithData({ type: 'error', title: '请填写发货单号和快递单号' })
       return
     }
 
@@ -107,17 +145,29 @@ export function ShippingEditDialog({
       })
 
       if (response.data.code === 0) {
-        toast.success('发货单更新成功')
+        showToastWithData({
+          type: 'success',
+          title: '发货单更新成功',
+          data: { 发货单号: formData.发货单号, 快递单号: formData.快递单号 },
+        })
         onOpenChange(false)
         if (onRefresh) {
           onRefresh()
         }
       } else {
-        toast.error(response.data.msg || '更新失败')
+        showToastWithData({
+          type: 'error',
+          title: '更新失败',
+          data: { msg: response.data.msg },
+        })
       }
     } catch (error: any) {
       console.error('更新发货单失败:', error)
-      toast.error('更新失败: ' + (error.message || '未知错误'))
+      showToastWithData({
+        type: 'error',
+        title: '更新失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }

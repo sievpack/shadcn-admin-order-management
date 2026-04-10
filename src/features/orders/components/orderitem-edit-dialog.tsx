@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
 import { z } from 'zod/v4'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -102,7 +101,7 @@ export function OrderItemEditDialog({
   const handleSubmit = async (data: OrderItemEditFormData) => {
     setLoading(true)
     try {
-      onSave({
+      await onSave({
         ...data,
         id: item!.id,
         订单编号: item!.订单编号,
@@ -110,9 +109,8 @@ export function OrderItemEditDialog({
         外购: data.外购,
       } as Partial<OrderItem>)
       onOpenChange(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update:', error)
-      toast.error('更新失败')
     } finally {
       setLoading(false)
     }

@@ -68,6 +68,8 @@ class QuoteRepository(BaseRepository):
         return items, total
 
     def create(self, db: Session, **kwargs) -> Quote:
+        if '含税总价' in kwargs:
+            del kwargs['含税总价']
         quote = Quote(**kwargs)
         db.add(quote)
         db.commit()
@@ -75,6 +77,8 @@ class QuoteRepository(BaseRepository):
         return quote
 
     def update(self, db: Session, quote: Quote, **kwargs) -> Quote:
+        if '含税总价' in kwargs:
+            del kwargs['含税总价']
         for key, value in kwargs.items():
             if value is not None:
                 setattr(quote, key, value)

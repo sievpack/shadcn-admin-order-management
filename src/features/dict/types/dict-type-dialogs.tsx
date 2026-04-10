@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { z } from 'zod/v4'
 import { dictTypeAPI, dictDataAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -104,16 +104,20 @@ export function DictTypeDialogs({
     try {
       if (mode === 'add') {
         await dictTypeAPI.createType(data)
-        toast.success('创建成功')
+        showToastWithData({ type: 'success', title: '创建成功', data })
       } else if (mode === 'edit' && dictType) {
         await dictTypeAPI.updateType(dictType.id, data)
-        toast.success('更新成功')
+        showToastWithData({ type: 'success', title: '更新成功', data })
       }
       onOpenChange(false)
       onSuccess()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit:', error)
-      toast.error('操作失败')
+      showToastWithData({
+        type: 'error',
+        title: '操作失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }
@@ -124,12 +128,20 @@ export function DictTypeDialogs({
     setLoading(true)
     try {
       await dictTypeAPI.deleteType(dictType.id)
-      toast.success('删除成功')
+      showToastWithData({
+        type: 'success',
+        title: '删除成功',
+        data: { dict_type: dictType.dict_type },
+      })
       onOpenChange(false)
       onSuccess()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete:', error)
-      toast.error('删除失败')
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }

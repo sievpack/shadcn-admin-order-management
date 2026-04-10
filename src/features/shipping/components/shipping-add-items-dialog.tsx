@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Package, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI, orderItemAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -81,26 +81,25 @@ export function ShippingAddItemsDialog({
 
     setFetchingItems(true)
     try {
-      const response = await orderItemAPI.getAllItemsNoPagination()
+      const response = await orderItemAPI.getAllItemsNoPagination({
+        客户名称: shipping.客户名称,
+      })
       if (response.data.code === 0) {
-        const allItems = response.data.data || []
-        const unshippedItems = allItems.filter(
-          (item: any) => !item.发货单号 && item.客户名称 === shipping.客户名称
-        )
-        setAvailableItems(unshippedItems)
+        const items = response.data.data || []
+        setAvailableItems(items)
 
         const initialSelection = new Map<
           number,
           { 数量: number; checked: boolean }
         >()
-        unshippedItems.forEach((item: OrderItem) => {
+        items.forEach((item: OrderItem) => {
           initialSelection.set(item.id, { 数量: item.数量, checked: false })
         })
         setSelectedItems(initialSelection)
       }
     } catch (error) {
       console.error('获取待发货订单失败:', error)
-      toast.error('获取订单列表失败')
+      showToastWithData({ type: 'error', title: '获取订单列表失败' })
     } finally {
       setFetchingItems(false)
     }
@@ -150,7 +149,7 @@ export function ShippingAddItemsDialog({
     )
 
     if (itemsToAdd.length === 0) {
-      toast.error('请选择至少一个订单项目')
+      showToastWithData({ type: 'error', title: '请选择至少一个订单项目' })
       return
     }
 
@@ -168,17 +167,29 @@ export function ShippingAddItemsDialog({
       })
 
       if (response.data.code === 0) {
-        toast.success(response.data.msg || '添加成功')
+        showToastWithData({
+          type: 'success',
+          title: '添加成功',
+          data: { msg: response.data.msg, 数量: itemsToAdd.length },
+        })
         onOpenChange(false)
         if (onRefresh) {
           onRefresh()
         }
       } else {
-        toast.error(response.data.msg || '添加失败')
+        showToastWithData({
+          type: 'error',
+          title: '添加失败',
+          data: { msg: response.data.msg },
+        })
       }
     } catch (error: any) {
       console.error('添加分项失败:', error)
-      toast.error('添加分项失败: ' + (error.message || '未知错误'))
+      showToastWithData({
+        type: 'error',
+        title: '添加分项失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,7 +30,10 @@ export function ShippingMultiDeleteDialog<TData>({
 
   const handleDelete = async () => {
     if (value.trim() !== CONFIRM_WORD) {
-      toast.error(`请输入 "${CONFIRM_WORD}" 确认删除`)
+      showToastWithData({
+        type: 'error',
+        title: `请输入 "${CONFIRM_WORD}" 确认删除`,
+      })
       return
     }
 
@@ -62,9 +65,17 @@ export function ShippingMultiDeleteDialog<TData>({
     table.resetRowSelection()
 
     if (failCount === 0) {
-      toast.success(`成功删除 ${successCount} 条发货单`)
+      showToastWithData({
+        type: 'success',
+        title: `成功删除 ${successCount} 条发货单`,
+        data: { 成功: successCount, 失败: failCount },
+      })
     } else {
-      toast.error(`成功删除 ${successCount} 条，失败 ${failCount} 条`)
+      showToastWithData({
+        type: 'error',
+        title: `删除结果`,
+        data: { 成功: successCount, 失败: failCount },
+      })
     }
 
     if (onDeleted) {

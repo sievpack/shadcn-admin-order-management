@@ -9,8 +9,8 @@ import {
   FileText,
   Loader2,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI, customerAPI, codeAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import {
@@ -110,7 +110,10 @@ export function NewShip({
 
   const handleSave = async () => {
     if (!formData.发货单号 || !formData.快递单号 || !formData.客户名称) {
-      toast.error('请填写发货单号、快递单号和客户名称')
+      showToastWithData({
+        type: 'error',
+        title: '请填写发货单号、快递单号和客户名称',
+      })
       return
     }
 
@@ -127,7 +130,11 @@ export function NewShip({
 
       const response = await shippingAPI.createShipping(shippingData)
       if (response.data.code === 0) {
-        toast.success('发货单创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '发货单创建成功',
+          data: { 发货单号: formData.发货单号, 客户名称: formData.客户名称 },
+        })
         resetForm()
         onOpenChange(false)
 
@@ -144,11 +151,19 @@ export function NewShip({
           onRefresh()
         }
       } else {
-        toast.error('创建发货单失败: ' + response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建发货单失败',
+          data: { msg: response.data.msg },
+        })
       }
     } catch (error: any) {
       console.error('创建发货单失败:', error)
-      toast.error('创建发货单失败: ' + (error.message || '未知错误'))
+      showToastWithData({
+        type: 'error',
+        title: '创建发货单失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }

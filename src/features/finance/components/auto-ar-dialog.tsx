@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Wand2, FileSpreadsheet } from 'lucide-react'
-import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { customerAPI } from '@/lib/api'
 import api from '@/lib/api'
 import { financeARAPI } from '@/lib/finance-api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import {
@@ -76,7 +76,7 @@ export function AutoARDialog({
 
   const handleCustomerGenerate = async () => {
     if (!selectedCustomer) {
-      toast.error('请选择客户')
+      showToastWithData({ type: 'error', title: '请选择客户' })
       return
     }
     try {
@@ -102,15 +102,27 @@ export function AutoARDialog({
             0
           ) || 0
         setResult({ created, skipped, totalAmount })
-        toast.success(`成功生成 ${created} 条应收单`)
+        showToastWithData({
+          type: 'success',
+          title: `成功生成 ${created} 条应收单`,
+          data: { created, skipped, totalAmount },
+        })
         if (created > 0) {
           onSuccess()
         }
       } else {
-        toast.error(res.data.msg || '生成失败')
+        showToastWithData({
+          type: 'error',
+          title: '生成失败',
+          data: { msg: res.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('生成失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '生成失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }
@@ -139,17 +151,27 @@ export function AutoARDialog({
             0
           ) || 0
         setResult({ created, skipped, totalAmount })
-        toast.success(
-          `成功生成 ${created} 条应收单，总金额 ¥${totalAmount.toLocaleString()}`
-        )
+        showToastWithData({
+          type: 'success',
+          title: `成功生成 ${created} 条应收单`,
+          data: { created, skipped, totalAmount },
+        })
         if (created > 0) {
           onSuccess()
         }
       } else {
-        toast.error(res.data.msg || '生成失败')
+        showToastWithData({
+          type: 'error',
+          title: '生成失败',
+          data: { msg: res.data.msg },
+        })
       }
-    } catch (error) {
-      toast.error('生成失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '生成失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }
@@ -176,12 +198,20 @@ export function AutoARDialog({
         const wb = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(wb, ws, '发货汇总')
         XLSX.writeFile(wb, `${year}年${month}月客户发货汇总.xlsx`)
-        toast.success(`导出成功，共 ${data.length} 条记录`)
+        showToastWithData({
+          type: 'success',
+          title: `导出成功，共 ${data.length} 条记录`,
+          data: { 导出数量: data.length },
+        })
       } else {
-        toast.error('暂无发货数据可导出')
+        showToastWithData({ type: 'error', title: '暂无发货数据可导出' })
       }
-    } catch (error) {
-      toast.error('导出失败')
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '导出失败',
+        data: { error: error.message },
+      })
     } finally {
       setLoading(false)
     }

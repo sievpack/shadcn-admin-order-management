@@ -1,52 +1,103 @@
 import React, { useState } from 'react'
-import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
-import { Card, CardContent } from '@/components/ui/card'
-import { type DateRange } from 'react-day-picker'
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+} from 'date-fns'
+import { zhCN } from 'date-fns/locale'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
 interface MonthlyCalendarProps {
   size?: string
   mdSize?: string
 }
 
-export function MonthlyCalendar({ size = '0.5rem', mdSize = '0.5rem' }: MonthlyCalendarProps) {
-  // 自动选择从当月1号到今天的日期范围
-  const [calendarRange, setCalendarRange] = useState<DateRange | undefined>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date()
-  })
+export function MonthlyCalendar({
+  size = '600px',
+  mdSize = '600px',
+}: MonthlyCalendarProps) {
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const today = new Date()
 
-  // 禁用除了当前月份1号到今天之外的所有日期
-  const isDateDisabled = (date: Date) => {
-    const currentDate = new Date()
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    return date < firstDayOfMonth || date > currentDate
+  const calendarDays = () => {
+    const monthStart = startOfMonth(currentMonth)
+    const monthEnd = endOfMonth(monthStart)
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
+
+    const days: Date[] = []
+    let day = calendarStart
+    while (day <= calendarEnd) {
+      days.push(day)
+      day = addDays(day, 1)
+    }
+    return days
   }
 
+  const days = calendarDays()
+
   return (
-    <Card className="w-full">
-      <CardContent className="p-0">
-        <Calendar
-          mode="range"
-          defaultMonth={calendarRange?.from}
-          selected={calendarRange}
-          onSelect={() => {}}
-          disabled={isDateDisabled}
-          showCaption={true}
-          captionLayout="label"
-          className={`w-full [--cell-size:${size}] md:[--cell-size:${mdSize}]`}
-          components={{
-            DayButton: ({ children, modifiers, day, ...props }) => {
-              const isWeekend =
-                day.date.getDay() === 0 || day.date.getDay() === 6
-              return (
-                <CalendarDayButton day={day} modifiers={modifiers} {...props}>
-                  {children}
-                </CalendarDayButton>
-              )
-            },
-          }}
-        />
-      </CardContent>
-    </Card>
+    <div className='rounded-lg border border-border bg-card p-4'>
+      <div className='mb-4 flex items-center justify-between'>
+        <Button
+          variant='outline'
+          size='icon'
+          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+        >
+          <ChevronLeft className='h-4 w-4' />
+        </Button>
+        <h2 className='text-lg font-semibold'>
+          {format(currentMonth, 'yyyy年MM月', { locale: zhCN })}
+        </h2>
+        <Button
+          variant='outline'
+          size='icon'
+          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+        >
+          <ChevronRight className='h-4 w-4' />
+        </Button>
+      </div>
+
+      <div
+        className='grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-border'
+        style={{ height: size }}
+      >
+        {WEEKDAYS.map((weekday) => (
+          <div
+            key={weekday}
+            className='flex items-center justify-center bg-muted p-2 text-sm font-medium'
+          >
+            {weekday}
+          </div>
+        ))}
+        {days.map((day, index) => {
+          const isCurrentMonth = isSameMonth(day, currentMonth)
+          const isToday = isSameDay(day, today)
+          const isFuture = day > today
+          return (
+            <div
+              key={index}
+              className={`flex flex-col items-center justify-center overflow-hidden bg-background p-2 ${
+                !isCurrentMonth ? 'text-muted-foreground/40' : ''
+              } ${isToday ? 'bg-primary text-primary-foreground' : ''} ${
+                isFuture && isCurrentMonth ? 'text-muted-foreground/30' : ''
+              }`}
+            >
+              <span className='text-xl font-medium'>{format(day, 'd')}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }

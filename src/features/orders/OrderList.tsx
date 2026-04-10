@@ -8,8 +8,8 @@ import { useDeleteOrderItem } from '@/queries/orders/useDeleteOrderItem'
 import { useUpdateOrder } from '@/queries/orders/useUpdateOrder'
 import { useUpdateOrderItem } from '@/queries/orders/useUpdateOrderItem'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { orderItemAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -146,9 +146,13 @@ export function OrderList() {
         setShowEditModal(false)
         setRefreshKey((k) => k + 1)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('更新订单失败:', error)
-      toast.error('更新失败，请稍后重试')
+      showToastWithData({
+        type: 'error',
+        title: '更新失败',
+        data: { error: error.message },
+      })
     }
   }, [editFormData, orderItems, updateOrder, updateOrderItem])
 
@@ -157,9 +161,13 @@ export function OrderList() {
       try {
         await deleteOrder.mutateAsync(id)
         setRefreshKey((k) => k + 1)
-      } catch (error) {
+      } catch (error: any) {
         console.error('删除订单失败:', error)
-        toast.error('删除失败，请稍后重试')
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { error: error.message },
+        })
       }
     },
     [deleteOrder]
@@ -180,11 +188,19 @@ export function OrderList() {
     async (data: any) => {
       try {
         await updateOrderItem.mutateAsync(data)
-        // 触发刷新
+        showToastWithData({
+          type: 'success',
+          title: '更新成功',
+          data,
+        })
         setRefreshKey((k) => k + 1)
-      } catch (error) {
+      } catch (error: any) {
         console.error('更新订单分项失败:', error)
-        toast.error('更新失败，请稍后重试')
+        showToastWithData({
+          type: 'error',
+          title: '更新失败',
+          data: { error: error.message },
+        })
       }
     },
     [updateOrderItem]
@@ -199,16 +215,23 @@ export function OrderList() {
     async (data: any) => {
       try {
         await createOrderItem.mutateAsync(data)
-        // 使该订单的分项缓存失效
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data,
+        })
         queryClient.invalidateQueries({
           queryKey: orderItemKeys.list(data.oid),
         })
-        // 触发刷新
         setRefreshKey((k) => k + 1)
         setAddItemDialogOpen(false)
-      } catch (error) {
+      } catch (error: any) {
         console.error('创建订单分项失败:', error)
-        toast.error('创建失败，请稍后重试')
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: { error: error.message },
+        })
       }
     },
     [createOrderItem, queryClient]
@@ -218,11 +241,19 @@ export function OrderList() {
     if (!itemToDelete) return
     try {
       await deleteOrderItem.mutateAsync(itemToDelete)
-      // 触发刷新，清除缓存
+      showToastWithData({
+        type: 'success',
+        title: '删除成功',
+        data: { id: itemToDelete },
+      })
       setRefreshKey((k) => k + 1)
-    } catch (error) {
+    } catch (error: any) {
       console.error('删除订单分项失败:', error)
-      toast.error('删除失败，请稍后重试')
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     } finally {
       setItemToDelete(null)
     }
@@ -234,11 +265,19 @@ export function OrderList() {
         for (const id of ids) {
           await deleteOrder.mutateAsync(id)
         }
-        toast.success(`成功删除 ${ids.length} 个订单`)
+        showToastWithData({
+          type: 'success',
+          title: `成功删除 ${ids.length} 个订单`,
+          data: { 删除数量: ids.length },
+        })
         setRefreshKey((k) => k + 1)
-      } catch (error) {
+      } catch (error: any) {
         console.error('批量删除订单失败:', error)
-        toast.error('批量删除失败，请稍后重试')
+        showToastWithData({
+          type: 'error',
+          title: '批量删除失败',
+          data: { error: error.message },
+        })
       }
     },
     [deleteOrder]
@@ -295,9 +334,13 @@ export function OrderList() {
           setShowAddModal(false)
           setRefreshKey((k) => k + 1)
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('创建订单失败:', error)
-        toast.error('创建失败，请稍后重试')
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: { error: error.message },
+        })
       }
     },
     [createOrder, createOrderItem]

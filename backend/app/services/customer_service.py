@@ -48,6 +48,10 @@ class CustomerService(BaseService[Customer]):
         if missing_fields:
             return None, f"缺少必填字段: {', '.join(missing_fields)}"
 
+        existing = self.get_by_name(db, data.get("客户名称"))
+        if existing:
+            return None, f"客户名称 '{data.get('客户名称')}' 已存在"
+
         customer = self.repository.create(db, {
             "客户名称": data.get("客户名称"),
             "联系电话": data.get("联系电话"),

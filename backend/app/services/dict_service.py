@@ -51,6 +51,7 @@ class DictTypeService(BaseService[DictType]):
             "available": available,
             "creator_id": creator_id
         })
+        db.commit()
         return dict_type_obj, None
 
     def update_dict_type(
@@ -93,6 +94,7 @@ class DictTypeService(BaseService[DictType]):
 
         dict_data_repository.delete_by_type(db, dict_type_obj.dict_type)
         self.repository.delete(db, type_id)
+        db.commit()
         return True, None
 
 
@@ -133,7 +135,7 @@ class DictDataService(BaseService[DictData]):
         creator_id: int = None
     ) -> DictData:
         """创建字典数据"""
-        return self.repository.create(db, {
+        dict_data = self.repository.create(db, {
             "dict_label": dict_label,
             "dict_value": dict_value,
             "dict_type": dict_type,
@@ -145,6 +147,8 @@ class DictDataService(BaseService[DictData]):
             "available": available,
             "creator_id": creator_id
         })
+        db.commit()
+        return dict_data
 
     def update_dict_data(
         self,
@@ -187,6 +191,7 @@ class DictDataService(BaseService[DictData]):
 
         if update_data:
             self.repository.update(db, dict_data_obj, update_data)
+        db.commit()
         return dict_data_obj, None
 
 

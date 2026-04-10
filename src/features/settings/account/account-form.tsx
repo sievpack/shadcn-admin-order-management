@@ -31,25 +31,25 @@ import {
 import { DatePicker } from '@/components/date-picker'
 
 const languages = [
+  { label: '简体中文', value: 'zh' },
   { label: 'English', value: 'en' },
-  { label: 'French', value: 'fr' },
-  { label: 'German', value: 'de' },
-  { label: 'Spanish', value: 'es' },
-  { label: 'Portuguese', value: 'pt' },
-  { label: 'Russian', value: 'ru' },
-  { label: 'Japanese', value: 'ja' },
-  { label: 'Korean', value: 'ko' },
-  { label: 'Chinese', value: 'zh' },
+  { label: 'Français', value: 'fr' },
+  { label: 'Deutsch', value: 'de' },
+  { label: 'Español', value: 'es' },
+  { label: 'Português', value: 'pt' },
+  { label: 'Русский', value: 'ru' },
+  { label: '日本語', value: 'ja' },
+  { label: '한국어', value: 'ko' },
 ] as const
 
 const accountFormSchema = z.object({
   name: z
     .string()
-    .min(1, 'Please enter your name.')
-    .min(2, 'Name must be at least 2 characters.')
-    .max(30, 'Name must not be longer than 30 characters.'),
-  dob: z.date('Please select your date of birth.'),
-  language: z.string('Please select a language.'),
+    .min(1, '请输入您的姓名')
+    .min(2, '姓名至少2个字符')
+    .max(30, '姓名不能超过30个字符'),
+  dob: z.date('请选择您的出生日期'),
+  language: z.string('请选择语言'),
 })
 
 type AccountFormValues = z.infer<typeof accountFormSchema>
@@ -80,13 +80,12 @@ export function AccountForm() {
           name='name'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>姓名</FormLabel>
               <FormControl>
-                <Input placeholder='Your name' {...field} />
+                <Input placeholder='输入您的姓名' {...field} />
               </FormControl>
               <FormDescription>
-                This is the name that will be displayed on your profile and in
-                emails.
+                这将显示在您的个人资料和邮件中。
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -97,11 +96,9 @@ export function AccountForm() {
           name='dob'
           render={({ field }) => (
             <FormItem className='flex flex-col'>
-              <FormLabel>Date of birth</FormLabel>
+              <FormLabel>出生日期</FormLabel>
               <DatePicker selected={field.value} onSelect={field.onChange} />
-              <FormDescription>
-                Your date of birth is used to calculate your age.
-              </FormDescription>
+              <FormDescription>您的出生日期用于计算年龄。</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -111,7 +108,7 @@ export function AccountForm() {
           name='language'
           render={({ field }) => (
             <FormItem className='flex flex-col'>
-              <FormLabel>Language</FormLabel>
+              <FormLabel>语言</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -127,15 +124,15 @@ export function AccountForm() {
                         ? languages.find(
                             (language) => language.value === field.value
                           )?.label
-                        : 'Select language'}
+                        : '选择语言'}
                       <CaretSortIcon className='ms-2 h-4 w-4 shrink-0 opacity-50' />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className='w-[200px] p-0'>
                   <Command>
-                    <CommandInput placeholder='Search language...' />
-                    <CommandEmpty>No language found.</CommandEmpty>
+                    <CommandInput placeholder='搜索语言...' />
+                    <CommandEmpty>未找到语言</CommandEmpty>
                     <CommandGroup>
                       <CommandList>
                         {languages.map((language) => (
@@ -162,14 +159,12 @@ export function AccountForm() {
                   </Command>
                 </PopoverContent>
               </Popover>
-              <FormDescription>
-                This is the language that will be used in the dashboard.
-              </FormDescription>
+              <FormDescription>这是将在仪表板中使用的语言。</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type='submit'>Update account</Button>
+        <Button type='submit'>更新账户</Button>
       </form>
     </Form>
   )

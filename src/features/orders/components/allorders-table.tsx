@@ -16,7 +16,6 @@ import {
 import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -35,7 +34,6 @@ import {
   DataTableToolbar,
   DataTableBulkActions,
 } from '@/components/data-table'
-import { DataTableFacetedFilter } from '@/components/data-table/faceted-filter'
 import { allOrdersColumns } from './allorders-columns'
 import { type OrderItem } from './allorders-columns'
 import { OrderItemMultiDeleteDialog } from './orderitem-multi-delete-dialog'
@@ -58,20 +56,18 @@ interface AllOrdersTableProps {
   sorting?: SortingState
   onSortingChange?: OnChangeFn<SortingState>
   onSearch?: (query: string) => void
-  onFilterChange?: (columnId: string, value: string | undefined) => void
   onDateRangeChange?: (from: Date | undefined, to: Date | undefined) => void
   onReset?: () => void
-  /** 规格搜索 */
-  specFilter?: string
-  onSpecFilterChange?: (value: string) => void
-  /** 型号搜索 */
-  modelFilter?: string
-  onModelFilterChange?: (value: string) => void
   /** 同步带类型筛选选项 */
   syncBeltTypeOptions?: { label: string; value: string }[]
   /** 同步带类型筛选值 */
   syncBeltTypeFilter?: string
   onSyncBeltTypeFilterChange?: (value: string | undefined) => void
+  /** 规格筛选选项 */
+  specOptions?: { label: string; value: string }[]
+  /** 规格筛选值 */
+  specFilter?: string
+  onSpecFilterChange?: (value: string | undefined) => void
 }
 
 export function AllOrdersTable({
@@ -92,16 +88,14 @@ export function AllOrdersTable({
   sorting: externalSorting,
   onSortingChange: externalOnSortingChange,
   onSearch,
-  onFilterChange,
   onDateRangeChange,
   onReset,
-  specFilter,
-  onSpecFilterChange,
-  modelFilter,
-  onModelFilterChange,
   syncBeltTypeOptions = [],
   syncBeltTypeFilter,
   onSyncBeltTypeFilterChange,
+  specOptions = [],
+  specFilter,
+  onSpecFilterChange,
 }: AllOrdersTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([
@@ -110,15 +104,6 @@ export function AllOrdersTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalGlobalFilter, setInternalGlobalFilter] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [localSpecFilter, setLocalSpecFilter] = useState('')
-  const [localModelFilter, setLocalModelFilter] = useState('')
-
-  const effectiveSpecFilter = serverPagination
-    ? (specFilter ?? '')
-    : localSpecFilter
-  const effectiveModelFilter = serverPagination
-    ? (modelFilter ?? '')
-    : localModelFilter
 
   const effectiveSorting = serverPagination
     ? (externalSorting ?? internalSorting)
@@ -168,15 +153,6 @@ export function AllOrdersTable({
       onGlobalFilterChangeFn?.(value)
     },
     [serverPagination, onSearch, onGlobalFilterChangeFn]
-  )
-
-  const handleFilterChange = useCallback(
-    (columnId: string, value: string | undefined) => {
-      if (serverPagination && onFilterChange) {
-        onFilterChange(columnId, value)
-      }
-    },
-    [serverPagination, onFilterChange]
   )
 
   const handleDateRangeChange = useCallback(
@@ -260,39 +236,17 @@ export function AllOrdersTable({
     }
   }
 
-  const handleSpecFilterChange = useCallback(
-    (value: string) => {
-      if (serverPagination && onSpecFilterChange) {
-        onSpecFilterChange(value)
-      } else {
-        setLocalSpecFilter(value)
-        table.getColumn('规格')?.setFilterValue(value)
-      }
-    },
-    [serverPagination, onSpecFilterChange, table]
-  )
-
-  const handleModelFilterChange = useCallback(
-    (value: string) => {
-      if (serverPagination && onModelFilterChange) {
-        onModelFilterChange(value)
-      } else {
-        setLocalModelFilter(value)
-        table.getColumn('型号')?.setFilterValue(value)
-      }
-    },
-    [serverPagination, onModelFilterChange, table]
-  )
-
   const handleSyncBeltTypeFilterChange = useCallback(
-    (value: string | undefined) => {
-      if (serverPagination && onSyncBeltTypeFilterChange) {
-        onSyncBeltTypeFilterChange(value)
-      } else if (onFilterChange) {
-        onFilterChange('产品类型', value)
+    (_columnId: string, value: string | undefined) => {
+      if (serverPagination) {
+        if (_columnId === '产品类型' && onSyncBeltTypeFilterChange) {
+          onSyncBeltTypeFilterChange(value)
+        } else if (_columnId === '规格' && onSpecFilterChange) {
+          onSpecFilterChange(value)
+        }
       }
     },
-    [serverPagination, onSyncBeltTypeFilterChange, onFilterChange]
+    [serverPagination, onSyncBeltTypeFilterChange, onSpecFilterChange]
   )
 
   return (
@@ -302,38 +256,43 @@ export function AllOrdersTable({
         'flex flex-1 flex-col gap-4'
       )}
     >
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex items-center gap-2'>
-          <Input
-            placeholder='规格...'
-            value={effectiveSpecFilter}
-            onChange={(e) => handleSpecFilterChange(e.target.value)}
-            className='h-8 w-[100px]'
-          />
-          <Input
-            placeholder='型号...'
-            value={effectiveModelFilter}
-            onChange={(e) => handleModelFilterChange(e.target.value)}
-            className='h-8 w-[100px]'
-          />
-          <DataTableFacetedFilter
-            title='同步带类型'
-            options={syncBeltTypeOptions}
-            onFilterChange={handleSyncBeltTypeFilterChange}
-            serverPaginationMode={serverPagination}
-            selectedValues={syncBeltTypeFilter}
-          />
-        </div>
-        <DataTableToolbar
-          table={table}
-          serverPaginationMode={serverPagination}
-          searchPlaceholder='客户名称/发货单号/快递单号...'
-          onSearch={handleSearchChange}
-          onFilterChange={handleFilterChange}
-          onDateRangeChange={handleDateRangeChange}
-          onReset={handleReset}
-        />
-      </div>
+      <DataTableToolbar
+        table={table}
+        serverPaginationMode={serverPagination}
+        searchPlaceholder='客户名称/发货单号/快递单号...'
+        onSearch={handleSearchChange}
+        onFilterChange={handleSyncBeltTypeFilterChange}
+        onDateRangeChange={handleDateRangeChange}
+        onReset={handleReset}
+        filters={[
+          ...(syncBeltTypeOptions.length > 0
+            ? [
+                {
+                  columnId: '产品类型',
+                  title: '同步带类型',
+                  options: syncBeltTypeOptions,
+                },
+              ]
+            : []),
+          ...(specOptions.length > 0
+            ? [
+                {
+                  columnId: '规格',
+                  title: '规格',
+                  options: specOptions,
+                },
+              ]
+            : []),
+        ]}
+        filterValues={
+          serverPagination
+            ? {
+                ...(syncBeltTypeFilter ? { 产品类型: syncBeltTypeFilter } : {}),
+                ...(specFilter ? { 规格: specFilter } : {}),
+              }
+            : undefined
+        }
+      />
       <div className='overflow-hidden rounded-md border'>
         <Table className='min-w-xl'>
           <TableHeader className='bg-muted/50'>

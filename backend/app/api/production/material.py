@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/list")
 async def get_material_list(
+    query: Optional[str] = None,
     工单编号: Optional[str] = None,
     物料编码: Optional[str] = None,
     物料名称: Optional[str] = None,
@@ -24,7 +25,7 @@ async def get_material_list(
 ):
     """获取物料消耗列表"""
     items, total = material_consumption_service.search(
-        db, 工单编号=工单编号, 物料编码=物料编码, 物料名称=物料名称,
+        db, query=query, 工单编号=工单编号, 物料编码=物料编码, 物料名称=物料名称,
         start_date=start_date, end_date=end_date, page=page, page_size=limit
     )
     data = [material_consumption_service.to_dict(item) for item in items]

@@ -69,6 +69,7 @@ async def create_quote(
         客户名称=data.get("客户名称"),
         报价项目=data.get("报价项目"),
         报价单号=data.get("报价单号"),
+        报价日期=data.get("报价日期"),
         客户物料编码=data.get("客户物料编码"),
         客户物料名称=data.get("客户物料名称"),
         客户规格型号=data.get("客户规格型号"),
@@ -78,6 +79,7 @@ async def create_quote(
         数量=data.get("数量"),
         未税单价=data.get("未税单价"),
         含税单价=data.get("含税单价"),
+        含税总价=data.get("含税总价"),
         备注=data.get("备注")
     )
 
@@ -109,6 +111,7 @@ async def update_quote(
         客户名称=data.get("客户名称"),
         报价项目=data.get("报价项目"),
         报价单号=data.get("报价单号"),
+        报价日期=data.get("报价日期"),
         客户物料编码=data.get("客户物料编码"),
         客户物料名称=data.get("客户物料名称"),
         客户规格型号=data.get("客户规格型号"),
@@ -118,6 +121,7 @@ async def update_quote(
         数量=data.get("数量"),
         未税单价=data.get("未税单价"),
         含税单价=data.get("含税单价"),
+        含税总价=data.get("含税总价"),
         备注=data.get("备注")
     )
 

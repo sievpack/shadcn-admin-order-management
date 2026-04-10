@@ -1,6 +1,5 @@
-import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { customerSampleAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,13 +30,25 @@ export function CustomerSampleDeleteDialog({
     try {
       const response = await customerSampleAPI.delete(data.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: { 样品单号: data.样品单号, id: data.id },
+        })
         onDeleteSuccess()
       } else {
-        toast.error('删除失败: ' + response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
     } catch (error: any) {
-      toast.error('删除失败: ' + (error.message || '未知错误'))
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message },
+      })
     } finally {
       onOpenChange(false)
     }
@@ -45,31 +56,22 @@ export function CustomerSampleDeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className='sm:max-w-md'>
-        <div className='p-6'>
-          <AlertDialogHeader className='flex flex-col items-center text-center'>
-            <div className='mb-4 rounded-full bg-destructive/10 p-3 text-destructive'>
-              <Trash2 className='h-6 w-6' />
-            </div>
-            <AlertDialogTitle className='text-lg font-semibold'>
-              确认删除
-            </AlertDialogTitle>
-            <AlertDialogDescription className='mt-2 text-sm text-muted-foreground'>
-              确定要删除样品「{data?.样品单号}」吗？此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-        </div>
-        <div className='border-t p-4'>
-          <AlertDialogFooter className='flex justify-center gap-2'>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              className='text-destructive-foreground bg-destructive hover:bg-destructive/90'
-              onClick={handleDelete}
-            >
-              确认删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </div>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除</AlertDialogTitle>
+          <AlertDialogDescription>
+            确定要删除样品「{data?.样品单号}」吗？此操作无法撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className='bg-destructive hover:bg-destructive/90'
+          >
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   )

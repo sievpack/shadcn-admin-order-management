@@ -172,6 +172,7 @@ export function ARTable({
               { label: '未收款', value: '未收款' },
               { label: '部分收款', value: '部分收款' },
               { label: '已收款', value: '已收款' },
+              { label: '已结清', value: '已结清' },
             ],
           },
         ]}

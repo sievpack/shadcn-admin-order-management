@@ -115,7 +115,12 @@ export const orderItemAPI = {
     )
     return api.get('/order/item/all', { params: validatedParams })
   },
-  getAllItemsNoPagination: () => api.get('/order/item/all-no-pagination'),
+  getAllItemsNoPagination: (params?: {
+    客户名称?: string
+    规格?: string
+    型号?: string
+    产品类型?: string
+  }) => api.get('/order/item/all-no-pagination', { params }),
   getItemsByOrderId: (orderId: number) =>
     api.get(`/order/item/list/${orderId}`),
   createItem: (data: z.infer<typeof createOrderItemSchema>) => {
@@ -465,6 +470,23 @@ export const dictDataAPI = {
     return api.put(`/dict/data/${id}`, null, { params: data })
   },
   deleteData: (id: number) => api.delete(`/dict/data/${id}`),
+}
+
+// 客户样品 API
+export const customerSampleAPI = {
+  getList: (params?: {
+    search?: string
+    客户名称?: string
+    产品类型?: string
+    start_date?: string
+    end_date?: string
+    page?: number
+    limit?: number
+  }) => api.get('/customer-sample/list', { params }),
+  getDetail: (id: number) => api.get(`/customer-sample/${id}`),
+  create: (data: any) => api.post('/customer-sample/create', data),
+  update: (data: any) => api.put('/customer-sample/update', data),
+  delete: (id: number) => api.delete(`/customer-sample/${id}`),
 }
 
 export default api

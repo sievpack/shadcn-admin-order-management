@@ -1,6 +1,6 @@
 import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { customerAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,14 +34,26 @@ export function CustomerDeleteDialog({
     try {
       const response = await customerAPI.deleteCustomer(customer.id)
       if (response.data.code === 0) {
-        toast.success('客户删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '客户删除成功',
+          data: { 客户名称: customer.客户名称, id: customer.id },
+        })
         onRefresh()
         refreshData()
       } else {
-        toast.error('删除失败: ' + response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: { msg: response.data.msg },
+        })
       }
     } catch (error: any) {
-      toast.error('删除失败: ' + (error.message || '未知错误'))
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: { error: error.message || '未知错误' },
+      })
     } finally {
       onOpenChange(false)
     }
