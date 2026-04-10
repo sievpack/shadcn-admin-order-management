@@ -4,12 +4,8 @@ import { Plus } from 'lucide-react'
 import { dictTypeAPI, dictDataAPI } from '@/lib/api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { Header } from '@/components/layout/header'
+import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { type DictData } from '../data/dict-data-columns'
 import { DictDataDialogs } from '../data/dict-data-dialogs'
 import { type DictType } from './dict-type-columns'
@@ -114,14 +110,7 @@ export function DictTypePage() {
 
   return (
     <>
-      <Header fixed>
-        <Search />
-        <div className='ms-auto flex items-center gap-4'>
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
-        </div>
-      </Header>
+      <AppHeader />
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>

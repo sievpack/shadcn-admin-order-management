@@ -11,7 +11,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { toast } from 'sonner'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { Badge } from '@/components/ui/badge'
@@ -275,7 +275,11 @@ export function TemplateBulkDelete() {
   })
 
   const handleBulkDelete = useCallback((ids: number[]) => {
-    toast.success(`成功删除 ${ids.length} 个项目`)
+    showToastWithData({
+      type: 'success',
+      title: `成功删除 ${ids.length} 个项目`,
+      data: { count: ids.length },
+    })
   }, [])
 
   return (

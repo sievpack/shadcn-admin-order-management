@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { financeVoucherAPI } from '@/lib/finance-api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
@@ -24,13 +24,21 @@ export function VoucherList() {
     try {
       const response = await financeVoucherAPI.approve(row.id)
       if (response.data.code === 0) {
-        toast.success('审核通过')
+        showToastWithData({
+          type: 'success',
+          title: '审核通过',
+          data: response.data,
+        })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '审核失败',
+          data: response.data,
+        })
       }
     } catch (error) {
-      toast.error('审核失败')
+      showToastWithData({ type: 'error', title: '审核失败' })
     }
   }
 
@@ -39,7 +47,11 @@ export function VoucherList() {
       setSaveLoading(true)
       const response = await financeVoucherAPI.create(addForm)
       if (response.data.code === 0) {
-        toast.success('创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data: response.data,
+        })
         setShowAddDialog(false)
         setAddForm({
           凭证日期: new Date().toISOString().split('T')[0],
@@ -49,10 +61,14 @@ export function VoucherList() {
         })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: response.data,
+        })
       }
     } catch (error) {
-      toast.error('创建失败')
+      showToastWithData({ type: 'error', title: '创建失败' })
     } finally {
       setSaveLoading(false)
     }

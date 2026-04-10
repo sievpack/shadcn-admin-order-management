@@ -4,7 +4,6 @@ import { orderStatsAPI } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
-import { TopNav } from '@/components/layout/top-nav'
 import { RecentOrders } from './components/recent-orders'
 import { RecentShipments } from './components/recent-shipments'
 import { SalesTrend } from './components/sales-trend'
@@ -80,15 +79,7 @@ export function Dashboard() {
 
   return (
     <>
-      <AppHeader>
-        <TopNav links={topNav} />
-        <div className='ms-auto flex items-center space-x-4'>
-          <NotificationIcon />
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
-        </div>
-      </AppHeader>
+      <AppHeader />
 
       <Main>
         <div className='mb-2 flex items-center justify-between'>
@@ -213,12 +204,3 @@ export function Dashboard() {
     </>
   )
 }
-
-const topNav = [
-  {
-    title: '仪表盘',
-    href: '/',
-    isActive: true,
-    disabled: false,
-  },
-]

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,15 +75,23 @@ export function ExpandedShippingItems({
     try {
       const response = await shippingAPI.deleteShippingItem(itemToDelete.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: response.data,
+        })
         setDeleteDialogOpen(false)
         onRefresh?.()
       } else {
-        toast.error(response.data.msg || '删除失败')
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: response.data,
+        })
       }
     } catch (error) {
       console.error('删除发货项目失败:', error)
-      toast.error('删除失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '删除失败，请稍后重试' })
     } finally {
       setDeleting(false)
       setItemToDelete(null)

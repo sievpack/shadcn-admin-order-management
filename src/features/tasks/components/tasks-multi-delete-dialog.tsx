@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { sleep } from '@/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
@@ -29,22 +29,22 @@ export function TasksMultiDeleteDialog<TData>({
 
   const handleDelete = () => {
     if (value.trim() !== CONFIRM_WORD) {
-      toast.error(`Please type "${CONFIRM_WORD}" to confirm.`)
+      showToastWithData({
+        type: 'error',
+        title: `Please type "${CONFIRM_WORD}" to confirm.`,
+      })
       return
     }
 
     onOpenChange(false)
 
-    toast.promise(sleep(2000), {
-      loading: 'Deleting tasks...',
-      success: () => {
-        setValue('')
-        table.resetRowSelection()
-        return `Deleted ${selectedRows.length} ${
-          selectedRows.length > 1 ? 'tasks' : 'task'
-        }`
-      },
-      error: 'Error',
+    sleep(2000).then(() => {
+      setValue('')
+      table.resetRowSelection()
+      showToastWithData({
+        type: 'success',
+        title: `Deleted ${selectedRows.length} ${selectedRows.length > 1 ? 'tasks' : 'task'}`,
+      })
     })
   }
 

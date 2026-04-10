@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
 import { z } from 'zod/v4'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -122,7 +122,7 @@ export function TemplateItemAddDialog({
       await onSave(saveData)
     } catch (error) {
       console.error('Failed to create:', error)
-      toast.error('创建失败')
+      showToastWithData({ type: 'error', title: '创建失败' })
     } finally {
       setLoading(false)
     }

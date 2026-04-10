@@ -40,6 +40,9 @@ export function ExpandedOrderItems({
   onEdit,
   onDelete,
 }: ExpandedOrderItemsProps) {
+  const totalQuantity = items.reduce((sum, item) => sum + (item.数量 || 0), 0)
+  const totalAmount = items.reduce((sum, item) => sum + (item.金额 || 0), 0)
+
   return (
     <Table>
       <TableHeader className='bg-muted/50'>
@@ -94,6 +97,16 @@ export function ExpandedOrderItems({
             </TableCell>
           </TableRow>
         ))}
+        <TableRow className='bg-muted/30 font-medium'>
+          <TableCell colSpan={3} className='text-right'>
+            合计
+          </TableCell>
+          <TableCell className='text-right'>{totalQuantity}</TableCell>
+          <TableCell></TableCell>
+          <TableCell></TableCell>
+          <TableCell className='text-right'>{totalAmount.toFixed(2)}</TableCell>
+          <TableCell colSpan={2}></TableCell>
+        </TableRow>
       </TableBody>
     </Table>
   )

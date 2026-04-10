@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,7 +31,10 @@ export function OrderItemMultiDeleteDialog<TData>({
 
   const handleDelete = () => {
     if (value.trim() !== CONFIRM_WORD) {
-      toast.error(`请输入 "${CONFIRM_WORD}" 确认删除。`)
+      showToastWithData({
+        type: 'error',
+        title: `请输入 "${CONFIRM_WORD}" 确认删除。`,
+      })
       return
     }
 
@@ -45,7 +48,6 @@ export function OrderItemMultiDeleteDialog<TData>({
     if (itemIds.length > 0) {
       onBulkDelete(itemIds)
       table.resetRowSelection()
-      toast.success(`已删除 ${selectedRows.length} 条订单分项`)
     }
   }
 

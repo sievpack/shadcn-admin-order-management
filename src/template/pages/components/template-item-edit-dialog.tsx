@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
 import { z } from 'zod/v4'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -77,11 +77,11 @@ export function TemplateItemEditDialog({
     setLoading(true)
     try {
       onSave({ ...data, id: item.id })
-      toast.success('更新成功')
+      showToastWithData({ type: 'success', title: '更新成功', data })
       onOpenChange(false)
     } catch (error) {
       console.error('Failed to update:', error)
-      toast.error('更新失败')
+      showToastWithData({ type: 'error', title: '更新失败' })
     } finally {
       setLoading(false)
     }

@@ -52,7 +52,7 @@ export function UnshippedList() {
       !shippingForm.发货单号 ||
       !shippingForm.快递单号
     ) {
-      toast.error('请选择订单并填写发货信息')
+      showToastWithData({ type: 'error', title: '请选择订单并填写发货信息' })
       return
     }
 

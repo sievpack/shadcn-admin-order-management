@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
 import { userAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,12 +31,20 @@ export function UsersDeleteDialog({
 
     setLoading(true)
     try {
-      await userAPI.deleteUser(currentRow.id)
-      toast.success('用户删除成功')
+      const response = await userAPI.deleteUser(currentRow.id)
+      showToastWithData({
+        type: 'success',
+        title: '用户删除成功',
+        data: response.data,
+      })
       onOpenChange(false)
       onSuccess?.()
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || '删除失败')
+      showToastWithData({
+        type: 'error',
+        title: '删除失败',
+        data: error.response?.data?.detail || '删除失败',
+      })
     } finally {
       setLoading(false)
     }

@@ -3,8 +3,8 @@ import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { pdf } from '@react-pdf/renderer'
 import { Eye, Edit, Trash2, Plus, Download } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI, authAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -52,7 +52,11 @@ export function DataTableRowActions({
         row.original.发货单号
       )
       if (detailResponse.data.code !== 0) {
-        toast.error('获取发货单详情失败')
+        showToastWithData({
+          type: 'error',
+          title: '获取发货单详情失败',
+          data: detailResponse.data,
+        })
         setExporting(false)
         return
       }
@@ -89,10 +93,10 @@ export function DataTableRowActions({
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      toast.success('导出成功，PDF文件已下载')
+      showToastWithData({ type: 'success', title: '导出成功，PDF文件已下载' })
     } catch (error) {
       console.error('导出PDF失败:', error)
-      toast.error('导出PDF失败')
+      showToastWithData({ type: 'error', title: '导出PDF失败' })
     } finally {
       setExporting(false)
     }

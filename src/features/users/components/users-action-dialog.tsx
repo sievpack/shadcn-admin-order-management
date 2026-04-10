@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
 import { userAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -108,7 +108,7 @@ export function UsersActionDialog({
     setLoading(true)
     try {
       if (isEdit && currentRow) {
-        await userAPI.updateUser({
+        const response = await userAPI.updateUser({
           id: currentRow.id,
           first_name: values.first_name,
           last_name: values.last_name,
@@ -116,14 +116,18 @@ export function UsersActionDialog({
           phone: values.phone || undefined,
           role: values.role,
         })
-        toast.success('用户更新成功')
+        showToastWithData({
+          type: 'success',
+          title: '用户更新成功',
+          data: response.data,
+        })
       } else {
         if (!values.password || values.password.length < 6) {
-          toast.error('密码至少6位字符')
+          showToastWithData({ type: 'error', title: '密码至少6位字符' })
           setLoading(false)
           return
         }
-        await userAPI.createUser({
+        const response = await userAPI.createUser({
           username: values.username,
           password: values.password,
           first_name: values.first_name,
@@ -132,13 +136,21 @@ export function UsersActionDialog({
           phone: values.phone || undefined,
           role: values.role,
         })
-        toast.success('用户创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '用户创建成功',
+          data: response.data,
+        })
       }
       form.reset()
       onOpenChange(false)
       onSuccess?.()
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || '操作失败')
+      showToastWithData({
+        type: 'error',
+        title: '操作失败',
+        data: error.response?.data?.detail || '操作失败',
+      })
     } finally {
       setLoading(false)
     }

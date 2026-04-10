@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { pdf } from '@react-pdf/renderer'
 import { Trash2, Printer, Download } from 'lucide-react'
-import { toast } from 'sonner'
 import { shippingAPI, authAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -54,12 +54,12 @@ export function ShippingBulkActions<TData>({
     )
 
     if (selectedItems.length === 0) {
-      toast.error('请先选择要打印的发货单')
+      showToastWithData({ type: 'error', title: '请先选择要打印的发货单' })
       return
     }
 
     if (selectedItems.length > 3) {
-      toast.error('每次最多打印3张发货单')
+      showToastWithData({ type: 'error', title: '每次最多打印3张发货单' })
       return
     }
 
@@ -85,7 +85,11 @@ export function ShippingBulkActions<TData>({
           item.发货单号
         )
         if (detailResponse.data.code !== 0) {
-          toast.error(`获取发货单 ${item.发货单号} 详情失败`)
+          showToastWithData({
+            type: 'error',
+            title: `获取发货单 ${item.发货单号} 详情失败`,
+            data: detailResponse.data,
+          })
           continue
         }
 
@@ -121,7 +125,7 @@ export function ShippingBulkActions<TData>({
             }, 1000)
           }
         } else {
-          toast.error('请允许弹出窗口')
+          showToastWithData({ type: 'error', title: '请允许弹出窗口' })
         }
 
         URL.revokeObjectURL(url)
@@ -132,10 +136,13 @@ export function ShippingBulkActions<TData>({
       }
 
       table.resetRowSelection()
-      toast.success(`已发送 ${selectedItems.length} 张发货单`)
+      showToastWithData({
+        type: 'success',
+        title: `已发送 ${selectedItems.length} 张发货单`,
+      })
     } catch (error) {
       console.error('打印失败:', error)
-      toast.error('打印失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '打印失败，请稍后重试' })
       table.resetRowSelection()
     } finally {
       setPrinting(false)
@@ -146,7 +153,10 @@ export function ShippingBulkActions<TData>({
     const selectedItems = selectedRows.map(
       (row) => row.original as ShippingItem
     )
-    toast.success(`已选择 ${selectedItems.length} 条发货单进行导出`)
+    showToastWithData({
+      type: 'success',
+      title: `已选择 ${selectedItems.length} 条发货单进行导出`,
+    })
     table.resetRowSelection()
   }
 

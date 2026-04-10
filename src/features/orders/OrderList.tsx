@@ -140,6 +140,11 @@ export function OrderList() {
           await updateOrderItem.mutateAsync(item)
         }
         setShowEditModal(false)
+        showToastWithData({
+          type: 'success',
+          title: '订单更新成功',
+          data: orderResponse,
+        })
         setRefreshKey((k) => k + 1)
       }
     } catch (error: any) {
@@ -155,7 +160,12 @@ export function OrderList() {
   const handleDeleteOrder = useCallback(
     async (id: number) => {
       try {
-        await deleteOrder.mutateAsync(id)
+        const response = await deleteOrder.mutateAsync(id)
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: response,
+        })
         setRefreshKey((k) => k + 1)
       } catch (error: any) {
         console.error('删除订单失败:', error)
@@ -328,6 +338,11 @@ export function OrderList() {
           }
 
           setShowAddModal(false)
+          showToastWithData({
+            type: 'success',
+            title: '订单创建成功',
+            data: orderResponse,
+          })
           setRefreshKey((k) => k + 1)
         }
       } catch (error: any) {

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { z } from 'zod/v4'
 import { dictDataAPI, dictTypeAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -116,17 +116,25 @@ export function DictDataDialogs({
     setLoading(true)
     try {
       if (mode === 'add') {
-        await dictDataAPI.createData(data)
-        toast.success('创建成功')
+        const response = await dictDataAPI.createData(data)
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data: response.data,
+        })
       } else if (mode === 'edit' && dictData) {
-        await dictDataAPI.updateData(dictData.id, data)
-        toast.success('更新成功')
+        const response = await dictDataAPI.updateData(dictData.id, data)
+        showToastWithData({
+          type: 'success',
+          title: '更新成功',
+          data: response.data,
+        })
       }
       onOpenChange(false)
       onSuccess()
     } catch (error) {
       console.error('Failed to submit:', error)
-      toast.error('操作失败')
+      showToastWithData({ type: 'error', title: '操作失败' })
     } finally {
       setLoading(false)
     }
@@ -136,13 +144,17 @@ export function DictDataDialogs({
     if (!dictData) return
     setLoading(true)
     try {
-      await dictDataAPI.deleteData(dictData.id)
-      toast.success('删除成功')
+      const response = await dictDataAPI.deleteData(dictData.id)
+      showToastWithData({
+        type: 'success',
+        title: '删除成功',
+        data: response.data,
+      })
       onOpenChange(false)
       onSuccess()
     } catch (error) {
       console.error('Failed to delete:', error)
-      toast.error('删除失败')
+      showToastWithData({ type: 'error', title: '删除失败' })
     } finally {
       setLoading(false)
     }
@@ -372,13 +384,17 @@ export function DictDataFormDialog({
   const handleSubmit = async (data: DictDataFormData) => {
     setLoading(true)
     try {
-      await dictDataAPI.createData(data)
-      toast.success('创建成功')
+      const response = await dictDataAPI.createData(data)
+      showToastWithData({
+        type: 'success',
+        title: '创建成功',
+        data: response.data,
+      })
       onOpenChange(false)
       onSuccess()
     } catch (error) {
       console.error('Failed to submit:', error)
-      toast.error('操作失败')
+      showToastWithData({ type: 'error', title: '操作失败' })
     } finally {
       setLoading(false)
     }

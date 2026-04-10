@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { financePaymentAPI } from '@/lib/finance-api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
@@ -23,13 +23,21 @@ export function PaymentRecordList() {
     try {
       const response = await financePaymentAPI.delete(row.id)
       if (response.data.code === 0) {
-        toast.success('删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '删除成功',
+          data: response.data,
+        })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '删除失败',
+          data: response.data,
+        })
       }
     } catch (error) {
-      toast.error('删除失败')
+      showToastWithData({ type: 'error', title: '删除失败' })
     }
   }
 
@@ -38,7 +46,11 @@ export function PaymentRecordList() {
       setSaveLoading(true)
       const response = await financePaymentAPI.create(addForm)
       if (response.data.code === 0) {
-        toast.success('创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '创建成功',
+          data: response.data,
+        })
         setShowAddDialog(false)
         setAddForm({
           付款方式: '银行转账',
@@ -47,10 +59,14 @@ export function PaymentRecordList() {
         })
         setRefreshKey((k) => k + 1)
       } else {
-        toast.error(response.data.msg)
+        showToastWithData({
+          type: 'error',
+          title: '创建失败',
+          data: response.data,
+        })
       }
     } catch (error) {
-      toast.error('创建失败')
+      showToastWithData({ type: 'error', title: '创建失败' })
     } finally {
       setSaveLoading(false)
     }

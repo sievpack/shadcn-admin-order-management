@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useOrderService } from '@/services/orderService'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { codeAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
@@ -136,12 +136,16 @@ export function Template() {
           await updateOrderItem.execute(item)
         }
         setShowEditModal(false)
-        toast.success('订单更新成功')
+        showToastWithData({
+          type: 'success',
+          title: '订单更新成功',
+          data: orderResponse,
+        })
         setRefreshKey((k) => k + 1)
       }
     } catch (error) {
       console.error('更新订单失败:', error)
-      toast.error('更新失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '更新失败，请稍后重试' })
     }
   }
 
@@ -149,12 +153,16 @@ export function Template() {
     try {
       const response = await deleteOrder.execute(id)
       if (response) {
-        toast.success('订单删除成功')
+        showToastWithData({
+          type: 'success',
+          title: '订单删除成功',
+          data: response,
+        })
         setRefreshKey((k) => k + 1)
       }
     } catch (error) {
       console.error('删除订单失败:', error)
-      toast.error('删除失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '删除失败，请稍后重试' })
     }
   }
 
@@ -171,12 +179,16 @@ export function Template() {
 
   const handleSaveEditOrderItem = async (data: any) => {
     try {
-      await updateOrderItem.execute(data)
-      toast.success('订单分项更新成功')
+      const response = await updateOrderItem.execute(data)
+      showToastWithData({
+        type: 'success',
+        title: '订单分项更新成功',
+        data: response,
+      })
       setRefreshKey((k) => k + 1)
     } catch (error) {
       console.error('更新订单分项失败:', error)
-      toast.error('更新失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '更新失败，请稍后重试' })
     }
   }
 
@@ -187,8 +199,12 @@ export function Template() {
 
   const handleSaveAddOrderItem = async (data: any) => {
     try {
-      await createOrderItem.execute(data)
-      toast.success('订单分项创建成功')
+      const response = await createOrderItem.execute(data)
+      showToastWithData({
+        type: 'success',
+        title: '订单分项创建成功',
+        data: response,
+      })
       setAddItemDialogOpen(false)
       setRefreshKey((k) => k + 1)
       if (addingOrder) {
@@ -197,19 +213,23 @@ export function Template() {
       }
     } catch (error) {
       console.error('创建订单分项失败:', error)
-      toast.error('创建失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '创建失败，请稍后重试' })
     }
   }
 
   const handleConfirmDeleteOrderItem = async () => {
     if (!itemToDelete) return
     try {
-      await deleteOrderItem.execute(itemToDelete)
-      toast.success('订单分项删除成功')
+      const response = await deleteOrderItem.execute(itemToDelete)
+      showToastWithData({
+        type: 'success',
+        title: '订单分项删除成功',
+        data: response,
+      })
       setRefreshKey((k) => k + 1)
     } catch (error) {
       console.error('删除订单分项失败:', error)
-      toast.error('删除失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '删除失败，请稍后重试' })
     } finally {
       setItemToDelete(null)
     }
@@ -220,11 +240,15 @@ export function Template() {
       for (const id of ids) {
         await deleteOrder.execute(id)
       }
-      toast.success(`成功删除 ${ids.length} 个订单`)
+      showToastWithData({
+        type: 'success',
+        title: `成功删除 ${ids.length} 个订单`,
+        data: { count: ids.length },
+      })
       setRefreshKey((k) => k + 1)
     } catch (error) {
       console.error('批量删除订单失败:', error)
-      toast.error('批量删除失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '批量删除失败，请稍后重试' })
     }
   }
 
@@ -276,12 +300,16 @@ export function Template() {
         }
 
         setShowAddModal(false)
-        toast.success('订单创建成功')
+        showToastWithData({
+          type: 'success',
+          title: '订单创建成功',
+          data: orderResponse,
+        })
         setRefreshKey((k) => k + 1)
       }
     } catch (error) {
       console.error('创建订单失败:', error)
-      toast.error('创建失败，请稍后重试')
+      showToastWithData({ type: 'error', title: '创建失败，请稍后重试' })
     } finally {
       setAddLoading(false)
     }

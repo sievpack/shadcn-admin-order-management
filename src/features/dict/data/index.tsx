@@ -1,15 +1,11 @@
 import { useState } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
 import { dictDataAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { Header } from '@/components/layout/header'
+import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { type DictData } from './dict-data-columns'
 import { DictDataDialogs } from './dict-data-dialogs'
 import { DictDataTable } from './dict-data-table'
@@ -47,12 +43,18 @@ export function DictDataPage() {
 
   const handleMultiDelete = async (rows: DictData[]) => {
     try {
-      await Promise.all(rows.map((row) => dictDataAPI.deleteData(row.id)))
-      toast.success(`成功删除 ${rows.length} 条记录`)
+      const results = await Promise.all(
+        rows.map((row) => dictDataAPI.deleteData(row.id))
+      )
+      showToastWithData({
+        type: 'success',
+        title: `成功删除 ${rows.length} 条记录`,
+        data: results.map((r) => r.data),
+      })
       setRefreshKey((k) => k + 1)
     } catch (error) {
       console.error('批量删除失败:', error)
-      toast.error('批量删除失败')
+      showToastWithData({ type: 'error', title: '批量删除失败' })
     }
   }
 
@@ -64,14 +66,7 @@ export function DictDataPage() {
 
   return (
     <>
-      <Header fixed>
-        <Search />
-        <div className='ms-auto flex items-center gap-4'>
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
-        </div>
-      </Header>
+      <AppHeader />
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
