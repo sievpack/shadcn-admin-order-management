@@ -4,6 +4,7 @@ import os
 import redis
 from datetime import datetime
 from typing import List
+from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
@@ -118,3 +119,40 @@ class NotificationService:
 
 
 notification_service = NotificationService()
+
+
+class ConnectionManager:
+    """WebSocket 连接管理器"""
+
+    def __init__(self):
+        self.active_connections: dict[str, list[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: str):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+        self.active_connections[user_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: str):
+        if user_id in self.active_connections:
+            self.active_connections[user_id].remove(websocket)
+
+    async def broadcast(self, message: dict):
+        """广播消息给所有用户"""
+        payload = message.get('payload', {})
+        user_id = payload.get('user_id')
+        msg_type = payload.get('type')
+
+        if user_id and msg_type:
+            notification_service.save(int(user_id), payload)
+
+        for uid, connections in self.active_connections.items():
+            for connection in connections:
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    pass
+
+
+manager = ConnectionManager()
+get_notification_manager = lambda: manager
