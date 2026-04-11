@@ -1,62 +1,68 @@
 import json
 import logging
+import os
 import redis
-import uuid
 from datetime import datetime
-from typing import List, Optional
-from fastapi import WebSocket
+from typing import List
 
 logger = logging.getLogger(__name__)
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_DB = 0
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_DB = int(os.getenv('REDIS_DB', 0))
 NOTIFICATION_TTL = 30 * 24 * 60 * 60
 
+MARK_READ_SCRIPT = """
+local key = KEYS[1]
+local target_id = ARGV[1]
+local items = redis.call('ZRANGE', key, 0, -1)
+for i, r in ipairs(items) do
+    local notification = cjson.decode(r)
+    if notification.id == target_id then
+        notification.read = true
+        local score = redis.call('ZSCORE', key, r)
+        redis.call('ZREM', key, r)
+        redis.call('ZADD', key, score, cjson.encode(notification))
+        return 1
+    end
+end
+return 0
+"""
 
-class ConnectionManager:
-    """WebSocket 连接管理器"""
-    
-    def __init__(self):
-        self.active_connections: dict[str, WebSocket] = {}
-    
-    async def connect(self, websocket: WebSocket, user_id: str):
-        """客户端连接"""
-        conn_id = str(uuid.uuid4())
-        await websocket.accept()
-        self.active_connections[f"{user_id}:{conn_id}"] = websocket
-        return conn_id
-    
-    def disconnect(self, conn_id: str):
-        """客户端断开"""
-        self.active_connections.pop(conn_id, None)
-    
-    async def send_message(self, conn_id: str, message: dict):
-        """向指定连接发送消息"""
-        if conn_id in self.active_connections:
-            await self.active_connections[conn_id].send_json(message)
-        else:
-            logger.warning(f"连接 {conn_id} 不在线，消息未送达: {message}")
-    
-    async def broadcast(self, message: dict):
-        """广播消息给所有连接"""
-        for connection in self.active_connections.values():
-            try:
-                await connection.send_json(message)
-            except Exception as e:
-                logger.error(f"发送消息失败: {e}")
+MARK_ALL_READ_SCRIPT = """
+local key = KEYS[1]
+local items = redis.call('ZRANGE', key, 0, -1)
+local count = 0
+for i, r in ipairs(items) do
+    local notification = cjson.decode(r)
+    if notification.read ~= true then
+        notification.read = true
+        local score = redis.call('ZSCORE', key, r)
+        redis.call('ZREM', key, r)
+        redis.call('ZADD', key, score, cjson.encode(notification))
+        count = count + 1
+    end
+end
+return count
+"""
 
-
-notification_manager = ConnectionManager()
-
-
-def get_notification_manager() -> ConnectionManager:
-    return notification_manager
+COUNT_UNREAD_SCRIPT = """
+local key = KEYS[1]
+local items = redis.call('ZRANGE', key, 0, -1)
+local count = 0
+for i, r in ipairs(items) do
+    local notification = cjson.decode(r)
+    if notification.read ~= true then
+        count = count + 1
+    end
+end
+return count
+"""
 
 
 class NotificationService:
     """Redis 通知服务"""
-    
+
     def __init__(self):
         self.redis_client = redis.Redis(
             host=REDIS_HOST,
@@ -64,6 +70,9 @@ class NotificationService:
             db=REDIS_DB,
             decode_responses=True
         )
+        self._mark_read_script = self.redis_client.register_script(MARK_READ_SCRIPT)
+        self._mark_all_read_script = self.redis_client.register_script(MARK_ALL_READ_SCRIPT)
+        self._count_unread_script = self.redis_client.register_script(COUNT_UNREAD_SCRIPT)
 
     def _get_key(self, user_id: int) -> str:
         return f"notifications:{user_id}"
@@ -73,7 +82,7 @@ class NotificationService:
         notification['created_at'] = datetime.now().isoformat()
         notification_id = notification.get('id', f"{user_id}:{datetime.now().timestamp()}")
         notification['id'] = notification_id
-        
+
         self.redis_client.zadd(key, {json.dumps(notification): datetime.now().timestamp()})
         self.redis_client.expire(key, NOTIFICATION_TTL)
         return notification_id
@@ -82,44 +91,30 @@ class NotificationService:
         key = self._get_key(user_id)
         start = (page - 1) * page_size
         end = start + page_size - 1
-        
+
         results = self.redis_client.zrevrange(key, start, end)
         notifications = [json.loads(r) for r in results]
         total = self.redis_client.zcard(key)
-        
+
         return notifications, total
 
     def mark_read(self, user_id: int, notification_id: str) -> bool:
+        """标记单条已读（原子操作）"""
         key = self._get_key(user_id)
-        results = self.redis_client.zrange(key, 0, -1)
-        for r in results:
-            notification = json.loads(r)
-            if notification.get('id') == notification_id:
-                notification['read'] = True
-                score = self.redis_client.zscore(key, r)
-                self.redis_client.zrem(key, r)
-                self.redis_client.zadd(key, {json.dumps(notification): score})
-                return True
-        return False
+        result = self._mark_read_script(keys=[key], args=[notification_id])
+        return result == 1
 
     def mark_all_read(self, user_id: int) -> int:
+        """标记全部已读（原子操作）"""
         key = self._get_key(user_id)
-        results = self.redis_client.zrange(key, 0, -1)
-        count = 0
-        for r in results:
-            notification = json.loads(r)
-            if not notification.get('read', False):
-                notification['read'] = True
-                score = self.redis_client.zscore(key, r)
-                self.redis_client.zrem(key, r)
-                self.redis_client.zadd(key, {json.dumps(notification): score})
-                count += 1
-        return count
+        result = self._mark_all_read_script(keys=[key])
+        return result
 
     def get_unread_count(self, user_id: int) -> int:
+        """获取未读数量（高效）"""
         key = self._get_key(user_id)
-        results = self.redis_client.zrange(key, 0, -1)
-        return sum(1 for r in results if not json.loads(r).get('read', False))
+        result = self._count_unread_script(keys=[key])
+        return result
 
 
 notification_service = NotificationService()
