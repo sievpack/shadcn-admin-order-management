@@ -135,7 +135,10 @@ class ConnectionManager:
 
     def disconnect(self, websocket: WebSocket, user_id: str):
         if user_id in self.active_connections:
-            self.active_connections[user_id].remove(websocket)
+            try:
+                self.active_connections[user_id].remove(websocket)
+            except ValueError:
+                pass
 
     async def broadcast(self, message: dict):
         """广播消息给所有用户"""
@@ -144,14 +147,17 @@ class ConnectionManager:
         msg_type = payload.get('type')
 
         if user_id and msg_type:
-            notification_service.save(int(user_id), payload)
+            try:
+                notification_service.save(int(user_id), payload)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid user_id for notification: {user_id}, error: {e}")
 
         for uid, connections in self.active_connections.items():
             for connection in connections:
                 try:
                     await connection.send_json(message)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Failed to send WebSocket message: {e}")
 
 
 manager = ConnectionManager()
