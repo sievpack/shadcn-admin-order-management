@@ -31,11 +31,15 @@ class BaseService(Generic[ModelType]):
         obj = self.repository.get(db, id)
         if not obj:
             return None
-        return self.repository.update(db, obj, obj_in)
+        result = self.repository.update(db, obj, obj_in)
+        db.commit()
+        return result
 
     def delete(self, db: Session, id: int) -> bool:
         """删除记录"""
-        return self.repository.delete(db, id)
+        result = self.repository.delete(db, id)
+        db.commit()
+        return result
 
     def exists(self, db: Session, id: int) -> bool:
         """检查记录是否存在"""

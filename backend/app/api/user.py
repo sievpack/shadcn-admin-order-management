@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -7,6 +8,8 @@ from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.user_service import user_service
 from app.schemas.user import UserResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -105,8 +108,6 @@ async def create_user(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {"code": 0, "msg": "用户创建成功", "data": {"id": user.id}}
 
 
@@ -143,7 +144,6 @@ async def update_user(
     
     if update_data:
         updated_user = user_service.update(db, user.id, update_data)
-        db.commit()
         user = updated_user
 
     return {"code": 0, "msg": "用户更新成功", "data": {
@@ -172,8 +172,6 @@ async def delete_user(
     if not success:
         raise HTTPException(status_code=404, detail="用户不存在")
 
-    db.commit()
-
     return {"code": 0, "msg": "用户删除成功"}
 
 
@@ -188,8 +186,6 @@ async def reset_password(
     success = user_service.reset_password(db, user_id, new_password)
     if not success:
         raise HTTPException(status_code=404, detail="用户不存在")
-
-    db.commit()
 
     return {"code": 0, "msg": "密码重置成功"}
 
@@ -208,7 +204,5 @@ async def update_password(
 
     if not success:
         raise HTTPException(status_code=400, detail=msg)
-
-    db.commit()
 
     return {"code": 0, "msg": msg}

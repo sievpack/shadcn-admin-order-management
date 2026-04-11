@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -6,6 +7,9 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.order_service import order_service
+from app.core.response import success_response, error_response
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -54,7 +58,7 @@ async def get_all_order_items(
             for item in items
         ]}
     except Exception as e:
-        print(f"获取订单分项失败: {e}")
+        logger.error(f"获取订单分项失败: {e}")
         import traceback
         traceback.print_exc()
         return {"code": 1, "msg": f"获取失败: {str(e)}", "count": 0, "data": []}
@@ -102,7 +106,7 @@ async def get_all_order_items_no_pagination(
             for item in items
         ]}
     except Exception as e:
-        print(f"获取所有订单分项失败: {e}")
+        logger.error(f"获取所有订单分项失败: {e}")
         import traceback
         traceback.print_exc()
         return {"code": 1, "msg": f"获取失败: {str(e)}", "count": 0, "data": []}
@@ -142,7 +146,7 @@ async def get_order_items(
             ]
         }}
     except Exception as e:
-        print(f"获取订单项失败: {e}")
+        logger.error(f"获取订单项失败: {e}")
         import traceback
         traceback.print_exc()
         return {"code": 1, "msg": f"获取失败: {str(e)}", "data": {"list": []}}
@@ -156,22 +160,21 @@ async def create_order_item(
 ):
     """创建订单项"""
     try:
-        print("=== 开始处理订单子项目创建请求 ===")
-        print(f"接收到的数据: {data}")
+        logger.info("开始处理订单子项目创建请求")
+        logger.info(f"接收到的数据: {data}")
 
         order, error = order_service.create_order_item(db, data)
 
         if error:
-            print(f"创建订单项失败: {error}")
+            logger.error(f"创建订单项失败: {error}")
             return {"code": 1, "msg": error, "data": {}}
 
-        db.commit()
-        print(f"订单项创建成功，ID: {order.id}")
+        logger.info(f"订单项创建成功，ID: {order.id}")
         return {"code": 0, "msg": "创建成功", "data": {"id": order.id}}
     except Exception as e:
         db.rollback()
         error_msg = f"创建订单项失败: {str(e)}"
-        print(f"{error_msg}")
+        logger.error(error_msg)
         import traceback
         traceback.print_exc()
         return {"code": 1, "msg": error_msg, "data": {}}
@@ -205,7 +208,6 @@ async def update_order_item(
         if update_data:
             order_service.update(db, item_id, update_data)
             order_service.update_order_status(db, item.oid)
-            db.commit()
             # 验证更新是否成功
             updated_item = order_service.get(db, item_id)
             if not updated_item:
@@ -259,7 +261,6 @@ async def delete_order_item(
 
         order_service.delete(db, item_id)
         order_service.update_order_status(db, item.oid)
-        db.commit()
         return {"code": 0, "msg": "删除成功", "data": {}}
     except Exception as e:
         db.rollback()

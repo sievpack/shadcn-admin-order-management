@@ -1,9 +1,12 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 import datetime
 
 from app.db.database import get_db_jns
+
+logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
 from app.models.ship import Ship
 from app.models.user import User
@@ -106,7 +109,7 @@ async def get_customer_yearly_report(
             }
         }
     except Exception as e:
-        print(f"获取客户年度统计报表数据失败: {e}")
+        logger.error(f"获取客户年度统计报表数据失败: {e}")
         return {
             "code": 1,
             "msg": f"获取客户年度统计报表数据失败: {str(e)}",
@@ -219,7 +222,7 @@ async def get_customer_yearly_shipment_report(
             }
         }
     except Exception as e:
-        print(f"获取客户年度发货统计报表数据失败: {e}")
+        logger.error(f"获取客户年度发货统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {

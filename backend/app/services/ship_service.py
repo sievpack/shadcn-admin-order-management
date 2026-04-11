@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -6,6 +7,8 @@ from app.models.ship import Ship
 from app.models.order import Order
 from app.repositories.ship_repository import ship_repository
 from app.services.base_service import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class ShipService(BaseService[Ship]):
@@ -73,6 +76,7 @@ class ShipService(BaseService[Ship]):
                     'ship_id': ship.id
                 })
 
+        db.commit()
         return ship, None
 
     def delete_shipping(self, db: Session, 发货单号: str, 快递单号: str) -> Tuple[int, Optional[str]]:
@@ -84,6 +88,7 @@ class ShipService(BaseService[Ship]):
         })
 
         db.query(Ship).filter(Ship.快递单号 == 快递单号).delete()
+        db.commit()
 
         return updated, None
 
@@ -94,6 +99,7 @@ class ShipService(BaseService[Ship]):
             '快递单号': None,
             'ship_id': None
         })
+        db.commit()
         return updated, None
 
     def add_shipping_items(
@@ -165,6 +171,7 @@ class ShipService(BaseService[Ship]):
         if errors:
             return updated_count, "; ".join(errors)
 
+        db.commit()
         return updated_count, None
 
     def get_shipping_detail(self, db: Session, 发货单号: str) -> Tuple[Optional[dict], Optional[str]]:
@@ -243,6 +250,7 @@ class ShipService(BaseService[Ship]):
         except ValueError:
             return False, "日期格式错误"
 
+        db.commit()
         return True, None
 
     def update_shipping(
@@ -276,6 +284,7 @@ class ShipService(BaseService[Ship]):
         if 备注 is not None:
             ship.备注 = 备注
 
+        db.commit()
         return True, None
 
 

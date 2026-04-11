@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -5,6 +6,8 @@ from datetime import datetime
 from app.models.customer import Customer
 from app.repositories.customer_repository import customer_repository
 from app.services.base_service import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class CustomerService(BaseService[Customer]):
@@ -71,6 +74,8 @@ class CustomerService(BaseService[Customer]):
             "create_at": datetime.now(),
             "update_at": datetime.now()
         })
+        if customer:
+            db.commit()
         return customer, None
 
     def update_customer(self, db: Session, customer_id: int, data: dict) -> Tuple[Optional[Customer], Optional[str]]:
@@ -84,6 +89,7 @@ class CustomerService(BaseService[Customer]):
 
         if update_data:
             self.repository.update(db, customer, update_data)
+            db.commit()
         return customer, None
 
 

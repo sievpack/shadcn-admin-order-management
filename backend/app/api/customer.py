@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -6,6 +7,8 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.customer_service import customer_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -104,7 +107,6 @@ async def create_customer(
         customer, error = customer_service.create(db, data)
         if error:
             return {"code": 1, "msg": error, "data": {}}
-        db.commit()
         return {"code": 0, "msg": "创建成功", "data": {"id": customer.id}}
     except Exception as e:
         db.rollback()
@@ -126,9 +128,6 @@ async def update_customer(
         customer, error = customer_service.update_customer(db, customer_id, data)
         if error:
             return {"code": 1, "msg": error, "data": {}}
-        
-        # 必须 commit 才能真正保存到数据库
-        db.commit()
         
         # 强制刷新确保获取最新数据
         db.refresh(customer)
@@ -167,7 +166,6 @@ async def delete_customer(
         if not customer:
             return {"code": 1, "msg": "客户不存在", "data": {}}
         customer_service.delete(db, id)
-        db.commit()
         return {"code": 0, "msg": "删除成功", "data": {}}
     except Exception as e:
         db.rollback()

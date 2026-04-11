@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -8,6 +9,8 @@ import os
 import platform
 
 from app.db.database import get_db_jns
+
+logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
 from app.models.user import User
 from app.api.auth import get_current_active_user
@@ -28,7 +31,7 @@ async def get_industry_report(
 ):
     """获取行业统计报表数据"""
     try:
-        print(f"API调用参数: industry={industry}, year={year}, month={month}, page={page}, limit={limit}")
+        logger.debug(f"API调用参数: industry={industry}, year={year}, month={month}, page={page}, limit={limit}")
         
         if not year:
             year = datetime.datetime.now().year
@@ -99,7 +102,7 @@ async def get_industry_report(
         is_all_industry = not industry or not industry.strip()
         
         if is_all_industry:
-            print("执行全部行业统计")
+            logger.debug("执行全部行业统计")
             
             industries = ["3C", "光伏", "机械手", "模组", "贸易", "平台", "其它"]
             
@@ -132,7 +135,7 @@ async def get_industry_report(
                 industry_stats_map[target_industry] = industry_stat
                 total_amount += industry_stat["amount"]
             
-            print("计算客户统计数据")
+            logger.debug("计算客户统计数据")
             
             if months:
                 start_date = months[0]
@@ -190,7 +193,7 @@ async def get_industry_report(
                     customer_stats.append(customer_stat)
         
         else:
-            print(f"执行单个行业统计: {industry}")
+            logger.debug(f"执行单个行业统计: {industry}")
             
             if months:
                 start_date = months[0]
@@ -267,7 +270,7 @@ async def get_industry_report(
         end_idx = start_idx + limit
         paginated_customers = customer_stats[start_idx:end_idx]
         
-        print("返回实际数据")
+        logger.debug("返回实际数据")
         return {
             "code": 0,
             "msg": "success",
@@ -280,7 +283,7 @@ async def get_industry_report(
             "count": len(customer_stats)
         }
     except Exception as e:
-        print(f"获取行业统计报表数据失败: {e}")
+        logger.error(f"获取行业统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -545,7 +548,7 @@ async def get_industry_export_data(
             "count": len(customer_stats)
         }
     except Exception as e:
-        print(f"获取行业统计导出数据失败: {e}")
+        logger.error(f"获取行业统计导出数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -816,7 +819,7 @@ async def export_industry_report(
                     font_loaded = True
                     font_name = "simhei"
                 except Exception as e:
-                    print(f"Failed to load SimHei font: {e}")
+                    logger.warning(f"Failed to load SimHei font: {e}")
         
         pdf.set_font(font_name, "", 16)
         pdf.cell(0, 15, "行业统计分析报表", 0, 1, "C")
@@ -904,7 +907,7 @@ async def export_industry_report(
             }
         )
     except Exception as e:
-        print(f"导出行业统计报表失败: {e}")
+        logger.error(f"导出行业统计报表失败: {e}")
         import traceback
         traceback.print_exc()
         return {

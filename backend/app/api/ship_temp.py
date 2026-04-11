@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
@@ -15,6 +16,8 @@ from app.schemas.order import (
     OrderListResponse, OrderListCreate, OrderListUpdate,
     OrderQuery
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -80,7 +83,7 @@ async def get_order_data(
     
     if 发货单号:
         filters.append(Order.发货单号 == 发货单号)
-        print(f"添加发货单号筛选条件: {发货单号}")
+        logger.info(f"添加发货单号筛选条件: {发货单号}")
     
     if query == "list":
         # 查询订单列表 - 使用优化查询
@@ -119,7 +122,7 @@ async def get_order_data(
             filters.append(Order.ship_id.isnot(None))
         
         # 打印筛选条件，用于调试
-        print(f"筛选条件: {filters}")
+        logger.info(f"筛选条件: {filters}")
         
         # 使用joinedload优化关联查询
         query_obj = db.query(Order, OrderList).outerjoin(
@@ -216,7 +219,7 @@ async def delete_shipping(
         # 3. 如果快递单号不存在于订单表中，删除发货表中的对应记录
         if not express_number_exists:
             ship_deleted = db.query(Ship).filter(Ship.快递单号 == 快递单号).delete()
-            print(f"删除发货表记录: {ship_deleted} 条")
+            logger.info(f"删除发货表记录: {ship_deleted} 条")
         
         # 提交事务
         db.commit()
@@ -231,7 +234,7 @@ async def delete_shipping(
         }
         
     except Exception as e:
-        print(f"删除发货单号失败: {e}")
+        logger.error(f"删除发货单号失败: {e}")
         db.rollback()
         return {
             "code": 1,
@@ -277,7 +280,7 @@ async def delete_shipping_item(
         }
         
     except Exception as e:
-        print(f"删除发货项目失败: {e}")
+        logger.error(f"删除发货项目失败: {e}")
         db.rollback()
         return {
             "code": 1,
@@ -396,7 +399,7 @@ async def get_sales_stats_optimized(
         return result
         
     except Exception as e:
-        print(f"获取销售统计数据失败: {e}")
+        logger.error(f"获取销售统计数据失败: {e}")
         # 返回默认数据
         sales_data = []
         for i in range(11, -1, -1):
@@ -506,7 +509,7 @@ async def get_shipping_detail(
         }
         
     except Exception as e:
-        print(f"获取发货单详情失败: {e}")
+        logger.error(f"获取发货单详情失败: {e}")
         return {
             "code": 1,
             "msg": f"获取失败: {str(e)}",
@@ -641,7 +644,7 @@ async def delete_shipping(
         # 3. 如果快递单号不存在于订单表中，删除发货表中的对应记录
         if not express_number_exists:
             ship_deleted = db.query(Ship).filter(Ship.快递单号 == 快递单号).delete()
-            print(f"删除发货表记录: {ship_deleted} 条")
+            logger.info(f"删除发货表记录: {ship_deleted} 条")
         
         # 提交事务
         db.commit()
@@ -656,7 +659,7 @@ async def delete_shipping(
         }
         
     except Exception as e:
-        print(f"删除发货单号失败: {e}")
+        logger.error(f"删除发货单号失败: {e}")
         db.rollback()
         return {
             "code": 1,
@@ -702,7 +705,7 @@ async def delete_shipping_item(
         }
         
     except Exception as e:
-        print(f"删除发货项目失败: {e}")
+        logger.error(f"删除发货项目失败: {e}")
         db.rollback()
         return {
             "code": 1,

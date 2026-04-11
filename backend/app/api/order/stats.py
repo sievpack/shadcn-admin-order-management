@@ -1,8 +1,11 @@
+import logging
 from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db_jns
+
+logger = logging.getLogger(__name__)
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.order_service import order_stats_service
@@ -20,7 +23,7 @@ async def get_sales_stats(
         data = order_stats_service.get_sales_stats(db)
         return {"code": 0, "msg": "success", "data": data}
     except Exception as e:
-        print(f"获取销售统计数据失败: {e}")
+        logger.error(f"获取销售统计数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {"code": 1, "msg": f"获取销售统计数据失败: {str(e)}", "data": {
@@ -53,7 +56,7 @@ async def get_recent_orders(
         orders = order_stats_service.get_recent_orders(db, limit)
         return {"code": 0, "msg": "success", "data": orders}
     except Exception as e:
-        print(f"获取最新订单失败: {e}")
+        logger.error(f"获取最新订单失败: {e}")
         import traceback
         traceback.print_exc()
         return {"code": 1, "msg": f"获取最新订单失败: {str(e)}", "data": []}
@@ -70,7 +73,7 @@ async def get_sales_trend(
         data = order_stats_service.get_sales_trend(db, period)
         return {"code": 0, "msg": "success", "data": data}
     except Exception as e:
-        print(f"获取销售趋势数据失败: {e}")
+        logger.error(f"获取销售趋势数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {"code": 1, "msg": f"获取销售趋势数据失败: {str(e)}", "data": []}

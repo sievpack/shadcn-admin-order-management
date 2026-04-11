@@ -152,6 +152,7 @@ class OrderService(BaseService[Order]):
         order = self.repository.create(db, insert_data)
         if order:
             self.update_order_status(db, order.oid)
+            db.commit()
         return order, None
 
 
@@ -222,6 +223,8 @@ class OrderListService(BaseService[OrderList]):
             "交货日期": delivery_date,
             "status": data.get('status', False)
         })
+        if order_list:
+            db.commit()
         return order_list, None
 
     def update_order(self, db: Session, order_id: int, data: dict) -> Tuple[Optional[OrderList], Optional[str]]:
@@ -244,6 +247,7 @@ class OrderListService(BaseService[OrderList]):
 
         if update_data:
             self.repository.update(db, order, update_data)
+            db.commit()
         return order, None
 
     def mark_shipped(
@@ -330,6 +334,7 @@ class OrderListService(BaseService[OrderList]):
                     }
                 }
 
+        db.commit()
         return updated, None, notification_msg
 
 

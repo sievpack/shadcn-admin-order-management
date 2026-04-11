@@ -11,6 +11,7 @@ class Ship(Base):
     id = Column(Integer, primary_key=True, comment="订单分项ID")
     发货单号 = Column(String(50), comment='发货单号')
     发货日期 = Column(DateTime, nullable=False, default=datetime.datetime.now, comment='发货日期')
+    created_at = Column(DateTime, nullable=False, default=datetime.datetime.now, comment='创建时间')
     代收货款 = Column(Float, comment='代收货款')
     备注 = Column(String(255), comment='备注')
     快递单号 = Column(String(50), nullable=False, comment='快递单号')

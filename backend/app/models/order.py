@@ -45,3 +45,4 @@ class OrderList(Base):
     交货日期 = Column(Date, nullable=False, comment='交货时间')
     客户名称 = Column(String(50), nullable=False)
     status =Column(Integer, default=0, comment='订单状态: 0=未发货, 1=部分发货, 2=已发货')
+    created_at = Column(DateTime, nullable=False, default=datetime.datetime.now, comment='创建时间')

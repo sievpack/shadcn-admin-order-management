@@ -1,7 +1,10 @@
+import logging
 from typing import Optional, Tuple, List, Dict, Any
 from sqlalchemy.orm import Session
 from app.repositories.quote_repository import quote_repository
 from app.models.quote import Quote
+
+logger = logging.getLogger(__name__)
 
 
 class QuoteService:
@@ -42,6 +45,8 @@ class QuoteService:
                 含税单价 = kwargs.get('含税单价') or 0
                 kwargs['含税总价'] = 数量 * 含税单价
             quote = self.repo.create(db, **kwargs)
+            if quote:
+                db.commit()
             return quote, None
         except Exception as e:
             return None, str(e)
@@ -56,6 +61,7 @@ class QuoteService:
                 含税单价 = kwargs.get('含税单价') or 0
                 kwargs['含税总价'] = 数量 * 含税单价
             updated = self.repo.update(db, quote, **kwargs)
+            db.commit()
             return updated, None
         except Exception as e:
             return None, str(e)
@@ -64,6 +70,7 @@ class QuoteService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "报价单不存在"
+        db.commit()
         return True, None
 
     def to_dict(self, quote: Quote) -> Dict[str, Any]:

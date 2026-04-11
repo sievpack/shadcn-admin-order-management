@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -6,6 +7,8 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.ship_service import ship_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -22,7 +25,6 @@ async def delete_shipping(
         updated, error = ship_service.delete_shipping(db, 发货单号, 快递单号)
         if error:
             return {"code": 1, "msg": error, "data": {}}
-        db.commit()
         return {"code": 0, "msg": "success", "data": {"updated": updated}}
     except Exception as e:
         db.rollback()
@@ -42,7 +44,6 @@ async def delete_shipping_item(
             return {"code": 1, "msg": error, "data": {}}
         if updated == 0:
             return {"code": 1, "msg": "未找到该订单记录", "data": {}}
-        db.commit()
         return {"code": 0, "msg": "success", "data": {"updated": updated}}
     except Exception as e:
         db.rollback()
@@ -132,7 +133,6 @@ async def create_shipping(
         )
         if error:
             return {"code": 1, "msg": error, "data": {}}
-        db.commit()
         return {"code": 0, "msg": "success", "data": {"ship_id": ship.id}}
     except Exception as e:
         db.rollback()
@@ -164,7 +164,6 @@ async def add_shipping_items(
         if error:
             return {"code": 1, "msg": error, "data": {}}
 
-        db.commit()
         return {"code": 0, "msg": f"成功添加 {updated} 个分项", "data": {"updated": updated}}
     except Exception as e:
         db.rollback()
@@ -190,7 +189,6 @@ async def update_shipping_date(
         if not success:
             return {"code": 1, "msg": error, "data": {}}
 
-        db.commit()
         return {"code": 0, "msg": "更新成功", "data": {}}
     except Exception as e:
         db.rollback()
@@ -222,7 +220,6 @@ async def update_shipping(
         if not success:
             return {"code": 1, "msg": error, "data": {}}
 
-        db.commit()
         return {"code": 0, "msg": "更新成功", "data": {}}
     except Exception as e:
         db.rollback()

@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -7,6 +8,8 @@ import os
 import platform
 
 from app.db.database import get_db_jns
+
+logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
 from app.models.user import User
 from app.api.auth import get_current_active_user
@@ -162,7 +165,7 @@ async def get_product_export_data(
             }
         }
     except Exception as e:
-        print(f"获取产品统计导出数据失败: {e}")
+        logger.error(f"获取产品统计导出数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -328,7 +331,7 @@ async def get_product_report(
             }
         }
     except Exception as e:
-        print(f"获取产品统计报表数据失败: {e}")
+        logger.error(f"获取产品统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -368,7 +371,7 @@ async def get_product_types(
             }
         }
     except Exception as e:
-        print(f"获取产品类型列表失败: {e}")
+        logger.error(f"获取产品类型列表失败: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -516,7 +519,7 @@ async def get_product_detail(
             }
         }
     except Exception as e:
-        print(f"获取产品详情失败: {e}")
+        logger.error(f"获取产品详情失败: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -668,7 +671,7 @@ async def export_product_report(
                     pdf.add_font("simhei", "", font_path, uni=True)
                     font_name = "simhei"
                 except Exception as e:
-                    print(f"Failed to load SimHei font: {e}")
+                    logger.warning(f"Failed to load SimHei font: {e}")
         
         pdf.set_font(font_name, "", 16)
         pdf.cell(0, 15, "产品统计分析报表", 0, 1, "C")
@@ -745,7 +748,7 @@ async def export_product_report(
             }
         )
     except Exception as e:
-        print(f"导出产品统计报表数据失败: {e}")
+        logger.error(f"导出产品统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
         return {

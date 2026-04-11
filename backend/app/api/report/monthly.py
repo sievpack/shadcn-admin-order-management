@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -5,6 +6,8 @@ from sqlalchemy import func
 import datetime
 
 from app.db.database import get_db_jns
+
+logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
 from app.models.ship import Ship
 from app.models.user import User
@@ -146,7 +149,7 @@ async def get_monthly_report(
             }
         }
     except Exception as e:
-        print(f"获取月度统计报表数据失败: {e}")
+        logger.error(f"获取月度统计报表数据失败: {e}")
         return {
             "code": 1,
             "msg": f"获取月度统计报表数据失败: {str(e)}",

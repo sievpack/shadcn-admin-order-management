@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -6,6 +7,8 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.quote_service import quote_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -86,8 +89,6 @@ async def create_quote(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {
         "code": 0,
         "msg": "创建成功",
@@ -128,8 +129,6 @@ async def update_quote(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    db.commit()
-
     return {
         "code": 0,
         "msg": "更新成功",
@@ -163,7 +162,5 @@ async def delete_quote(
 
     if not success:
         raise HTTPException(status_code=404, detail=error)
-
-    db.commit()
 
     return {"code": 0, "msg": "删除成功", "data": {}}

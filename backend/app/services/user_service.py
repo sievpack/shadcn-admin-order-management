@@ -46,6 +46,8 @@ class UserService(BaseService[User]):
             db, username, password_hash, first_name, last_name,
             email, phone, role
         )
+        if user:
+            db.commit()
         return user, None
 
     def search(
@@ -68,6 +70,7 @@ class UserService(BaseService[User]):
             return False
         password_hash = get_password_hash(new_password)
         self.repository.update(db, user, {"password": password_hash})
+        db.commit()
         return True
 
     def change_password(self, db: Session, user_id: int, old_password: str, new_password: str) -> tuple[bool, str]:
@@ -79,6 +82,7 @@ class UserService(BaseService[User]):
             return False, "旧密码错误"
         password_hash = get_password_hash(new_password)
         self.repository.update(db, user, {"password": password_hash})
+        db.commit()
         return True, "密码修改成功"
 
 

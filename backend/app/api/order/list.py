@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -8,6 +9,8 @@ from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.order_service import order_list_service, order_service, generate_order_number
 from app.schemas.common import APIResponse, PageResult
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -97,7 +100,7 @@ async def get_orders(
             for item in orders
         ]}
     except Exception as e:
-        print(f"获取订单列表失败: {e}")
+        logger.error(f"获取订单列表失败: {e}")
         return {"code": 1, "msg": f"获取失败: {str(e)}", "data": {}}
 
 
@@ -121,7 +124,7 @@ async def get_all_orders(
             for order in orders
         ]}
     except Exception as e:
-        print(f"获取所有订单失败: {e}")
+        logger.error(f"获取所有订单失败: {e}")
         return {"code": 1, "msg": f"获取失败: {str(e)}", "data": {}}
 
 
@@ -135,8 +138,6 @@ async def create_order(
     order, error = order_list_service.create(db, data)
     if error:
         return {"code": 1, "msg": error, "data": {}}
-
-    db.commit()
 
     return {"code": 0, "msg": "创建成功", "data": {"id": order.id}}
 
@@ -155,8 +156,6 @@ async def update_order(
     order, error = order_list_service.update_order(db, order_id, data)
     if error:
         return {"code": 1, "msg": error, "data": {}}
-
-    db.commit()
 
     return {"code": 0, "msg": "更新成功", "data": {
         "id": order.id,
@@ -180,7 +179,6 @@ async def delete_order(
         return {"code": 1, "msg": "订单不存在", "data": {}}
 
     order_list_service.delete(db, id)
-    db.commit()
     return {"code": 0, "msg": "删除成功", "data": {}}
 
 
@@ -213,8 +211,6 @@ async def mark_as_shipped(
 
     if error:
         return {"code": 1, "msg": error, "data": {}}
-
-    db.commit()
 
     # 发送 WebSocket 通知
     if notification_msg:
