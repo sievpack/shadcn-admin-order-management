@@ -34,6 +34,7 @@ import {
   DataTableToolbar,
   DataTableBulkActions,
 } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import { allOrdersColumns } from './allorders-columns'
 import { type OrderItem } from './allorders-columns'
 import { OrderItemMultiDeleteDialog } from './orderitem-multi-delete-dialog'
@@ -239,14 +240,28 @@ export function AllOrdersTable({
   const handleSyncBeltTypeFilterChange = useCallback(
     (_columnId: string, value: string | undefined) => {
       if (serverPagination) {
-        if (_columnId === '产品类型' && onSyncBeltTypeFilterChange) {
-          onSyncBeltTypeFilterChange(value)
-        } else if (_columnId === '规格' && onSpecFilterChange) {
-          onSpecFilterChange(value)
+        const currentFilters = columnFilters || []
+        const otherFilters = currentFilters.filter((f) => f.id !== _columnId)
+        const newFilters = value
+          ? [...otherFilters, { id: _columnId, value: value.split(',') }]
+          : otherFilters
+        const allFilterValues: Record<string, string | undefined> = {}
+        for (const f of newFilters) {
+          allFilterValues[f.id] = (f.value as string[]).join(',')
+        }
+        if (_columnId === '产品类型') {
+          onSyncBeltTypeFilterChange?.(allFilterValues['产品类型'])
+        } else if (_columnId === '规格') {
+          onSpecFilterChange?.(allFilterValues['规格'])
         }
       }
     },
-    [serverPagination, onSyncBeltTypeFilterChange, onSpecFilterChange]
+    [
+      serverPagination,
+      columnFilters,
+      onSyncBeltTypeFilterChange,
+      onSpecFilterChange,
+    ]
   )
 
   return (
@@ -322,14 +337,7 @@ export function AllOrdersTable({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length + 1}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              <TableLoading colSpan={columns.length + 1} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
