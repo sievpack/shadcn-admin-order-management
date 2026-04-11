@@ -159,32 +159,36 @@ export function AllOrders() {
 
   const handleSyncBeltTypeFilterChange = useCallback(
     (value: string | undefined) => {
-      const currentSearch = search as Record<string, unknown>
       startTransition(() => {
-        navigate({
-          search: {
-            ...currentSearch,
-            sync_belt_type: value || undefined,
-          },
+        navigate((prevSearch) => {
+          const currentSearch = (prevSearch || {}) as Record<string, unknown>
+          return {
+            search: {
+              ...currentSearch,
+              sync_belt_type: value || undefined,
+            },
+          }
         })
       })
     },
-    [search, navigate]
+    [navigate]
   )
 
   const handleSpecFilterChange = useCallback(
     (value: string | undefined) => {
-      const currentSearch = search as Record<string, unknown>
       startTransition(() => {
-        navigate({
-          search: {
-            ...currentSearch,
-            spec: value || undefined,
-          },
+        navigate((prevSearch) => {
+          const currentSearch = (prevSearch || {}) as Record<string, unknown>
+          return {
+            search: {
+              ...currentSearch,
+              spec: value || undefined,
+            },
+          }
         })
       })
     },
-    [search, navigate]
+    [navigate]
   )
 
   return (
