@@ -16,7 +16,8 @@
   "rules": {
     "tableDataFetch": "表格组件获取数据时，useEffect 应监听 globalFilter/columnFilters/pagination 等最终值，而不是 search 对象本身。因为 React 批处理可能导致 search 已更新但内部状态未同步。",
     "paginationWithUrl": "分页状态通过 useTableUrlState 管理，onPaginationChange 传递给 useReactTable，确保分页状态同步到 URL。使用 DataTablePagination 时，serverPaginationMode=true 必须传递 onPageChange 和 onPageSizeChange 回调。",
-    "toolbarArchitecture": "工具栏状态管理应放在使用工具栏的组件内部（如 OrderListTable），使用 navigate({ search: {} }) 清空所有 URL 参数。避免通过 props 传递 useTableUrlState 的回调函数，这会导致状态同步问题。"
+    "toolbarArchitecture": "工具栏状态管理应放在使用工具栏的组件内部（如 OrderListTable），使用 navigate({ search: {} }) 清空所有 URL 参数。避免通过 props 传递 useTableUrlState 的回调函数，这会导致状态同步问题。",
+    "transactionCommit": "Repository 层使用 flush() 而非 commit()，事务由 Service 层统一管理。API 层不调用 commit。"
   },
   "history": [
     {
@@ -62,6 +63,47 @@
       "description": "客户资料页面搜索输入框不显示内容，重置按钮不出现",
       "file": "features/customers/CustomerList.tsx, features/customers/components/customer-table.tsx",
       "detail": "问题原因：CustomerList 组件调用 useTableUrlState 并通过 props 传递给 CustomerTable，这种架构导致状态同步复杂化。修复方案：完全参照 orderlist-table.tsx 的架构，让 CustomerTable 内部自己调用 route.useSearch()、route.useNavigate() 和 useTableUrlState。CustomerList 从 143 行简化为 57 行。"
+    },
+    {
+      "date": "2026-04-09",
+      "description": "发货管理模块工具栏搜索框输入时页面抖动闪烁",
+      "file": "components/data-table/toolbar.tsx",
+      "detail": "问题原因：handleSearch 每次 onChange 都立即调用 onSearch，导致频繁 URL 更新和页面重渲染。中文输入时 onChange 被频繁触发，问题更严重。解决方案：使用 isComposingRef 区分中文输入状态，优化搜索触发时机：1）中文输入只在 onCompositionEnd 时触发一次搜索；2）英文输入每次 onChange 都触发；3）清空输入框直接触发搜索重置。"
+    },
+    {
+      "date": "2026-04-09",
+      "description": "生产计划与生产工单联动功能",
+      "files": [
+        "backend/app/api/production/plan.py - get-plan-orders API",
+        "backend/app/api/production/order.py - create-from-plan API",
+        "backend/app/services/production_service.py - create_from_plan/start/pause/finish",
+        "backend/app/repositories/production_repository.py - delete 逻辑（flush vs commit）",
+        "src/lib/production-api.ts - 添加 createFromPlan/getOrders",
+        "src/features/production/components/production-plan-dialogs.tsx - GenerateOrderDialog + 详情 Tab",
+        "src/features/production/components/production-plan-row-actions.tsx - 生成工单菜单",
+        "src/features/production/ProductionPlan.tsx - 状态和处理函数",
+        "src/features/production/components/production-order-row-actions.tsx - 已暂停显示开始按钮"
+      ],
+      "detail": "功能：1）从生产计划生成工单；2）查看计划关联工单列表；3）工单操作后状态联动。关键修复：1）工单编号使用 generate_code('WO') 生成；2）数据库 CHECK 约束必须包含所有状态值（已暂停/暂停中等）；3）刷新机制使用 productionOrderKeys.lists() 作为 queryKey。文档：.opencode/documents/生产计划与生产工单联动方案_v2.md"
+    },
+    {
+      "date": "2026-04-09",
+      "description": "修复工单状态同步到生产计划的逻辑",
+      "files": [
+        "backend/app/services/production_service.py - start/finish/pause 方法",
+        "backend/app/api/production/order.py - 移除重复的 db.commit()"
+      ],
+      "detail": "修复3个问题：1）finish()完工时累加已完成数量到plan.已完成数量；2）start()只有计划在暂停中时才改为生产中；3）pause()只有所有生产中工单都暂停了才将计划设为暂停；4）统一事务管理：Service层调用db.commit()，API层不调用db.commit()。文档：.opencode/documents/生产计划与生产工单联动方案_v2.md"
+    },
+    {
+      "date": "2026-04-09",
+      "description": "扩展工单编辑功能",
+      "files": [
+        "src/features/production/components/production-order-dialogs.tsx - 添加工单数量编辑、产线下拉、产品型号只读显示",
+        "src/features/production/ProductionOrder.tsx - showEditDialog时也获取lineOptions",
+        "backend/app/services/production_service.py - update方法添加数量联动逻辑"
+      ],
+      "detail": "编辑弹窗支持：1）工单数量编辑；2）产线下拉选择；3）产品型号、产品类型、规格只读显示。后端update方法：工单数量变化时联动更新计划已排数量，检查已完成数量不超过工单数量。"
     }
   ],
   "knownIssues": [

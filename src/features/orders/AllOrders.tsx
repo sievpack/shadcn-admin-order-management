@@ -1,4 +1,10 @@
-import { useState, useCallback, useMemo, startTransition } from 'react'
+import {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  startTransition,
+} from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { useDictDataByType } from '@/queries/dict/useDictData'
@@ -34,6 +40,17 @@ export function AllOrders() {
   const specParam = (search as Record<string, unknown>)?.spec as
     | string
     | undefined
+
+  const [localSyncBeltType, setLocalSyncBeltType] = useState(syncBeltTypeParam)
+  const [localSpec, setLocalSpec] = useState(specParam)
+
+  useEffect(() => {
+    setLocalSyncBeltType(syncBeltTypeParam)
+  }, [syncBeltTypeParam])
+
+  useEffect(() => {
+    setLocalSpec(specParam)
+  }, [specParam])
 
   const { data: syncBeltTypeData } = useDictDataByType('sync_belt_pitch')
   const { data: specData } = useDictDataByType('sync_belt_spec')
@@ -159,36 +176,28 @@ export function AllOrders() {
 
   const handleSyncBeltTypeFilterChange = useCallback(
     (value: string | undefined) => {
-      startTransition(() => {
-        navigate((prevSearch) => {
-          const currentSearch = (prevSearch || {}) as Record<string, unknown>
-          return {
-            search: {
-              ...currentSearch,
-              sync_belt_type: value || undefined,
-            },
-          }
-        })
+      navigate({
+        search: {
+          ...search,
+          sync_belt_type: value || undefined,
+          spec: localSpec || undefined,
+        },
       })
     },
-    [navigate]
+    [navigate, search, localSpec]
   )
 
   const handleSpecFilterChange = useCallback(
     (value: string | undefined) => {
-      startTransition(() => {
-        navigate((prevSearch) => {
-          const currentSearch = (prevSearch || {}) as Record<string, unknown>
-          return {
-            search: {
-              ...currentSearch,
-              spec: value || undefined,
-            },
-          }
-        })
+      navigate({
+        search: {
+          ...search,
+          sync_belt_type: localSyncBeltType || undefined,
+          spec: value || undefined,
+        },
       })
     },
-    [navigate]
+    [navigate, search, localSyncBeltType]
   )
 
   return (
