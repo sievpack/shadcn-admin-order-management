@@ -28,12 +28,10 @@ async def get_notifications(
     return {
         "code": 0,
         "msg": "success",
-        "data": {
-            "list": notifications,
-            "total": total,
-            "page": page,
-            "page_size": page_size
-        }
+        "count": total,
+        "data": notifications,
+        "page": page,
+        "page_size": page_size
     }
 
 

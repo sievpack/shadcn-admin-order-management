@@ -73,6 +73,10 @@ class OrderService(BaseService[Order]):
         """获取订单的所有分项"""
         return self.repository.get_by_oid(db, oid)
 
+    def update_order_status(self, db: Session, oid: int) -> int:
+        """更新订单列表的状态"""
+        return order_list_repository.update_status_by_oid(db, oid)
+
     def search(
         self,
         db: Session,
@@ -146,6 +150,8 @@ class OrderService(BaseService[Order]):
         }
 
         order = self.repository.create(db, insert_data)
+        if order:
+            self.update_order_status(db, order.oid)
         return order, None
 
 
@@ -283,17 +289,44 @@ class OrderListService(BaseService[OrderList]):
             synchronize_session=False
         )
 
+        # 更新所有受影响订单的父订单状态
+        oids_to_update = list(set([o.oid for o in orders if o.oid]))
+        for oid in oids_to_update:
+            order_service.update_order_status(db, oid)
+
         notification_msg = None
         if updated > 0:
             order_nums = [o.订单编号 for o in orders if o.订单编号]
             if order_nums:
+                发货总金额 = sum(float(o.金额 or 0) for o in orders)
+                订单项目 = []
+                for o in orders:
+                    订单项目.append({
+                        "订单编号": o.订单编号,
+                        "合同编号": o.合同编号,
+                        "产品类型": o.产品类型,
+                        "型号": o.型号,
+                        "规格": o.规格,
+                        "数量": o.数量,
+                        "单位": o.单位,
+                        "销售单价": float(o.销售单价) if o.销售单价 else 0,
+                        "金额": float(o.金额) if o.金额 else 0
+                    })
                 notification_msg = {
                     "type": "notification",
                     "payload": {
-                        "type": "order",
+                        "type": "order_shipped",
                         "title": "订单已发货",
                         "content": f"订单 {', '.join(order_nums)} 已发货，快递: {快递单号}",
-                        "timestamp": int(datetime.now().timestamp())
+                        "timestamp": int(datetime.now().timestamp()),
+                        "detail": {
+                            "发货单号": 发货单号,
+                            "快递单号": 快递单号,
+                            "发货日期": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            "客户名称": 客户名称,
+                            "发货总金额": 发货总金额,
+                            "订单项目": 订单项目
+                        }
                     }
                 }
 

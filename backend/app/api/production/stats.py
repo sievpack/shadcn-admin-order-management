@@ -8,6 +8,8 @@ from app.models.production import (
     ProductionPlan, ProductionOrder, ProductionReport,
     QualityInspection, ProductInbound
 )
+from app.models.user import User
+from app.api.auth import get_current_active_user
 
 
 router = APIRouter()
@@ -15,7 +17,8 @@ router = APIRouter()
 
 @router.get("/summary", response_model=dict)
 async def get_production_summary(
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取生产概览统计"""
     try:
@@ -53,7 +56,8 @@ async def get_production_summary(
 @router.get("/monthly", response_model=dict)
 async def get_monthly_stats(
     year: Optional[int] = None,
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取月度生产统计"""
     try:
@@ -97,7 +101,8 @@ async def get_monthly_stats(
 
 @router.get("/product", response_model=dict)
 async def get_product_stats(
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取产品生产统计"""
     try:
@@ -130,7 +135,8 @@ async def get_product_stats(
 
 @router.get("/line", response_model=dict)
 async def get_line_stats(
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取产线统计"""
     try:
@@ -166,7 +172,8 @@ async def get_line_stats(
 
 @router.get("/qc", response_model=dict)
 async def get_qc_stats(
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取质检统计"""
     try:
@@ -202,7 +209,8 @@ async def get_qc_stats(
 
 @router.get("/plan-status", response_model=dict)
 async def get_plan_status_stats(
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取计划状态统计"""
     try:
@@ -225,7 +233,8 @@ async def get_plan_status_stats(
 
 @router.get("/order-status", response_model=dict)
 async def get_order_status_stats(
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取工单状态统计"""
     try:

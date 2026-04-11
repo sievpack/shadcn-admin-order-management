@@ -28,7 +28,7 @@ async def get_all_order_items(
             page=page, page_size=limit
         )
 
-        return {"code": 0, "msg": "success", "total": total, "data": [
+        return {"code": 0, "msg": "success", "count": total, "data": [
             {
                 "id": item.id,
                 "oid": item.oid,
@@ -57,7 +57,7 @@ async def get_all_order_items(
         print(f"获取订单分项失败: {e}")
         import traceback
         traceback.print_exc()
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "total": 0, "data": []}
+        return {"code": 1, "msg": f"获取失败: {str(e)}", "count": 0, "data": []}
 
 
 @router.get("/all-no-pagination")
@@ -76,7 +76,7 @@ async def get_all_order_items_no_pagination(
             db, query=query, 规格=规格, 型号=型号, 产品类型=产品类型, 客户名称=客户名称
         )
 
-        return {"code": 0, "msg": "success", "total": len(items), "data": [
+        return {"code": 0, "msg": "success", "count": len(items), "data": [
             {
                 "id": item.id,
                 "oid": item.oid,
@@ -105,7 +105,7 @@ async def get_all_order_items_no_pagination(
         print(f"获取所有订单分项失败: {e}")
         import traceback
         traceback.print_exc()
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "total": 0, "data": []}
+        return {"code": 1, "msg": f"获取失败: {str(e)}", "count": 0, "data": []}
 
 
 @router.get("/list/{order_id}")
@@ -204,6 +204,7 @@ async def update_order_item(
 
         if update_data:
             order_service.update(db, item_id, update_data)
+            order_service.update_order_status(db, item.oid)
             db.commit()
             # 验证更新是否成功
             updated_item = order_service.get(db, item_id)
@@ -257,6 +258,7 @@ async def delete_order_item(
             return {"code": 1, "msg": "订单项不存在", "data": {}}
 
         order_service.delete(db, item_id)
+        order_service.update_order_status(db, item.oid)
         db.commit()
         return {"code": 0, "msg": "删除成功", "data": {}}
     except Exception as e:

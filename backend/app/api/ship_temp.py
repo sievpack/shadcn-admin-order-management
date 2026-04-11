@@ -8,6 +8,8 @@ import time
 
 from app.db.database import get_db_jns
 from app.models.order import Order, OrderList
+from app.models.user import User
+from app.api.auth import get_current_active_user
 from app.schemas.order import (
     OrderResponse, OrderCreate, OrderUpdate,
     OrderListResponse, OrderListCreate, OrderListUpdate,
@@ -53,7 +55,8 @@ async def get_order_data(
     发货状态: int = Query(2, description="0:未发货, 1:已发货, 2:全部"),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取订单数据 - 优化版本"""
     # 构建缓存键
@@ -190,7 +193,8 @@ async def get_order_data(
 async def delete_shipping(
     发货单号: str = Query(..., description="发货单号"),
     快递单号: str = Query(..., description="快递单号"),
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """删除发货单号
     1. 将订单表的发货单号、快递单号、ship_id三个字段设置为NULL
@@ -239,7 +243,8 @@ async def delete_shipping(
 @router.delete("/shipping/delete-item", response_model=dict)
 async def delete_shipping_item(
     order_id: int = Query(..., description="订单ID"),
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """删除单个发货项目
     将指定订单的发货单号、快递单号、ship_id三个字段设置为NULL
@@ -282,7 +287,10 @@ async def delete_shipping_item(
 
 
 @router.get("/stats", response_model=dict)
-async def get_sales_stats_optimized(db: Session = Depends(get_db_jns)):
+async def get_sales_stats_optimized(
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
+):
     """获取销售统计数据 - 优化版本"""
     cache_key = "sales_stats"
     
@@ -420,7 +428,9 @@ async def get_sales_stats_optimized(db: Session = Depends(get_db_jns)):
 
 # 清除缓存的端点（用于数据更新后）
 @router.post("/cache/clear")
-async def clear_cache():
+async def clear_cache(
+    current_user: User = Depends(get_current_active_user)
+):
     """清除所有缓存"""
     cache.clear()
     return {"code": 0, "msg": "缓存已清除"}
@@ -429,7 +439,8 @@ async def clear_cache():
 @router.get("/shipping/detail", response_model=dict)
 async def get_shipping_detail(
     发货单号: str = Query(..., description="发货单号"),
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取发货单详情 - 根据发货单号获取所有相关的订单项目"""
     try:
@@ -513,7 +524,8 @@ async def get_shipping_list(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     all: bool = Query(False, description="是否返回所有数据，不分页"),
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """获取发货列表 - 按发货单号去重"""
     # 构建缓存键
@@ -606,7 +618,8 @@ async def get_shipping_list(
 async def delete_shipping(
     发货单号: str = Query(..., description="发货单号"),
     快递单号: str = Query(..., description="快递单号"),
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """删除发货单号
     1. 将订单表的发货单号、快递单号、ship_id三个字段设置为NULL
@@ -655,7 +668,8 @@ async def delete_shipping(
 @router.delete("/shipping/delete-item", response_model=dict)
 async def delete_shipping_item(
     order_id: int = Query(..., description="订单ID"),
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """删除单个发货项目
     将指定订单的发货单号、快递单号、ship_id三个字段设置为NULL

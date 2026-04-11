@@ -7,6 +7,8 @@ import copy
 from jinja2 import Template
 
 from app.db.database import get_db_jns
+from app.models.user import User
+from app.api.auth import get_current_active_user
 
 router = APIRouter()
 
@@ -159,7 +161,8 @@ def prepare_report_data(data: dict) -> dict:
 @router.get("/workorder/{order_id}", response_model=dict)
 async def print_workorder(
     order_id: int,
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """打印生产工单"""
     try:
@@ -208,7 +211,8 @@ async def print_workorder(
 @router.get("/delivery/{ship_id}", response_model=dict)
 async def print_delivery(
     ship_id: int,
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """打印送货单"""
     try:
@@ -280,7 +284,8 @@ async def print_delivery(
 @router.get("/order/{order_id}", response_model=dict)
 async def print_order(
     order_id: int,
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """打印订单合同"""
     try:
@@ -332,7 +337,8 @@ async def print_order(
 @router.get("/report/{report_id}", response_model=dict)
 async def print_report(
     report_id: int,
-    db: Session = Depends(get_db_jns)
+    db: Session = Depends(get_db_jns),
+    current_user: User = Depends(get_current_active_user)
 ):
     """打印报工记录"""
     try:
@@ -373,7 +379,8 @@ async def print_report(
 @router.post("/preview", response_model=dict)
 async def print_preview(
     data: dict,
-    type: str = Query(..., description="打印类型: workorder, delivery, order, report")
+    type: str = Query(..., description="打印类型: workorder, delivery, order, report"),
+    current_user: User = Depends(get_current_active_user)
 ):
     """自定义打印预览"""
     type_map = {

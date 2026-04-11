@@ -7,7 +7,7 @@ from app.repositories.production_repository import (
     material_consumption_repository, production_report_repository
 )
 from app.models.production import ProductionPlan, ProductionOrder, ProductionReport, QualityInspection, ProductInbound, MaterialConsumption
-from app.api.code import generate_code
+from app.core.code_generator import generate_code
 
 
 class ProductionPlanService:

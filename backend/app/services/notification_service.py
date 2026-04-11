@@ -128,13 +128,13 @@ class ConnectionManager:
         self.active_connections: dict[str, list[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, user_id: str):
-        print(f"NOTIF SERVICE: connect called with user_id={user_id}")
+        logger.info(f"connect called with user_id={user_id}")
         await websocket.accept()
-        print(f"NOTIF SERVICE: accept done")
+        logger.info(f"accept done")
         if user_id not in self.active_connections:
             self.active_connections[user_id] = []
         self.active_connections[user_id].append(websocket)
-        print(f"NOTIF SERVICE: connect done, active={self.active_connections}")
+        logger.info(f"connect done, active={self.active_connections}")
 
     def disconnect(self, websocket: WebSocket, user_id: str):
         if user_id in self.active_connections:

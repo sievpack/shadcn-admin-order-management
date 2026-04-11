@@ -277,7 +277,7 @@ async def get_industry_report(
                 "industryStats": industry_stats,
                 "months": month_list
             },
-            "total": len(customer_stats)
+            "count": len(customer_stats)
         }
     except Exception as e:
         print(f"获取行业统计报表数据失败: {e}")
@@ -292,7 +292,7 @@ async def get_industry_report(
                 "industryStats": [],
                 "months": []
             },
-            "total": 0
+            "count": 0
         }
 
 
@@ -542,7 +542,7 @@ async def get_industry_export_data(
                 "industryStats": industry_stats,
                 "months": month_list
             },
-            "total": len(customer_stats)
+            "count": len(customer_stats)
         }
     except Exception as e:
         print(f"获取行业统计导出数据失败: {e}")
@@ -557,7 +557,7 @@ async def get_industry_export_data(
                 "industryStats": [],
                 "months": []
             },
-            "total": 0
+            "count": 0
         }
 
 

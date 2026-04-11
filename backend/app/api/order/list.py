@@ -67,7 +67,7 @@ async def get_orders(
                 '客户名称': order_list.客户名称 if order_list else None,
             } for order, order_list in results]
 
-            return {"code": 0, "msg": "success", "total": total, "data": data}
+            return {"code": 0, "msg": "success", "count": total, "data": data}
 
         start = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
         end = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
@@ -85,7 +85,7 @@ async def get_orders(
                 return 'partial'
             return 'pending'
 
-        return {"code": 0, "msg": "success", "total": total, "data": [
+        return {"code": 0, "msg": "success", "count": total, "data": [
             {
                 "id": item.id,
                 "订单编号": item.订单编号,
@@ -220,6 +220,7 @@ async def mark_as_shipped(
     if notification_msg:
         from app.services.notification_service import get_notification_manager
         manager = get_notification_manager()
+        notification_msg["payload"]["user_id"] = current_user.id
         await manager.broadcast(notification_msg)
 
     return {"code": 0, "msg": f"成功标记 {updated} 条订单为已发货", "data": {"updated": updated}}

@@ -31,7 +31,7 @@ async def get_dict_type_list(
         'updated_at': item.updated_at.isoformat() if item.updated_at else None,
     } for item in items]
 
-    return {"code": 0, "msg": "success", "data": {"list": data, "total": total, "page": page, "page_size": limit}}
+    return {"code": 0, "msg": "success", "count": total, "data": data, "page": page, "page_size": limit}
 
 
 @router.get("/type/all")
@@ -143,7 +143,7 @@ async def get_dict_data_list(
         'updated_at': item.updated_at.isoformat() if item.updated_at else None,
     } for item in items]
 
-    return {"code": 0, "msg": "success", "data": {"list": data, "total": total, "page": page, "page_size": limit}}
+    return {"code": 0, "msg": "success", "count": total, "data": data, "page": page, "page_size": limit}
 
 
 @router.get("/data/type/{dict_type}")

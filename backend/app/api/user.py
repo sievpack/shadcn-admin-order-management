@@ -30,7 +30,7 @@ async def get_user_list(
     return {
         "code": 0,
         "msg": "success",
-        "total": total,
+        "count": total,
         "data": [
             {
                 "id": item.id,
