@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -42,9 +42,16 @@ async def mark_notification_read(
     req: MarkReadRequest,
     current_user: User = Depends(get_current_active_user)
 ):
-    """标记单条已读"""
+    """标记单条已读
+    
+    Returns:
+        - 成功: {"code": 0, "msg": "success"}
+        - 失败: HTTP 404
+    """
     success = notification_service.mark_read(current_user.id, req.notification_id)
-    return {"code": 0 if success else 1, "msg": "success" if success else "notification not found"}
+    if not success:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {"code": 0, "msg": "success"}
 
 
 @router.post("/mark-all-read")
