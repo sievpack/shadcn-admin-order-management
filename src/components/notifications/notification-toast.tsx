@@ -10,13 +10,13 @@ export function NotificationToast() {
   if (toasts.length === 0) return null
 
   return (
-    <div className='fixed right-4 bottom-4 z-[100] flex flex-col gap-2'>
+    <div className='fixed top-4 left-1/2 z-[100] flex -translate-x-1/2 flex-col gap-2'>
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={cn(
             'flex items-start gap-3 rounded-lg border bg-background p-4 shadow-lg',
-            'animate-in fade-in-0 slide-in-from-bottom-5',
+            'animate-in fade-in-0 slide-in-from-top-5',
             'max-w-[400px] min-w-[300px]'
           )}
         >

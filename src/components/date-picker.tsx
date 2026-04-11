@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { format, startOfDay } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,14 +12,11 @@ import {
 function parseLocalDate(dateStr: string): Date | undefined {
   if (!dateStr) return undefined
   const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(year, month - 1, day)
+  return startOfDay(new Date(year, month - 1, day))
 }
 
 function formatDateForStorage(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return format(startOfDay(date), 'yyyy-MM-dd')
 }
 
 type DatePickerProps = {

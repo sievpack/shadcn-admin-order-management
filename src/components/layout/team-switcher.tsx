@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { ChevronsUpDown, User, LogOut } from 'lucide-react'
+import { removeCookie } from '@/lib/cookies'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+
+const ACCESS_TOKEN = 'thisisjustarandomstring'
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()
@@ -33,7 +36,7 @@ export function TeamSwitcher() {
   }, [])
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    removeCookie(ACCESS_TOKEN)
     localStorage.removeItem('userInfo')
     window.location.href = '/sign-in'
   }

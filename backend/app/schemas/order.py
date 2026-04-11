@@ -65,7 +65,7 @@ class OrderListBase(BaseModel):
     订单日期: datetime
     交货日期: datetime
     客户名称: str
-    status: Optional[bool] = False
+    status: Optional[int] = 0
 
 
 class OrderListCreate(OrderListBase):
@@ -79,7 +79,7 @@ class OrderListUpdate(BaseModel):
     订单日期: Optional[datetime] = None
     交货日期: Optional[datetime] = None
     客户名称: Optional[str] = None
-    status: Optional[bool] = None
+    status: Optional[int] = 0
 
 
 class OrderListResponse(OrderListBase):
@@ -96,6 +96,5 @@ class OrderQuery(BaseModel):
     型号: Optional[str] = None
     规格: Optional[str] = None
     合同编号: Optional[str] = None
-    发货状态: Optional[int] = 2  # 0:未发货, 1:已发货, 2:全部
     page: int = 1
     limit: int = 10

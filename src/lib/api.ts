@@ -29,11 +29,13 @@ import {
   createDictTypeSchema,
   updateDictTypeSchema,
   createDictDataSchema,
-  updateDictDataSchema,
   loginParamsSchema,
   paginationParamsSchema,
 } from './api-types'
 import { validateData, validateParams } from './api-validation'
+import { getCookie } from './cookies'
+
+const ACCESS_TOKEN = 'thisisjustarandomstring'
 
 const api = axios.create({
   baseURL: '/api',
@@ -45,8 +47,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
+    const cookieToken = getCookie(ACCESS_TOKEN)
+    if (cookieToken) {
+      const token = JSON.parse(cookieToken)
       config.headers.Authorization = `Bearer ${token}`
     }
     return config

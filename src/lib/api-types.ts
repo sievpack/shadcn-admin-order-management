@@ -16,7 +16,7 @@ export const orderListParamsSchema = z.object({
   search: z.string().optional(),
   status: z.string().optional(),
   settlement: z.string().optional(),
-  发货状态: z.coerce.number().optional(),
+  发货状态: z.string().optional(),
   items: z.boolean().optional(),
   start_date: z.string().optional(),
   end_date: z.string().optional(),

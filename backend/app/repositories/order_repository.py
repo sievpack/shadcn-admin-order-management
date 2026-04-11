@@ -133,7 +133,7 @@ class OrderListRepository(BaseRepository[OrderList]):
         self,
         db: Session,
         query: str = None,
-        status: bool = None,
+        发货状态: str = None,
         start_date: date = None,
         end_date: date = None,
         skip: int = 0,
@@ -151,13 +151,20 @@ class OrderListRepository(BaseRepository[OrderList]):
                 )
             )
 
-        if status is not None:
-            q = q.filter(OrderList.status == status)
-
         if start_date:
             q = q.filter(OrderList.订单日期 >= start_date)
         if end_date:
             q = q.filter(OrderList.订单日期 <= end_date)
+
+        if 发货状态:
+            status_map = {'pending': 0, 'partial': 1, 'shipped': 2}
+            status_list = []
+            for s in 发货状态.split(','):
+                s = s.strip()
+                if s in status_map:
+                    status_list.append(status_map[s])
+            if status_list:
+                q = q.filter(OrderList.status.in_(status_list))
 
         total = q.count()
         items = q.order_by(desc(OrderList.id)).offset(skip).limit(limit).all()
@@ -171,7 +178,7 @@ class OrderListRepository(BaseRepository[OrderList]):
         self,
         db: Session,
         query: str = None,
-        发货状态: int = 2,
+        发货状态: int = None,
         start_date: date = None,
         end_date: date = None,
         skip: int = 0,
@@ -182,10 +189,13 @@ class OrderListRepository(BaseRepository[OrderList]):
             OrderList, Order.oid == OrderList.id
         )
 
+        # 发货状态判断：通过发货单号是否为 NULL
+        # 0=未发货（发货单号为NULL），1/2=已发货（发货单号不为NULL）
         if 发货状态 == 0:
-            q = q.filter(Order.ship_id == None)
-        elif 发货状态 == 1:
-            q = q.filter(Order.ship_id.isnot(None))
+            q = q.filter(Order.发货单号 == None)
+        elif 发货状态 in (1, 2):
+            q = q.filter(Order.发货单号.isnot(None))
+        # 如果发货状态为 None，不做筛选
 
         if query:
             search_pattern = f"%{query}%"
@@ -207,6 +217,46 @@ class OrderListRepository(BaseRepository[OrderList]):
         total = q.count()
         results = q.order_by(desc(Order.id)).offset(skip).limit(limit).all()
         return results, total
+
+    def get_shipping_status_map(
+        self,
+        db: Session,
+        order_ids: List[int]
+    ) -> dict:
+        """批量获取订单的发货状态
+        
+        用 count 统计总分项数和已发货项数，相减得出未发货数
+        Returns:
+            dict: {order_id: 'shipped'|'partial'|'pending'}
+        """
+        if not order_ids:
+            return {}
+        
+        status_map = {}
+        
+        for order_id in order_ids:
+            # count 总分项数
+            total_count = db.query(Order).filter(Order.oid == order_id).count()
+            # count 已发货分项数 (ship_id 不为 NULL)
+            shipped_count = db.query(Order).filter(
+                Order.oid == order_id,
+                Order.ship_id.isnot(None)
+            ).count()
+            # 未发货数 = 总分项数 - 已发货分项数
+            pending_count = total_count - shipped_count
+            
+            print(f"[DEBUG] order_id={order_id}, total={total_count}, shipped={shipped_count}, pending={pending_count}")
+            
+            if total_count == 0:
+                status_map[order_id] = 'pending'
+            elif pending_count == total_count:
+                status_map[order_id] = 'pending'
+            elif pending_count == 0:
+                status_map[order_id] = 'shipped'
+            else:
+                status_map[order_id] = 'partial'
+        
+        return status_map
 
 
 order_repository = OrderRepository(Order)

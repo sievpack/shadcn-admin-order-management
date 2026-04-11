@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api import ship, auth, customer, quote, report, code, print_service, dict as dict_api
+from app.api import ship, auth, customer, quote, report, code, print_service, dict as dict_api, ws
 from app.api.order import router as order_router
 from app.api.customer_sample import router as customer_sample_router
 from app.api.production import router as production_router
@@ -41,6 +41,7 @@ app.include_router(code.router, prefix="/api/code", tags=["编号生成"])
 app.include_router(print_service.router, prefix="/api/print", tags=["打印管理"])
 app.include_router(dict_api.router, prefix="/api/dict", tags=["字典管理"])
 app.include_router(customer_sample_router, prefix="/api/customer-sample", tags=["客户样品"])
+app.include_router(ws.router, prefix="/ws", tags=["WebSocket"])
 
 
 @app.get("/")

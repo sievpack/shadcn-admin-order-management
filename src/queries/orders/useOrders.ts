@@ -16,6 +16,5 @@ export function useOrders({
     queryKey: orderKeys.list(params),
     queryFn: () => orderListAPI.getOrders(params),
     enabled,
-    placeholderData: (previousData) => previousData,
   })
 }
