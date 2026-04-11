@@ -12,13 +12,20 @@ import {
 } from './components/collection-dialogs'
 import { CollectionTable } from './components/collection-table'
 
+const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function CollectionRecordList() {
   const [selectedRow, setSelectedRow] = useState<CollectionRecord | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [addForm, setAddForm] = useState<Partial<CollectionRecord>>({
     收款方式: '银行转账',
-    收款日期: new Date().toISOString().split('T')[0],
+    收款日期: formatDateLocal(new Date()),
     收款金额: 0,
   })
   const [saveLoading, setSaveLoading] = useState(false)
@@ -70,7 +77,7 @@ export function CollectionRecordList() {
         setShowAddDialog(false)
         setAddForm({
           收款方式: '银行转账',
-          收款日期: new Date().toISOString().split('T')[0],
+          收款日期: formatDateLocal(new Date()),
           收款金额: 0,
         })
         setRefreshKey((k) => k + 1)

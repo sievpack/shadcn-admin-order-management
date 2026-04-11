@@ -98,9 +98,11 @@ export const dictTypeColumns = ({
     ),
     cell: ({ row }) => {
       const available = row.getValue('available')
+      const isEnabled =
+        available == 1 || available === '1' || available === true
       return (
-        <Badge variant={available ? 'default' : 'secondary'}>
-          {available ? '启用' : '禁用'}
+        <Badge variant={isEnabled ? 'default' : 'secondary'}>
+          {isEnabled ? '启用' : '禁用'}
         </Badge>
       )
     },
@@ -112,7 +114,7 @@ export const dictTypeColumns = ({
     id: 'actions',
     cell: ({ row }) => (
       <DictTypeRowActions
-        row={row.original}
+        row={row}
         onView={onView}
         onEdit={onEdit}
         onDelete={onDelete}

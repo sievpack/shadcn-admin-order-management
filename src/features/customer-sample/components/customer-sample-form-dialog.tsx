@@ -26,6 +26,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
 import { type CustomerSample } from './customer-sample-provider'
 
+const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const schema = z.object({
   客户名称: z.string().min(1, '客户名称不能为空'),
   样品单号: z.string().min(1, '样品单号不能为空'),
@@ -89,7 +96,7 @@ export function CustomerSampleFormDialog({
           需求日期: data.需求日期 || '',
         })
       } else {
-        const today = new Date().toISOString().slice(0, 10)
+        const today = formatDateLocal(new Date())
         form.reset({
           客户名称: '',
           样品单号: '',
@@ -230,9 +237,7 @@ export function CustomerSampleFormDialog({
                           field.value ? new Date(field.value) : undefined
                         }
                         onSelect={(date) => {
-                          field.onChange(
-                            date ? date.toISOString().slice(0, 10) : ''
-                          )
+                          field.onChange(date ? formatDateLocal(date) : '')
                         }}
                         className='w-full'
                       />
@@ -253,9 +258,7 @@ export function CustomerSampleFormDialog({
                           field.value ? new Date(field.value) : undefined
                         }
                         onSelect={(date) => {
-                          field.onChange(
-                            date ? date.toISOString().slice(0, 10) : ''
-                          )
+                          field.onChange(date ? formatDateLocal(date) : '')
                         }}
                         className='w-full'
                       />

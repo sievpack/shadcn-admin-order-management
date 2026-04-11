@@ -111,7 +111,7 @@ export const productionReportColumns = ({
     id: 'actions',
     cell: ({ row }) => (
       <ProductionReportRowActions
-        row={row.original}
+        row={row}
         onView={onView}
         onDelete={onDelete}
       />

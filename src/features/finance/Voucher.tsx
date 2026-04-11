@@ -9,10 +9,17 @@ import { type Voucher } from './components/voucher-columns'
 import { VoucherAddDialog } from './components/voucher-dialogs'
 import { VoucherTable } from './components/voucher-table'
 
+const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function VoucherList() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [addForm, setAddForm] = useState<Partial<Voucher>>({
-    凭证日期: new Date().toISOString().split('T')[0],
+    凭证日期: formatDateLocal(new Date()),
     凭证类型: '记账凭证',
     借方金额: 0,
     贷方金额: 0,
@@ -54,7 +61,7 @@ export function VoucherList() {
         })
         setShowAddDialog(false)
         setAddForm({
-          凭证日期: new Date().toISOString().split('T')[0],
+          凭证日期: formatDateLocal(new Date()),
           凭证类型: '记账凭证',
           借方金额: 0,
           贷方金额: 0,

@@ -164,6 +164,7 @@ async def get_dict_data_by_type(
         'css_class': item.css_class,
         'list_class': item.list_class,
         'is_default': item.is_default,
+        'available': item.available,
     } for item in items]
 
     return {"code": 0, "msg": "success", "data": data}

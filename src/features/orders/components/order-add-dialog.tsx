@@ -85,7 +85,7 @@ export function OrderAddDialog({
         }
       } catch (error) {
         console.error('获取订单编号失败:', error)
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+        const dateStr = formatDateLocal(new Date()).replace(/-/g, '')
         const randomStr = Math.random()
           .toString(36)
           .substring(2, 8)
@@ -206,16 +206,23 @@ export function OrderAddDialog({
       }
     }
 
-    // 确保日期格式正确
+    // 确保日期格式正确 - 使用本地时间
+    const formatDateLocal = (date: Date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
     const formattedFormData = {
       ...formData,
       order_date:
         formData.order_date instanceof Date
-          ? formData.order_date.toISOString().substring(0, 10)
+          ? formatDateLocal(formData.order_date)
           : formData.order_date,
       delivery_date:
         formData.delivery_date instanceof Date
-          ? formData.delivery_date.toISOString().substring(0, 10)
+          ? formatDateLocal(formData.delivery_date)
           : formData.delivery_date,
     }
 

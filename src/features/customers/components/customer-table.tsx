@@ -12,6 +12,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useCustomers } from '@/queries/customers/useCustomers'
+import { customerAPI } from '@/lib/api'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -22,6 +24,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  MultiDeleteDialog,
+  DataTableBulkActions,
+  presetBulkActions,
+} from '@/components/common'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { customerColumns } from './customer-columns'
 import { type Customer } from './customer-provider'
@@ -34,8 +41,9 @@ interface CustomerTableProps {
 }
 
 export function CustomerTable({ onRefresh }: CustomerTableProps) {
-  const { setRefreshData } = useCustomer()
+  const { setRefreshData, refreshData } = useCustomer()
   const [rowSelection, setRowSelection] = useState({})
+  const [showMultiDelete, setShowMultiDelete] = useState(false)
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting] = useState<SortingState>([
     { id: '客户名称', desc: false },
@@ -121,6 +129,30 @@ export function CustomerTable({ onRefresh }: CustomerTableProps) {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
+  const handleBulkDelete = async (ids: (number | string)[]) => {
+    try {
+      for (const id of ids) {
+        await customerAPI.deleteCustomer(id as number)
+      }
+      showToastWithData({
+        type: 'success',
+        title: `成功删除 ${ids.length} 个客户`,
+        data: { count: ids.length },
+      })
+      setRowSelection({})
+      onRefresh?.()
+      refreshData()
+    } catch (error: any) {
+      showToastWithData({
+        type: 'error',
+        title: '批量删除失败',
+        data: { error: error.message },
+      })
+    }
+  }
+
+  const bulkActions = [presetBulkActions.delete(() => setShowMultiDelete(true))]
+
   return (
     <div
       className={cn(
@@ -166,6 +198,11 @@ export function CustomerTable({ onRefresh }: CustomerTableProps) {
             ],
           },
         ]}
+      />
+      <DataTableBulkActions
+        table={table}
+        actions={bulkActions}
+        entityName='客户'
       />
       <div className='overflow-hidden rounded-md border'>
         <Table className='min-w-xl'>
@@ -240,6 +277,13 @@ export function CustomerTable({ onRefresh }: CustomerTableProps) {
         </Table>
       </div>
       <DataTablePagination table={table} className='mt-auto' />
+      <MultiDeleteDialog
+        open={showMultiDelete}
+        onOpenChange={setShowMultiDelete}
+        table={table}
+        entityName='客户'
+        onBulkDelete={handleBulkDelete}
+      />
     </div>
   )
 }

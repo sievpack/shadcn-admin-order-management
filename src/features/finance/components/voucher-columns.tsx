@@ -116,8 +116,6 @@ export const voucherColumns = ({
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <VoucherRowActions row={row.original} onApprove={onApprove} />
-    ),
+    cell: ({ row }) => <VoucherRowActions row={row} onApprove={onApprove} />,
   },
 ]

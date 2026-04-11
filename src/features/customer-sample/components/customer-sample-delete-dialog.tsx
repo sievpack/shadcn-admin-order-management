@@ -1,15 +1,6 @@
 import { customerSampleAPI } from '@/lib/api'
 import { showToastWithData } from '@/lib/show-submitted-data'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { SimpleDeleteDialog } from '@/components/common'
 import { type CustomerSample } from './customer-sample-provider'
 
 type CustomerSampleDeleteDialogProps = {
@@ -55,24 +46,12 @@ export function CustomerSampleDeleteDialog({
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认删除</AlertDialogTitle>
-          <AlertDialogDescription>
-            确定要删除样品「{data?.样品单号}」吗？此操作无法撤销。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            className='bg-destructive hover:bg-destructive/90'
-          >
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <SimpleDeleteDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title='确认删除'
+      entityName={data?.样品单号}
+      onConfirm={handleDelete}
+    />
   )
 }

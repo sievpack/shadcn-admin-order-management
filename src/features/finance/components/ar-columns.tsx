@@ -124,7 +124,7 @@ export const accountsReceivableColumns = ({
     id: 'actions',
     cell: ({ row }) => (
       <ARRowActions
-        row={row.original}
+        row={row}
         onView={onView}
         onEdit={onEdit}
         onDelete={onDelete}

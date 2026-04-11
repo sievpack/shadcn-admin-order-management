@@ -103,7 +103,7 @@ export const materialConsumptionColumns = ({
   {
     id: 'actions',
     cell: ({ row }) => (
-      <MaterialConsumptionRowActions row={row.original} onDelete={onDelete} />
+      <MaterialConsumptionRowActions row={row} onDelete={onDelete} />
     ),
   },
 ]

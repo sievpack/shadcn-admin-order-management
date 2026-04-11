@@ -1,14 +1,9 @@
-import { DotsHorizontalIcon } from '@radix-ui/react-icons'
+import { type Row } from '@tanstack/react-table'
 import { Eye, Edit, Trash2, Check, X, ClipboardList } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  DataTableRowActionsWithGroups as CommonRowActions,
+  presetActions,
+} from '@/components/common'
 
 export interface ProductionPlan {
   id: number
@@ -33,7 +28,7 @@ export interface ProductionPlan {
 }
 
 type DataTableRowActionsProps = {
-  row: ProductionPlan
+  row: Row<ProductionPlan>
   onView?: (row: ProductionPlan) => void
   onEdit?: (row: ProductionPlan) => void
   onDelete?: (row: ProductionPlan) => void
@@ -51,82 +46,54 @@ export function ProductionPlanRowActions({
   onReject,
   onGenerateOrder,
 }: DataTableRowActionsProps) {
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant='ghost'
-          className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
-        >
-          <DotsHorizontalIcon className='h-4 w-4' />
-          <span className='sr-only'>打开菜单</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-[160px]'>
-        {onView && (
-          <DropdownMenuItem onClick={() => onView(row)}>
-            查看
-            <DropdownMenuShortcut>
-              <Eye size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-        )}
-        {onEdit && (
-          <DropdownMenuItem onClick={() => onEdit(row)}>
-            编辑
-            <DropdownMenuShortcut>
-              <Edit size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-        )}
-        {row.计划状态 !== '待审核' &&
-          onGenerateOrder &&
-          row.计划数量 > row.已排数量 && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onGenerateOrder(row)}>
-                生成工单
-                <DropdownMenuShortcut>
-                  <ClipboardList size={16} />
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </>
-          )}
-        {row.计划状态 === '待审核' && onApprove && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onApprove(row)}>
-              审核通过
-              <DropdownMenuShortcut>
-                <Check size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onReject?.(row)}
-              className='text-orange-500'
-            >
-              驳回
-              <DropdownMenuShortcut>
-                <X size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </>
-        )}
-        {onDelete && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDelete(row)}
-              className='text-red-500'
-            >
-              删除
-              <DropdownMenuShortcut>
-                <Trash2 size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  const plan = row.original
+  const actions: any[] = []
+
+  if (onView) {
+    actions.push(presetActions.view((r: ProductionPlan) => onView(r)))
+  }
+  if (onEdit) {
+    actions.push(presetActions.edit((r: ProductionPlan) => onEdit(r)))
+  }
+
+  if (
+    plan.计划状态 !== '待审核' &&
+    onGenerateOrder &&
+    plan.计划数量 > plan.已排数量
+  ) {
+    actions.push({ separator: true, label: '', onClick: () => {} })
+    actions.push({
+      label: '生成工单',
+      icon: <ClipboardList className='h-4 w-4' />,
+      variant: 'secondary' as const,
+      onClick: (r: ProductionPlan) => onGenerateOrder(r),
+    })
+  }
+
+  if (plan.计划状态 === '待审核') {
+    actions.push({ separator: true, label: '', onClick: () => {} })
+    if (onApprove) {
+      actions.push({
+        label: '审核通过',
+        icon: <Check className='h-4 w-4' />,
+        variant: 'secondary' as const,
+        onClick: (r: ProductionPlan) => onApprove(r),
+      })
+    }
+    if (onReject) {
+      actions.push({
+        label: '驳回',
+        icon: <X className='h-4 w-4' />,
+        variant: 'secondary' as const,
+        onClick: (r: ProductionPlan) => onReject(r),
+      })
+    }
+  }
+
+  if (onDelete) {
+    actions.push({ separator: true, label: '', onClick: () => {} })
+    actions.push(presetActions.delete((r: ProductionPlan) => onDelete(r)))
+  }
+
+  return <CommonRowActions row={row} actions={actions} />
 }

@@ -129,7 +129,7 @@ export const accountsPayableColumns = ({
     id: 'actions',
     cell: ({ row }) => (
       <APRowActions
-        row={row.original}
+        row={row}
         onView={onView}
         onEdit={onEdit}
         onDelete={onDelete}

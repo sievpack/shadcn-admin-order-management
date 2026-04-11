@@ -144,7 +144,7 @@ export const qualityInspectionColumns = ({
     id: 'actions',
     cell: ({ row }) => (
       <QualityInspectionRowActions
-        row={row.original}
+        row={row}
         onView={onView}
         onDelete={onDelete}
       />

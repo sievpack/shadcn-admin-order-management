@@ -166,8 +166,20 @@ export function DictTypeDialogs({
               </div>
               <div className='flex flex-col gap-1'>
                 <Label className='text-muted-foreground'>状态</Label>
-                <Badge variant={dictType.available ? 'default' : 'secondary'}>
-                  {dictType.available ? '启用' : '禁用'}
+                <Badge
+                  variant={
+                    dictType.available == 1 ||
+                    dictType.available === '1' ||
+                    dictType.available === true
+                      ? 'default'
+                      : 'secondary'
+                  }
+                >
+                  {dictType.available == 1 ||
+                  dictType.available === '1' ||
+                  dictType.available === true
+                    ? '启用'
+                    : '禁用'}
                 </Badge>
               </div>
               <div className='col-span-2 flex flex-col gap-1'>
@@ -205,7 +217,9 @@ export function DictTypeDialogs({
                             {item.dict_value}
                           </TableCell>
                           <TableCell className='text-center'>
-                            {item.is_default ? (
+                            {item.is_default == 1 ||
+                            item.is_default === '1' ||
+                            item.is_default === true ? (
                               <Badge variant='default'>是</Badge>
                             ) : (
                               '-'
@@ -213,9 +227,19 @@ export function DictTypeDialogs({
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={item.available ? 'default' : 'secondary'}
+                              variant={
+                                item.available == 1 ||
+                                item.available === '1' ||
+                                item.available === true
+                                  ? 'default'
+                                  : 'secondary'
+                              }
                             >
-                              {item.available ? '启用' : '禁用'}
+                              {item.available == 1 ||
+                              item.available === '1' ||
+                              item.available === true
+                                ? '启用'
+                                : '禁用'}
                             </Badge>
                           </TableCell>
                         </TableRow>

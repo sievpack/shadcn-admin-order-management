@@ -11,7 +11,7 @@ interface Order {
   customer_name: string
   order_date: string
   delivery_date: string
-  status: boolean
+  发货状态?: 'pending' | 'partial' | 'shipped'
 }
 
 export const orderListColumns = ({
@@ -119,7 +119,22 @@ export const orderListColumns = ({
     ),
     cell: ({ row }) => {
       const deliveryDate = row.getValue('delivery_date')
+      const shippingStatus = row.getValue('发货状态') as string
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const isOverdue =
+        shippingStatus !== 'shipped' &&
+        shippingStatus !== undefined &&
+        deliveryDate &&
+        new Date(deliveryDate) <= today
       try {
+        if (isOverdue) {
+          return (
+            <Badge variant='destructive' className='px-2 py-0.5'>
+              {format(new Date(deliveryDate), 'yyyy-MM-dd')}
+            </Badge>
+          )
+        }
         return <span>{format(new Date(deliveryDate), 'yyyy-MM-dd')}</span>
       } catch {
         return <span>{deliveryDate || '-'}</span>
@@ -128,27 +143,35 @@ export const orderListColumns = ({
     meta: { label: '交期日期' },
   },
   {
-    accessorKey: 'status',
+    accessorKey: '发货状态',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='状态' />
+      <DataTableColumnHeader column={column} title='发货状态' />
     ),
     cell: ({ row }) => {
-      const status = row.getValue('status')
-      return (
-        <Badge variant={status ? 'default' : 'outline'}>
-          {status ? '已完成' : '未完成'}
-        </Badge>
-      )
+      const shippingStatus = row.getValue('发货状态') as string
+      const variant =
+        shippingStatus === 'shipped'
+          ? 'success'
+          : shippingStatus === 'partial'
+            ? 'warning'
+            : 'secondary'
+      const label =
+        shippingStatus === 'shipped'
+          ? '已发货'
+          : shippingStatus === 'partial'
+            ? '部分发货'
+            : '未发货'
+      return <Badge variant={variant}>{label}</Badge>
     },
     filterFn: (row, id, filterValue) => {
       if (!filterValue) return true
-      const status = row.getValue(id) as boolean
+      const status = row.getValue(id) as string
       const filterValues = Array.isArray(filterValue)
         ? filterValue
         : [filterValue]
-      return filterValues.includes(status.toString())
+      return filterValues.includes(status)
     },
-    meta: { label: '状态' },
+    meta: { label: '发货状态' },
   },
   {
     id: 'actions',

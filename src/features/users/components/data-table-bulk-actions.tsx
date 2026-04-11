@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
 import { Trash2, UserX, UserCheck, Mail } from 'lucide-react'
-import { toast } from 'sonner'
-import { sleep } from '@/lib/utils'
+import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { MultiDeleteDialog } from '@/components/common'
 import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
 import { type User } from '../data/schema'
-import { UsersMultiDeleteDialog } from './users-multi-delete-dialog'
 
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
@@ -23,30 +22,36 @@ export function DataTableBulkActions<TData>({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const selectedRows = table.getFilteredSelectedRowModel().rows
 
-  const handleBulkStatusChange = (status: 'active' | 'inactive') => {
-    const selectedUsers = selectedRows.map((row) => row.original as User)
-    toast.promise(sleep(2000), {
-      loading: `${status === 'active' ? 'Activating' : 'Deactivating'} users...`,
-      success: () => {
-        table.resetRowSelection()
-        return `${status === 'active' ? 'Activated' : 'Deactivated'} ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}`
-      },
-      error: `Error ${status === 'active' ? 'activating' : 'deactivating'} users`,
+  const handleBulkStatusChange = async (status: 'active' | 'inactive') => {
+    showToastWithData({
+      type: 'info',
+      title: `${status === 'active' ? '激活' : '停用'} ${selectedRows.length} 个用户`,
     })
     table.resetRowSelection()
   }
 
   const handleBulkInvite = () => {
-    const selectedUsers = selectedRows.map((row) => row.original as User)
-    toast.promise(sleep(2000), {
-      loading: 'Inviting users...',
-      success: () => {
-        table.resetRowSelection()
-        return `Invited ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}`
-      },
-      error: 'Error inviting users',
+    showToastWithData({
+      type: 'info',
+      title: `邀请 ${selectedRows.length} 个用户`,
     })
     table.resetRowSelection()
+  }
+
+  const handleBulkDelete = async (ids: (number | string)[]) => {
+    try {
+      showToastWithData({
+        type: 'success',
+        title: `成功删除 ${ids.length} 个用户`,
+        data: { count: ids.length },
+      })
+      table.resetRowSelection()
+    } catch (error) {
+      showToastWithData({
+        type: 'error',
+        title: '批量删除失败',
+      })
+    }
   }
 
   return (
@@ -129,10 +134,12 @@ export function DataTableBulkActions<TData>({
         </Tooltip>
       </BulkActionsToolbar>
 
-      <UsersMultiDeleteDialog
-        table={table}
+      <MultiDeleteDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
+        table={table}
+        entityName='用户'
+        onBulkDelete={handleBulkDelete}
       />
     </>
   )

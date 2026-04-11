@@ -95,8 +95,6 @@ export const collectionColumns = ({
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <CollectionRowActions row={row.original} onDelete={onDelete} />
-    ),
+    cell: ({ row }) => <CollectionRowActions row={row} onDelete={onDelete} />,
   },
 ]

@@ -101,8 +101,6 @@ export const paymentColumns = ({
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <PaymentRowActions row={row.original} onDelete={onDelete} />
-    ),
+    cell: ({ row }) => <PaymentRowActions row={row} onDelete={onDelete} />,
   },
 ]

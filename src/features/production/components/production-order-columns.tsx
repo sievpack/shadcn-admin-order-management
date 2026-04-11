@@ -182,7 +182,7 @@ export const productionOrderColumns = ({
     id: 'actions',
     cell: ({ row }) => (
       <ProductionOrderRowActions
-        row={row.original}
+        row={row}
         onView={onView}
         onEdit={onEdit}
         onDelete={onDelete}

@@ -22,6 +22,13 @@ import {
 import { ProductionOrderTable } from './components/production-order-table'
 import { ProductionReportAddDialog } from './components/production-report-dialogs'
 
+const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function ProductionOrderList() {
   const [selectedRow, setSelectedRow] = useState<ProductionOrder | null>(null)
   const [showDetailDialog, setShowDetailDialog] = useState(false)
@@ -272,7 +279,7 @@ export function ProductionOrderList() {
       const response = await productionReportAPI.create({
         ...reportForm,
         报工编号,
-        报工日期: new Date().toISOString().split('T')[0],
+        报工日期: formatDateLocal(new Date()),
       })
       if (response.data.code === 0) {
         const data = response.data.data

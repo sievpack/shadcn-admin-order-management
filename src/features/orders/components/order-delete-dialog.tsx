@@ -1,5 +1,4 @@
-import { Button } from '@/components/ui/button'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { SimpleDeleteDialog } from '@/components/common'
 
 type OrderDeleteDialogProps = {
   open: boolean
@@ -8,7 +7,12 @@ type OrderDeleteDialogProps = {
   onDelete: (id: number) => void
 }
 
-export function OrderDeleteDialog({ open, onOpenChange, orderId, onDelete }: OrderDeleteDialogProps) {
+export function OrderDeleteDialog({
+  open,
+  onOpenChange,
+  orderId,
+  onDelete,
+}: OrderDeleteDialogProps) {
   const handleDelete = () => {
     if (orderId) {
       onDelete(orderId)
@@ -17,21 +21,12 @@ export function OrderDeleteDialog({ open, onOpenChange, orderId, onDelete }: Ord
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认删除</AlertDialogTitle>
-          <AlertDialogDescription>
-            你确定要删除这个订单吗？此操作无法撤销。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} className='bg-destructive hover:bg-destructive/90'>
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <SimpleDeleteDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title='确认删除订单'
+      description='确定要删除这个订单吗？此操作无法撤销。'
+      onConfirm={handleDelete}
+    />
   )
 }

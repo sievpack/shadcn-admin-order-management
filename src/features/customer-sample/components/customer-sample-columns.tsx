@@ -66,7 +66,7 @@ export function customerSampleColumns(): ColumnDef<any>[] {
     },
     {
       id: 'actions',
-      cell: ({ row }) => <DataTableRowActions row={row.original} />,
+      cell: ({ row }) => <DataTableRowActions row={row} />,
     },
   ]
 }

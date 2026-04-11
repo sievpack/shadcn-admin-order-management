@@ -318,7 +318,9 @@ export function DictTypeTable({
                                       {item.dict_value}
                                     </TableCell>
                                     <TableCell className='text-center'>
-                                      {item.is_default ? (
+                                      {item.is_default == 1 ||
+                                      item.is_default === '1' ||
+                                      item.is_default === true ? (
                                         <Badge variant='default'>是</Badge>
                                       ) : (
                                         '-'
@@ -327,12 +329,18 @@ export function DictTypeTable({
                                     <TableCell>
                                       <Badge
                                         variant={
-                                          item.available
+                                          item.available == 1 ||
+                                          item.available === '1' ||
+                                          item.available === true
                                             ? 'default'
                                             : 'secondary'
                                         }
                                       >
-                                        {item.available ? '启用' : '禁用'}
+                                        {item.available == 1 ||
+                                        item.available === '1' ||
+                                        item.available === true
+                                          ? '启用'
+                                          : '禁用'}
                                       </Badge>
                                     </TableCell>
                                     <TableCell>

@@ -1,16 +1,6 @@
-import { Trash2 } from 'lucide-react'
 import { quoteAPI } from '@/lib/api'
 import { showToastWithData } from '@/lib/show-submitted-data'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { SimpleDeleteDialog } from '@/components/common'
 import { type Quote } from './quote-provider'
 
 type QuoteDeleteDialogProps = {
@@ -56,33 +46,12 @@ export function QuoteDeleteDialog({
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className='sm:max-w-md'>
-        <div className='p-6'>
-          <AlertDialogHeader className='flex flex-col items-center text-center'>
-            <div className='mb-4 rounded-full bg-destructive/10 p-3 text-destructive'>
-              <Trash2 className='h-6 w-6' />
-            </div>
-            <AlertDialogTitle className='text-lg font-semibold'>
-              确认删除
-            </AlertDialogTitle>
-            <AlertDialogDescription className='mt-2 text-sm text-muted-foreground'>
-              确定要删除报价单「{quote?.报价单号}」吗？此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-        </div>
-        <div className='border-t p-4'>
-          <AlertDialogFooter className='flex justify-center gap-2'>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              className='text-destructive-foreground bg-destructive hover:bg-destructive/90'
-              onClick={handleDelete}
-            >
-              确认删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </div>
-      </AlertDialogContent>
-    </AlertDialog>
+    <SimpleDeleteDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title='确认删除'
+      entityName={quote?.报价单号}
+      onConfirm={handleDelete}
+    />
   )
 }

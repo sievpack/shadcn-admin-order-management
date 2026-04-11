@@ -109,7 +109,9 @@ export const dictDataColumns = ({
     ),
     cell: ({ row }) => {
       const isDefault = row.getValue('is_default')
-      return isDefault ? (
+      const isDefaultTrue =
+        isDefault == 1 || isDefault === '1' || isDefault === true
+      return isDefaultTrue ? (
         <Badge variant='default'>是</Badge>
       ) : (
         <span className='text-muted-foreground'>-</span>
@@ -126,9 +128,11 @@ export const dictDataColumns = ({
     ),
     cell: ({ row }) => {
       const available = row.getValue('available')
+      const isEnabled =
+        available == 1 || available === '1' || available === true
       return (
-        <Badge variant={available ? 'default' : 'secondary'}>
-          {available ? '启用' : '禁用'}
+        <Badge variant={isEnabled ? 'default' : 'secondary'}>
+          {isEnabled ? '启用' : '禁用'}
         </Badge>
       )
     },
@@ -139,11 +143,7 @@ export const dictDataColumns = ({
   {
     id: 'actions',
     cell: ({ row }) => (
-      <DictDataRowActions
-        row={row.original}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
+      <DictDataRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
     ),
     meta: {
       className: 'w-[80px]',

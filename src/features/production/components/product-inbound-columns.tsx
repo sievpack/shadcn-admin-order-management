@@ -142,11 +142,7 @@ export const productInboundColumns = ({
   {
     id: 'actions',
     cell: ({ row }) => (
-      <ProductInboundRowActions
-        row={row.original}
-        onView={onView}
-        onDelete={onDelete}
-      />
+      <ProductInboundRowActions row={row} onView={onView} onDelete={onDelete} />
     ),
   },
 ]

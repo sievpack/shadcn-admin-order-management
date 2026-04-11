@@ -1,4 +1,4 @@
-import { DotsHorizontalIcon } from '@radix-ui/react-icons'
+import { type Row } from '@tanstack/react-table'
 import {
   Eye,
   Edit,
@@ -9,19 +9,14 @@ import {
   Printer,
   ClipboardList,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  DataTableRowActionsWithGroups as CommonRowActions,
+  presetActions,
+} from '@/components/common'
 import { type ProductionOrder } from './production-order-columns'
 
 type ProductionOrderRowActionsProps = {
-  row: ProductionOrder
+  row: Row<ProductionOrder>
   onView?: (row: ProductionOrder) => void
   onEdit?: (row: ProductionOrder) => void
   onDelete?: (row: ProductionOrder) => void
@@ -43,112 +38,70 @@ export function ProductionOrderRowActions({
   onPrint,
   onReport,
 }: ProductionOrderRowActionsProps) {
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant='ghost'
-          className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
-        >
-          <DotsHorizontalIcon className='h-4 w-4' />
-          <span className='sr-only'>打开菜单</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-[160px]'>
-        {onView && (
-          <DropdownMenuItem onClick={() => onView(row)}>
-            查看
-            <DropdownMenuShortcut>
-              <Eye size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-        )}
-        {onEdit && (
-          <DropdownMenuItem onClick={() => onEdit(row)}>
-            编辑
-            <DropdownMenuShortcut>
-              <Edit size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-        )}
-        {(row.工单状态 === '待生产' || row.工单状态 === '已暂停') &&
-          onStart && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onStart(row)}
-                className='text-green-600'
-              >
-                开始生产
-                <DropdownMenuShortcut>
-                  <Play size={16} />
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </>
-          )}
-        {row.工单状态 === '生产中' && (
-          <>
-            <DropdownMenuSeparator />
-            {onReport && (
-              <DropdownMenuItem
-                onClick={() => onReport(row)}
-                className='text-cyan-600'
-              >
-                报工
-                <DropdownMenuShortcut>
-                  <ClipboardList size={16} />
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-            )}
-            {onFinish && (
-              <DropdownMenuItem
-                onClick={() => onFinish(row)}
-                className='text-blue-600'
-              >
-                完工确认
-                <DropdownMenuShortcut>
-                  <CheckCircle size={16} />
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-            )}
-            {onPause && (
-              <DropdownMenuItem
-                onClick={() => onPause(row)}
-                className='text-orange-500'
-              >
-                暂停
-                <DropdownMenuShortcut>
-                  <Pause size={16} />
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-            )}
-          </>
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => onPrint?.(row)}
-          className='text-purple-600'
-        >
-          打印
-          <DropdownMenuShortcut>
-            <Printer size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-        {onDelete && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDelete(row)}
-              className='text-red-500'
-            >
-              删除
-              <DropdownMenuShortcut>
-                <Trash2 size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  const order = row.original
+  const actions: any[] = []
+
+  if (onView) {
+    actions.push(presetActions.view((r: ProductionOrder) => onView(r)))
+  }
+  if (onEdit) {
+    actions.push(presetActions.edit((r: ProductionOrder) => onEdit(r)))
+  }
+
+  if (order.工单状态 === '待生产' || order.工单状态 === '已暂停') {
+    if (onStart) {
+      actions.push({ separator: true, label: '', onClick: () => {} })
+      actions.push({
+        label: '开始生产',
+        icon: <Play className='h-4 w-4' />,
+        variant: 'secondary' as const,
+        onClick: (r: ProductionOrder) => onStart(r),
+      })
+    }
+  }
+
+  if (order.工单状态 === '生产中') {
+    actions.push({ separator: true, label: '', onClick: () => {} })
+    if (onReport) {
+      actions.push({
+        label: '报工',
+        icon: <ClipboardList className='h-4 w-4' />,
+        variant: 'secondary' as const,
+        onClick: (r: ProductionOrder) => onReport(r),
+      })
+    }
+    if (onFinish) {
+      actions.push({
+        label: '完工确认',
+        icon: <CheckCircle className='h-4 w-4' />,
+        variant: 'secondary' as const,
+        onClick: (r: ProductionOrder) => onFinish(r),
+      })
+    }
+    if (onPause) {
+      actions.push({
+        label: '暂停',
+        icon: <Pause className='h-4 w-4' />,
+        variant: 'secondary' as const,
+        onClick: (r: ProductionOrder) => onPause(r),
+      })
+    }
+  }
+
+  if (onPrint) {
+    actions.push({ separator: true, label: '', onClick: () => {} })
+    actions.push({
+      label: '打印',
+      icon: <Printer className='h-4 w-4' />,
+      variant: 'secondary' as const,
+      onClick: (r: ProductionOrder) => onPrint(r),
+    })
+  }
+
+  if (onDelete) {
+    actions.push({ separator: true, label: '', onClick: () => {} })
+    actions.push(presetActions.delete((r: ProductionOrder) => onDelete(r)))
+  }
+
+  return <CommonRowActions row={row} actions={actions} />
 }
