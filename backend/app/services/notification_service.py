@@ -128,10 +128,13 @@ class ConnectionManager:
         self.active_connections: dict[str, list[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, user_id: str):
+        print(f"NOTIF SERVICE: connect called with user_id={user_id}")
         await websocket.accept()
+        print(f"NOTIF SERVICE: accept done")
         if user_id not in self.active_connections:
             self.active_connections[user_id] = []
         self.active_connections[user_id].append(websocket)
+        print(f"NOTIF SERVICE: connect done, active={self.active_connections}")
 
     def disconnect(self, websocket: WebSocket, user_id: str):
         if user_id in self.active_connections:
@@ -141,17 +144,19 @@ class ConnectionManager:
                 pass
 
     async def broadcast(self, message: dict):
-        """广播消息给所有用户"""
+        """广播消息给所有用户，同时保存到 Redis"""
         payload = message.get('payload', {})
-        user_id = payload.get('user_id')
         msg_type = payload.get('type')
 
-        if user_id and msg_type:
-            try:
-                notification_service.save(int(user_id), payload)
-            except (ValueError, TypeError) as e:
-                logger.warning(f"Invalid user_id for notification: {user_id}, error: {e}")
+        # 保存到所有在线用户的 Redis
+        if msg_type:
+            for uid in self.active_connections.keys():
+                try:
+                    notification_service.save(uid, payload)
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Failed to save notification for user {uid}: {e}")
 
+        # 推送给所有在线用户
         for uid, connections in self.active_connections.items():
             for connection in connections:
                 try:

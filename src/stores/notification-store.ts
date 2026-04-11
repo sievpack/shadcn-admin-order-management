@@ -1,113 +1,82 @@
 import { create } from 'zustand'
-import { notificationAPI } from '@/lib/api/notification-api'
 
-interface Notification {
+export interface Notification {
   id: string
-  type: 'order_shipped' | 'order_created' | 'order' | 'production'
+  notification_type: string
   title: string
   content: string
   timestamp: number
-  read: boolean
+  detail_id?: number
+  detail_type?: string
   detail?: any
+  read?: boolean
 }
 
 interface NotificationState {
+  toasts: Notification[]
   notifications: Notification[]
-  unreadCount: number
+  readIds: Set<string>
   isDrawerOpen: boolean
   wsConnected: boolean
-  toasts: Notification[]
-  // 新增分页状态
-  hasMore: boolean
-  currentPage: number
-  isLoading: boolean
-  // 详情弹窗
-  detailNotification: Notification | null
-  isDetailDialogOpen: boolean
 
-  // Actions
-  addNotification: (
-    notification: Omit<Notification, 'id' | 'timestamp' | 'read'>
-  ) => void
-  markAsRead: (id: string) => Promise<void>
-  markAllAsRead: () => Promise<void>
+  addToast: (notification: Notification) => void
+  removeToast: (id: string) => void
+  removeNotification: (id: string) => void
   clearNotifications: () => void
+  setNotifications: (notifications: Notification[]) => void
   setDrawerOpen: (open: boolean) => void
   setWsConnected: (connected: boolean) => void
-  removeToast: (id: string) => void
-  // 新增
-  fetchNotifications: (reset?: boolean) => Promise<void>
-  loadMore: () => Promise<void>
-  setDetailNotification: (notification: Notification | null) => void
-  setDetailDialogOpen: (open: boolean) => void
+  markRead: (id: string) => void
+  markAllRead: () => void
+  isRead: (id: string) => boolean
+  setReadIds: (ids: string[]) => void
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
+  toasts: [],
   notifications: [],
-  unreadCount: 0,
+  readIds: new Set<string>(),
   isDrawerOpen: false,
   wsConnected: false,
-  toasts: [],
-  hasMore: false,
-  currentPage: 1,
-  isLoading: false,
-  detailNotification: null,
-  isDetailDialogOpen: false,
 
-  addNotification: (notification) => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  addToast: (notification) => {
+    const id =
+      notification.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    // WebSocket payload 中 type 字段映射到 notification_type
     const newNotification: Notification = {
       ...notification,
       id,
-      timestamp: Date.now(),
-      read: false,
+      notification_type: notification.notification_type || notification.type,
     }
 
     set((state) => ({
-      notifications: [newNotification, ...state.notifications].slice(0, 100),
-      unreadCount: state.unreadCount + 1,
       toasts: [...state.toasts, newNotification],
+      notifications: [newNotification, ...state.notifications],
     }))
 
-    // 3秒后自动移除 toast
     setTimeout(() => {
       get().removeToast(id)
-    }, 3000)
+    }, 8000)
   },
 
-  markAsRead: async (id) => {
-    try {
-      await notificationAPI.markRead(id)
-    } catch (e) {
-      console.error('Failed to mark as read:', e)
-    }
-    set((state) => {
-      const notification = state.notifications.find((n) => n.id === id)
-      if (!notification || notification.read) return state
-
-      return {
-        notifications: state.notifications.map((n) =>
-          n.id === id ? { ...n, read: true } : n
-        ),
-        unreadCount: Math.max(0, state.unreadCount - 1),
-      }
-    })
-  },
-
-  markAllAsRead: async () => {
-    try {
-      await notificationAPI.markAllRead()
-    } catch (e) {
-      console.error('Failed to mark all as read:', e)
-    }
+  removeToast: (id) => {
     set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
-      unreadCount: 0,
+      toasts: state.toasts.filter((t) => t.id !== id),
+    }))
+  },
+
+  removeNotification: (id) => {
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
     }))
   },
 
   clearNotifications: () => {
-    set({ notifications: [], unreadCount: 0 })
+    set({ notifications: [] })
+  },
+
+  setNotifications: (notifications) => {
+    set({ notifications })
   },
 
   setDrawerOpen: (open) => {
@@ -118,48 +87,30 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     set({ wsConnected: connected })
   },
 
-  removeToast: (id) => {
-    set((state) => ({
-      toasts: state.toasts.filter((t) => t.id !== id),
-    }))
+  markRead: (id) => {
+    set((state) => {
+      const newReadIds = new Set(state.readIds)
+      newReadIds.add(id)
+      return { readIds: newReadIds }
+    })
+    const notifications = get().notifications.map((n) =>
+      n.id === id ? { ...n, read: true } : n
+    )
+    set({ notifications })
   },
 
-  // 新增方法
-  fetchNotifications: async (reset = false) => {
-    const { isLoading, currentPage } = get()
-    if (isLoading) return
-
-    set({ isLoading: true })
-    try {
-      const page = reset ? 1 : currentPage
-      const response = await notificationAPI.getNotifications(page)
-      if (response.code === 0) {
-        const { list, total, page: respPage } = response.data
-        set((state) => ({
-          notifications: reset ? list : [...state.notifications, ...list],
-          hasMore: state.notifications.length < total,
-          currentPage: respPage + 1,
-        }))
-      }
-    } catch (e) {
-      console.error('Failed to fetch notifications:', e)
-    } finally {
-      set({ isLoading: false })
-    }
+  markAllRead: () => {
+    const allIds = get().notifications.map((n) => n.id)
+    set({ readIds: new Set(allIds) })
+    const notifications = get().notifications.map((n) => ({ ...n, read: true }))
+    set({ notifications })
   },
 
-  loadMore: async () => {
-    await get().fetchNotifications(false)
+  isRead: (id) => {
+    return get().readIds.has(id)
   },
 
-  setDetailNotification: (notification) => {
-    set({ detailNotification: notification })
-  },
-
-  setDetailDialogOpen: (open) => {
-    set({ isDetailDialogOpen: open })
-    if (!open) {
-      set({ detailNotification: null })
-    }
+  setReadIds: (ids) => {
+    set({ readIds: new Set(ids) })
   },
 }))

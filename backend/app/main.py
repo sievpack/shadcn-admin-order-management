@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,11 +12,24 @@ from app.api.notification import router as notification_router
 from app.api import user
 from app.db.database import db_binds
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 启动时导入并启动轮询服务
+    from app.services.shipment_poller import start_pollers
+    from app.services import order_poller  # noqa: 导入注册订单轮询
+    await start_pollers()
+    yield
+    # 关闭时停止轮询服务
+    from app.services.shipment_poller import stop_pollers
+    await stop_pollers()
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="JNS订单管理系统API",
     version="1.0.0",
-    debug=settings.DEBUG
+    debug=settings.DEBUG,
+    lifespan=lifespan
 )
 
 # CORS配置
