@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { productInboundAPI } from '@/lib/production-api'
+import { useProductInboundList } from '@/queries/production'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import {
   type ProductInbound,
   productInboundColumns,
@@ -36,18 +37,12 @@ const formatDate = (date: Date) => format(date, 'yyyy-MM-dd')
 interface ProductInboundTableProps {
   onView?: (row: ProductInbound) => void
   onDelete?: (row: ProductInbound) => void
-  refreshKey?: number
 }
 
 export function ProductInboundTable({
   onView,
   onDelete,
-  refreshKey = 0,
 }: ProductInboundTableProps) {
-  const [data, setData] = useState<ProductInbound[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
-
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -62,7 +57,6 @@ export function ProductInboundTable({
     onColumnFiltersChange,
     pagination,
     onPaginationChange,
-    ensurePageInRange,
   } = useTableUrlState({
     search,
     navigate,
@@ -78,58 +72,23 @@ export function ProductInboundTable({
     | string
     | undefined
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await productInboundAPI.getList({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        query: globalFilter || undefined,
-        start_date: startDateParam,
-        end_date: endDateParam,
-      })
-
-      if (response.data.code === 0) {
-        const listData = Array.isArray(response.data.data)
-          ? response.data.data
-          : []
-        setData(listData)
-        setTotal(response.data.total || 0)
-      }
-    } catch (error) {
-      console.error('Failed to fetch product inbound records:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    pagination.pageIndex,
-    pagination.pageSize,
-    globalFilter,
-    startDateParam,
-    endDateParam,
-  ])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  useEffect(() => {
-    ensurePageInRange(Math.ceil(total / pagination.pageSize))
-  }, [total, pagination.pageSize, ensurePageInRange])
-
-  useEffect(() => {
-    if (refreshKey > 0) {
-      fetchData()
-    }
-  }, [refreshKey])
-
-  const columns = productInboundColumns({
-    onView,
-    onDelete,
+  const { data: response, isLoading } = useProductInboundList({
+    params: {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      query: globalFilter || undefined,
+      start_date: startDateParam,
+      end_date: endDateParam,
+    },
   })
 
+  const tableData = response?.data?.data || []
+  const total = response?.data?.count || response?.data?.total || 0
+
+  const columns = productInboundColumns({ onView, onDelete })
+
   const table = useReactTable({
-    data,
+    data: tableData,
     columns,
     state: {
       sorting: internalSorting,
@@ -216,15 +175,8 @@ export function ProductInboundTable({
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+            {isLoading ? (
+              <TableLoading colSpan={columns.length} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

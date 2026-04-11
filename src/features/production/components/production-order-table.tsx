@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
-import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import {
   type SortingState,
@@ -13,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useProductionOrders, productionOrderKeys } from '@/queries/production'
+import { useProductionOrders } from '@/queries/production'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -25,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import {
   type ProductionOrder,
   productionOrderColumns,
@@ -43,7 +43,6 @@ interface ProductionOrderTableProps {
   onPause?: (row: ProductionOrder) => void
   onPrint?: (row: ProductionOrder) => void
   onReport?: (row: ProductionOrder) => void
-  refreshKey?: number
 }
 
 export function ProductionOrderTable({
@@ -55,9 +54,7 @@ export function ProductionOrderTable({
   onPause,
   onPrint,
   onReport,
-  refreshKey = 0,
 }: ProductionOrderTableProps) {
-  const queryClient = useQueryClient()
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -109,7 +106,8 @@ export function ProductionOrderTable({
         ? queryData.data.data
         : []
       : []
-  const total = queryData?.data?.total || tableData.length
+  const total =
+    queryData?.data?.count || queryData?.data?.total || tableData.length
 
   const columns = productionOrderColumns({
     onView,
@@ -149,12 +147,6 @@ export function ProductionOrderTable({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
-
-  useEffect(() => {
-    if (refreshKey > 0) {
-      queryClient.invalidateQueries({ queryKey: productionOrderKeys.lists() })
-    }
-  }, [refreshKey, queryClient])
 
   return (
     <div
@@ -217,14 +209,7 @@ export function ProductionOrderTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              <TableLoading colSpan={columns.length} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

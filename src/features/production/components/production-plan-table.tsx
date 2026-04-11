@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { productionPlanAPI } from '@/lib/production-api'
+import { useProductionPlanList } from '@/queries/production'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import {
   type ProductionPlan,
   productionPlanColumns,
@@ -40,7 +41,6 @@ interface ProductionPlanTableProps {
   onApprove?: (row: ProductionPlan) => void
   onReject?: (row: ProductionPlan) => void
   onGenerateOrder?: (row: ProductionPlan) => void
-  refreshKey?: number
 }
 
 export function ProductionPlanTable({
@@ -50,12 +50,7 @@ export function ProductionPlanTable({
   onApprove,
   onReject,
   onGenerateOrder,
-  refreshKey = 0,
 }: ProductionPlanTableProps) {
-  const [data, setData] = useState<ProductionPlan[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
-
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -70,7 +65,6 @@ export function ProductionPlanTable({
     onColumnFiltersChange,
     pagination,
     onPaginationChange,
-    ensurePageInRange,
   } = useTableUrlState({
     search,
     navigate,
@@ -90,52 +84,19 @@ export function ProductionPlanTable({
     | string
     | undefined
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await productionPlanAPI.getList({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        query: globalFilter || undefined,
-        status: statusFilter,
-        start_date: startDateParam,
-        end_date: endDateParam,
-      })
+  const { data: response, isLoading } = useProductionPlanList({
+    params: {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      query: globalFilter || undefined,
+      status: statusFilter,
+      start_date: startDateParam,
+      end_date: endDateParam,
+    },
+  })
 
-      if (response.data.code === 0) {
-        const listData = Array.isArray(response.data.data)
-          ? response.data.data
-          : []
-        setData(listData)
-        setTotal(response.data.total || 0)
-      }
-    } catch (error) {
-      console.error('Failed to fetch production plans:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    pagination.pageIndex,
-    pagination.pageSize,
-    globalFilter,
-    statusFilter,
-    startDateParam,
-    endDateParam,
-  ])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  useEffect(() => {
-    ensurePageInRange(Math.ceil(total / pagination.pageSize))
-  }, [total, pagination.pageSize, ensurePageInRange])
-
-  useEffect(() => {
-    if (refreshKey > 0) {
-      fetchData()
-    }
-  }, [refreshKey])
+  const tableData = response?.data?.data || []
+  const total = response?.data?.count || response?.data?.total || 0
 
   const columns = productionPlanColumns({
     onView,
@@ -147,7 +108,7 @@ export function ProductionPlanTable({
   })
 
   const table = useReactTable({
-    data,
+    data: tableData,
     columns,
     state: {
       sorting: internalSorting,
@@ -234,15 +195,8 @@ export function ProductionPlanTable({
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+            {isLoading ? (
+              <TableLoading colSpan={columns.length} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

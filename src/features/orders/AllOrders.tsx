@@ -76,7 +76,8 @@ export function AllOrders() {
   const [currentItem, setCurrentItem] = useState<OrderItem | null>(null)
 
   const orderItems = orderItemsResponse?.data?.data || []
-  const total = orderItemsResponse?.data?.total || 0
+  const total =
+    orderItemsResponse?.data?.count || orderItemsResponse?.data?.total || 0
 
   const handleViewItem = useCallback((_id: number, item: OrderItem) => {
     setCurrentItem(item)

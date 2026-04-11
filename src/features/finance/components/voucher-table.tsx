@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import { voucherColumns, type Voucher } from './voucher-columns'
 
 const route = getRouteApi('/_authenticated/finance/voucher')
@@ -86,7 +87,7 @@ export function VoucherTable({ onApprove, refreshKey = 0 }: VoucherTableProps) {
           ? response.data.data
           : []
         setData(listData)
-        setTotal(response.data.total || listData.length)
+        setTotal(response.data.count || response.data.total || listData.length)
       }
     } catch (error) {
       console.error('Failed to fetch vouchers:', error)
@@ -205,14 +206,7 @@ export function VoucherTable({ onApprove, refreshKey = 0 }: VoucherTableProps) {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              <TableLoading colSpan={columns.length} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import { roleOptions } from '../data/data'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { usersColumns as columns } from './users-columns'
@@ -73,7 +74,8 @@ export function UsersTable({ search, navigate }: DataTableProps) {
   })
 
   const tableData = queryData?.data?.code === 0 ? queryData.data.data || [] : []
-  const total = queryData?.data?.total || tableData.length
+  const total =
+    queryData?.data?.count || queryData?.data?.total || tableData.length
 
   const table = useReactTable({
     data: tableData,
@@ -177,14 +179,7 @@ export function UsersTable({ search, navigate }: DataTableProps) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              <TableLoading colSpan={columns.length} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

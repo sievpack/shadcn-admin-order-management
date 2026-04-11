@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { financePaymentAPI } from '@/lib/finance-api'
+import { usePaymentList } from '@/queries/finance/payment/usePaymentList'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import { paymentColumns, type PaymentRecord } from './payment-columns'
 
 const route = getRouteApi('/_authenticated/finance/payment')
@@ -32,14 +33,9 @@ const formatDate = (date: Date) => format(date, 'yyyy-MM-dd')
 
 interface PaymentTableProps {
   onDelete?: (row: PaymentRecord) => void
-  refreshKey?: number
 }
 
-export function PaymentTable({ onDelete, refreshKey = 0 }: PaymentTableProps) {
-  const [data, setData] = useState<PaymentRecord[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
-
+export function PaymentTable({ onDelete }: PaymentTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -54,7 +50,6 @@ export function PaymentTable({ onDelete, refreshKey = 0 }: PaymentTableProps) {
     onColumnFiltersChange,
     pagination,
     onPaginationChange,
-    ensurePageInRange,
   } = useTableUrlState({
     search,
     navigate,
@@ -70,55 +65,23 @@ export function PaymentTable({ onDelete, refreshKey = 0 }: PaymentTableProps) {
     | string
     | undefined
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await financePaymentAPI.getList({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        query: globalFilter || undefined,
-        start_date: startDateParam,
-        end_date: endDateParam,
-      })
+  const { data: response, isLoading } = usePaymentList({
+    params: {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      query: globalFilter || undefined,
+      start_date: startDateParam,
+      end_date: endDateParam,
+    },
+  })
 
-      if (response.data.code === 0) {
-        const listData = Array.isArray(response.data.data)
-          ? response.data.data
-          : []
-        setData(listData)
-        setTotal(response.data.total || listData.length)
-      }
-    } catch (error) {
-      console.error('Failed to fetch payment records:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    pagination.pageIndex,
-    pagination.pageSize,
-    globalFilter,
-    startDateParam,
-    endDateParam,
-  ])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  useEffect(() => {
-    ensurePageInRange(Math.ceil(total / pagination.pageSize))
-  }, [total, pagination.pageSize, ensurePageInRange])
-
-  useEffect(() => {
-    if (refreshKey > 0) {
-      fetchData()
-    }
-  }, [refreshKey])
+  const paymentData = response?.data?.data || []
+  const total = response?.data?.count || response?.data?.total || 0
 
   const columns = paymentColumns({ onDelete })
 
   const table = useReactTable({
-    data,
+    data: paymentData,
     columns,
     state: {
       sorting: internalSorting,
@@ -204,15 +167,8 @@ export function PaymentTable({ onDelete, refreshKey = 0 }: PaymentTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+            {isLoading ? (
+              <TableLoading colSpan={columns.length} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

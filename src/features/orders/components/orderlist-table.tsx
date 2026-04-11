@@ -13,7 +13,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useOrders } from '@/queries/orders/useOrders'
-import { ChevronDown, ChevronRight, Plus, Minus } from 'lucide-react'
+import { ChevronDown, ChevronRight, Loader2, Plus, Minus } from 'lucide-react'
 import { orderItemAPI } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { ExpandedOrderItems } from './expanded-order-items'
 import { type Order, orderListColumns } from './orderlist-columns'
@@ -170,7 +171,7 @@ export function OrderListTable({
   })
 
   const ordersData = ordersResponse?.data?.data || []
-  const total = ordersResponse?.data?.total || 0
+  const total = ordersResponse?.data?.count || ordersResponse?.data?.total || 0
 
   const data: Order[] = ordersData.map((item: any) => ({
     id: item.id,
@@ -360,9 +361,9 @@ export function OrderListTable({
                         }}
                       >
                         {isAllExpanded ? (
-                          <Minus className='h-4 w-4' />
+                          <Minus data-icon='inline-start' />
                         ) : (
-                          <Plus className='h-4 w-4' />
+                          <Plus data-icon='inline-start' />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -395,14 +396,7 @@ export function OrderListTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length + 1}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              <TableLoading colSpan={columns.length + 1} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <React.Fragment key={row.id}>
@@ -418,9 +412,9 @@ export function OrderListTable({
                         onClick={() => toggleRow(row.original)}
                       >
                         {expandedRows.has(row.original.id) ? (
-                          <ChevronDown className='h-4 w-4' />
+                          <ChevronDown data-icon='inline-start' />
                         ) : (
-                          <ChevronRight className='h-4 w-4' />
+                          <ChevronRight data-icon='inline-start' />
                         )}
                       </Button>
                     </TableCell>
@@ -452,8 +446,8 @@ export function OrderListTable({
                             条)
                           </div>
                           {loadingChildren.has(row.original.id) ? (
-                            <div className='py-4 text-center text-muted-foreground'>
-                              加载中...
+                            <div className='py-4 text-center'>
+                              <Loader2 className='mx-auto h-5 w-5 animate-spin text-muted-foreground' />
                             </div>
                           ) : (
                             <ExpandedOrderItems

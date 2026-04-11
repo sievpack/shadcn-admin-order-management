@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { getRouteApi } from '@tanstack/react-router'
 import {
@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { financeAPAPI } from '@/lib/finance-api'
+import { useAPList } from '@/queries/finance/ap/useAPList'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
@@ -33,14 +33,9 @@ const formatDate = (date: Date) => format(date, 'yyyy-MM-dd')
 interface APTableProps {
   onView?: (row: AccountsPayable) => void
   onDelete?: (row: AccountsPayable) => void
-  refreshKey?: number
 }
 
-export function APTable({ onView, onDelete, refreshKey = 0 }: APTableProps) {
-  const [data, setData] = useState<AccountsPayable[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
-
+export function APTable({ onView, onDelete }: APTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -55,7 +50,6 @@ export function APTable({ onView, onDelete, refreshKey = 0 }: APTableProps) {
     onColumnFiltersChange,
     pagination,
     onPaginationChange,
-    ensurePageInRange,
   } = useTableUrlState({
     search,
     navigate,
@@ -75,57 +69,24 @@ export function APTable({ onView, onDelete, refreshKey = 0 }: APTableProps) {
     | string[]
     | undefined
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await financeAPAPI.getList({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        query: globalFilter || undefined,
-        status: statusFilterParam,
-        start_date: startDateParam,
-        end_date: endDateParam,
-      })
+  const { data: response, isLoading } = useAPList({
+    params: {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      query: globalFilter || undefined,
+      status: statusFilterParam,
+      start_date: startDateParam,
+      end_date: endDateParam,
+    },
+  })
 
-      if (response.data.code === 0) {
-        const listData = Array.isArray(response.data.data)
-          ? response.data.data
-          : []
-        setData(listData)
-        setTotal(response.data.total || listData.length)
-      }
-    } catch (error) {
-      console.error('Failed to fetch accounts payable:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    pagination.pageIndex,
-    pagination.pageSize,
-    globalFilter,
-    statusFilterParam,
-    startDateParam,
-    endDateParam,
-  ])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  useEffect(() => {
-    ensurePageInRange(Math.ceil(total / pagination.pageSize))
-  }, [total, pagination.pageSize, ensurePageInRange])
-
-  useEffect(() => {
-    if (refreshKey > 0) {
-      fetchData()
-    }
-  }, [refreshKey])
+  const tableData = response?.data?.data || []
+  const total = response?.data?.count || response?.data?.total || 0
 
   const columns = accountsPayableColumns({ onView, onDelete })
 
   const table = useReactTable({
-    data,
+    data: tableData,
     columns,
     state: {
       sorting: internalSorting,
@@ -222,7 +183,7 @@ export function APTable({ onView, onDelete, refreshKey = 0 }: APTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               <TableRow>
                 <TableCell
                   colSpan={columns.length}

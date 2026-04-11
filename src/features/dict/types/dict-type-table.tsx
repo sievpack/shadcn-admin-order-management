@@ -12,7 +12,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useDictTypes } from '@/queries/dict'
-import { ChevronDown, ChevronRight, Edit, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Edit, Loader2, Trash2 } from 'lucide-react'
 import { dictDataAPI } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
@@ -31,6 +31,7 @@ import {
   DataTableToolbar,
   DataTableBulkActions,
 } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import { type DictData } from '../data/dict-data-columns'
 import { type DictType, dictTypeColumns } from './dict-type-columns'
 
@@ -94,7 +95,10 @@ export function DictTypeTable({
 
   const tableData =
     queryData?.data?.code === 0 ? queryData.data.data.list || [] : []
-  const total = queryData?.data?.data?.total || tableData.length
+  const total =
+    queryData?.data?.data?.count ||
+    queryData?.data?.data?.total ||
+    tableData.length
 
   const fetchChildData = useCallback(
     async (dictTypeId: number, dictType: string) => {
@@ -225,14 +229,7 @@ export function DictTypeTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length + 1}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              <TableLoading colSpan={columns.length + 1} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <>
@@ -282,8 +279,8 @@ export function DictTypeTable({
                             条)
                           </div>
                           {loadingChildren.has(row.original.id) ? (
-                            <div className='py-4 text-center text-muted-foreground'>
-                              加载中...
+                            <div className='py-4 text-center'>
+                              <Loader2 className='mx-auto h-5 w-5 animate-spin text-muted-foreground' />
                             </div>
                           ) : childData[row.original.id]?.length ? (
                             <Table>

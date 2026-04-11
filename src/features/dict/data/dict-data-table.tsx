@@ -28,6 +28,7 @@ import {
   DataTableToolbar,
   DataTableBulkActions,
 } from '@/components/data-table'
+import { TableLoading } from '@/components/table-loading'
 import { type DictData, dictDataColumns } from './dict-data-columns'
 
 type DictDataTableProps = {
@@ -79,7 +80,8 @@ export function DictDataTable({
 
   const tableData =
     queryData?.data?.code === 0 ? queryData.data.data.list || [] : []
-  const total = queryData?.data?.total || tableData.length
+  const total =
+    queryData?.data?.count || queryData?.data?.total || tableData.length
 
   const columns = dictDataColumns({ onEdit, onDelete })
 
@@ -161,14 +163,7 @@ export function DictDataTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  加载中...
-                </TableCell>
-              </TableRow>
+              <TableLoading colSpan={columns.length} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
