@@ -249,11 +249,9 @@ export function AllOrdersTable({
         for (const f of newFilters) {
           allFilterValues[f.id] = (f.value as string[]).join(',')
         }
-        if (_columnId === '产品类型') {
-          onSyncBeltTypeFilterChange?.(allFilterValues['产品类型'])
-        } else if (_columnId === '规格') {
-          onSpecFilterChange?.(allFilterValues['规格'])
-        }
+        // 同时调用两个回调，确保两个筛选器的值都被保留
+        onSyncBeltTypeFilterChange?.(allFilterValues['产品类型'])
+        onSpecFilterChange?.(allFilterValues['规格'])
       }
     },
     [
