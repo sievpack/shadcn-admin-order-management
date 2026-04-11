@@ -24,6 +24,7 @@ from app.services.finance_service import (
     AccountsPayableService, accounts_payable_service
 )
 from app.services.customer_sample_service import CustomerSampleService, customer_sample_service
+from app.services.notification_service import NotificationService, notification_service
 
 __all__ = [
     "BaseService",
@@ -43,5 +44,6 @@ __all__ = [
     "ProductionReportService", "production_report_service",
     "AccountsReceivableService", "accounts_receivable_service",
     "AccountsPayableService", "accounts_payable_service",
-    "CustomerSampleService", "customer_sample_service"
+    "CustomerSampleService", "customer_sample_service",
+    "NotificationService", "notification_service"
 ]
