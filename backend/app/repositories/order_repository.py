@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, or_, func
+from sqlalchemy import desc, or_, func, and_
 from datetime import datetime, date
 
 from app.models.order import Order, OrderList
@@ -44,11 +44,17 @@ class OrderRepository(BaseRepository[Order]):
 
         if 规格:
             spec_values = [s.strip() for s in 规格.split(',') if s.strip()]
-            spec_filters = [Order.规格.like(f"%{spec_val}%") for spec_val in spec_values]
-            if len(spec_filters) == 1:
-                q = q.filter(spec_filters[0])
-            elif len(spec_filters) > 1:
-                q = q.filter(or_(*spec_filters))
+            if spec_values:
+                and_conditions = []
+                for spec_val in spec_values:
+                    part_conditions = [
+                        Order.规格 == spec_val,
+                        Order.规格.like(f"%/{spec_val}"),
+                        Order.规格.like(f"{spec_val}/%"),
+                        Order.规格.like(f"%/{spec_val}/%"),
+                    ]
+                    and_conditions.append(or_(*part_conditions))
+                q = q.filter(and_(*and_conditions))
 
         if 型号:
             q = q.filter(Order.型号.like(f"%{型号}%"))
@@ -74,6 +80,9 @@ class OrderRepository(BaseRepository[Order]):
         total = q.count()
         items = q.order_by(desc(Order.id)).offset(skip).limit(limit).all()
         return items, total
+
+
+class OrderListRepository(BaseRepository[OrderList]):
 
     def get_all_no_pagination(
         self,
@@ -101,11 +110,17 @@ class OrderRepository(BaseRepository[Order]):
 
         if 规格:
             spec_values = [s.strip() for s in 规格.split(',') if s.strip()]
-            spec_filters = [Order.规格.like(f"%{spec_val}%") for spec_val in spec_values]
-            if len(spec_filters) == 1:
-                q = q.filter(spec_filters[0])
-            elif len(spec_filters) > 1:
-                q = q.filter(or_(*spec_filters))
+            if spec_values:
+                and_conditions = []
+                for spec_val in spec_values:
+                    part_conditions = [
+                        Order.规格 == spec_val,
+                        Order.规格.like(f"%/{spec_val}"),
+                        Order.规格.like(f"{spec_val}/%"),
+                        Order.规格.like(f"%/{spec_val}/%"),
+                    ]
+                    and_conditions.append(or_(*part_conditions))
+                q = q.filter(and_(*and_conditions))
 
         if 型号:
             q = q.filter(Order.型号.like(f"%{型号}%"))
@@ -124,9 +139,6 @@ class OrderRepository(BaseRepository[Order]):
         q = q.filter(Order.ship_id == None)
 
         return q.order_by(desc(Order.id)).all()
-
-
-class OrderListRepository(BaseRepository[OrderList]):
     """订单列表 Repository"""
 
     def search(
@@ -173,6 +185,35 @@ class OrderListRepository(BaseRepository[OrderList]):
     def get_all(self, db: Session) -> List[OrderList]:
         """获取所有订单列表"""
         return db.query(OrderList).order_by(desc(OrderList.id)).all()
+
+    def update_status_by_oid(self, db: Session, oid: int) -> int:
+        """根据订单ID更新订单状态
+        
+        逻辑：
+        - 当 TotalItems = ShippedItems 时，status = 2（全部发货）
+        - 当 ShippedItems = 0 时，status = 0（未发货）
+        - 否则 status = 1（部分发货）
+        """
+        total_count = db.query(Order).filter(Order.oid == oid).count()
+        shipped_count = db.query(Order).filter(
+            Order.oid == oid,
+            Order.ship_id.isnot(None)
+        ).count()
+        
+        if total_count == 0:
+            new_status = 0
+        elif shipped_count == total_count:
+            new_status = 2
+        elif shipped_count == 0:
+            new_status = 0
+        else:
+            new_status = 1
+        
+        db.query(OrderList).filter(OrderList.id == oid).update(
+            {'status': new_status},
+            synchronize_session=False
+        )
+        return new_status
 
     def get_with_items(
         self,
