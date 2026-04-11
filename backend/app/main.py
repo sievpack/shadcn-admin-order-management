@@ -7,6 +7,7 @@ from app.api.order import router as order_router
 from app.api.customer_sample import router as customer_sample_router
 from app.api.production import router as production_router
 from app.api.finance import router as finance_router
+from app.api.notification import router as notification_router
 from app.api import user
 from app.db.database import db_binds
 
@@ -41,6 +42,7 @@ app.include_router(code.router, prefix="/api/code", tags=["编号生成"])
 app.include_router(print_service.router, prefix="/api/print", tags=["打印管理"])
 app.include_router(dict_api.router, prefix="/api/dict", tags=["字典管理"])
 app.include_router(customer_sample_router, prefix="/api/customer-sample", tags=["客户样品"])
+app.include_router(notification_router, prefix="/api/notifications", tags=["通知管理"])
 app.include_router(ws.router, prefix="/ws", tags=["WebSocket"])
 
 
