@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
+import {
+  useQualityInspectors,
+  useGenerateQcCode,
+} from '@/queries/production/useProductionOptions'
 import { Plus } from 'lucide-react'
-import { qualityInspectionAPI, codeAPI } from '@/lib/production-api'
+import { qualityInspectionAPI } from '@/lib/production-api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
@@ -25,49 +29,33 @@ export function QualityInspectionList() {
     不良率: 0,
   })
   const [addLoading, setAddLoading] = useState(false)
-  const [inspectorOptions, setInspectorOptions] = useState<string[]>([])
   const [qcCodeGenerated, setQcCodeGenerated] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    const generateQcCode = async () => {
-      if (showAddDialog && !qcCodeGenerated) {
-        try {
-          const res = await codeAPI.generate('ZJ')
-          if (res.data.code === 0) {
-            setAddForm((prev) => ({
-              ...prev,
-              质检单号: res.data.data.code,
-            }))
-            setQcCodeGenerated(true)
-          }
-        } catch (error) {
-          console.error('生成质检编号失败:', error)
-        }
+  const { data: inspectorsData } = useQualityInspectors()
+  const inspectorOptions = inspectorsData?.data?.data || []
+
+  const { mutate: generateQcCode } = useGenerateQcCode({
+    onSuccess: (res) => {
+      if (res.data.code === 0) {
+        setAddForm((prev) => ({
+          ...prev,
+          质检单号: res.data.data.code,
+        }))
+        setQcCodeGenerated(true)
       }
-      if (!showAddDialog) {
-        setQcCodeGenerated(false)
-      }
-    }
-    generateQcCode()
-  }, [showAddDialog, qcCodeGenerated])
+    },
+  })
 
   useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const res = await qualityInspectionAPI.getInspectors()
-        if (res.data.code === 0) {
-          setInspectorOptions(res.data.data || [])
-        }
-      } catch (error) {
-        console.error('获取选项失败:', error)
-      }
+    if (showAddDialog && !qcCodeGenerated) {
+      generateQcCode()
     }
-    if (showAddDialog) {
-      fetchOptions()
+    if (!showAddDialog) {
+      setQcCodeGenerated(false)
     }
-  }, [showAddDialog])
+  }, [showAddDialog, qcCodeGenerated, generateQcCode])
 
   const handleView = (row: QualityInspection) => {
     setSelectedRow(row)

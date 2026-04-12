@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react'
+import {
+  useProductionSummary,
+  useProductionPlanStatus,
+  useProductionOrderStatus,
+} from '@/queries/production/useProductionOptions'
 import {
   Activity,
   Package,
@@ -9,7 +13,6 @@ import {
   AlertCircle,
   TrendingUp,
 } from 'lucide-react'
-import { productionStatsAPI } from '@/lib/production-api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -23,47 +26,29 @@ import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
 
 export function ProductionStats() {
-  const [summary, setSummary] = useState<any>(null)
-  const [planStatus, setPlanStatus] = useState<Record<string, number>>({})
-  const [orderStatus, setOrderStatus] = useState<Record<string, number>>({})
-  const [loading, setLoading] = useState(true)
+  const { data: summaryData, isLoading: summaryLoading } =
+    useProductionSummary()
+  const { data: planStatusData, isLoading: planStatusLoading } =
+    useProductionPlanStatus()
+  const { data: orderStatusData, isLoading: orderStatusLoading } =
+    useProductionOrderStatus()
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const [summaryRes, planRes, orderRes] = await Promise.all([
-          productionStatsAPI.getSummary(),
-          productionStatsAPI.getPlanStatus(),
-          productionStatsAPI.getOrderStatus(),
-        ])
-        if (summaryRes.data.code === 0) {
-          setSummary(summaryRes.data.data)
-        }
-        if (planRes.data.code === 0) {
-          const planData = planRes.data.data || []
-          const planMap: Record<string, number> = {}
-          planData.forEach((item: { 状态: string; 数量: number }) => {
-            planMap[item.状态] = item.数量
-          })
-          setPlanStatus(planMap)
-        }
-        if (orderRes.data.code === 0) {
-          const orderData = orderRes.data.data || []
-          const orderMap: Record<string, number> = {}
-          orderData.forEach((item: { 状态: string; 数量: number }) => {
-            orderMap[item.状态] = item.数量
-          })
-          setOrderStatus(orderMap)
-        }
-      } catch (error) {
-        console.error('获取统计数据失败:', error)
-      } finally {
-        setLoading(false)
+  const summary = summaryData?.data?.data
+  const planStatus: Record<string, number> = {}
+  if (planStatusData?.data?.data) {
+    planStatusData.data.data.forEach((item: { 状态: string; 数量: number }) => {
+      planStatus[item.状态] = item.数量
+    })
+  }
+  const orderStatus: Record<string, number> = {}
+  if (orderStatusData?.data?.data) {
+    orderStatusData.data.data.forEach(
+      (item: { 状态: string; 数量: number }) => {
+        orderStatus[item.状态] = item.数量
       }
-    }
-    fetchData()
-  }, [])
+    )
+  }
+  const loading = summaryLoading || planStatusLoading || orderStatusLoading
 
   const stats = [
     {

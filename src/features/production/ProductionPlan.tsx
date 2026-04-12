@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus } from 'lucide-react'
 import {
-  productionPlanAPI,
-  productionOrderAPI,
-  codeAPI,
-} from '@/lib/production-api'
+  useProductionLines,
+  useGeneratePlanCode,
+} from '@/queries/production/useProductionOptions'
+import { Plus } from 'lucide-react'
+import { productionPlanAPI, productionOrderAPI } from '@/lib/production-api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
@@ -40,54 +40,37 @@ export function ProductionPlanList() {
     工单数量: 0,
     产线: '',
   })
-  const [lines, setLines] = useState<{ label: string; value: string }[]>([])
   const [generateLoading, setGenerateLoading] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    const generatePlanCode = async () => {
-      if (showAddDialog && !planCodeGenerated) {
-        try {
-          const res = await codeAPI.generate('PC')
-          if (res.data.code === 0) {
-            setAddForm((prev) => ({
-              ...prev,
-              计划编号: res.data.data.code,
-            }))
-            setPlanCodeGenerated(true)
-          }
-        } catch (error) {
-          console.error('生成计划编号失败:', error)
-        }
+  const { data: linesData } = useProductionLines()
+  const lines =
+    linesData?.data?.data?.map((line: string) => ({
+      label: line,
+      value: line,
+    })) || []
+
+  const { mutate: generatePlanCode } = useGeneratePlanCode({
+    onSuccess: (res) => {
+      if (res.data.code === 0) {
+        setAddForm((prev) => ({
+          ...prev,
+          计划编号: res.data.data.code,
+        }))
+        setPlanCodeGenerated(true)
       }
-      if (!showAddDialog) {
-        setPlanCodeGenerated(false)
-      }
-    }
-    generatePlanCode()
-  }, [showAddDialog, planCodeGenerated])
+    },
+  })
 
   useEffect(() => {
-    const fetchLines = async () => {
-      if (showGenerateOrderDialog) {
-        try {
-          const res = await productionOrderAPI.getLines()
-          if (res.data.code === 0) {
-            setLines(
-              res.data.data.map((line: string) => ({
-                label: line,
-                value: line,
-              }))
-            )
-          }
-        } catch (error) {
-          console.error('获取产线列表失败:', error)
-        }
-      }
+    if (showAddDialog && !planCodeGenerated) {
+      generatePlanCode()
     }
-    fetchLines()
-  }, [showGenerateOrderDialog])
+    if (!showAddDialog) {
+      setPlanCodeGenerated(false)
+    }
+  }, [showAddDialog, planCodeGenerated, generatePlanCode])
 
   const handleView = (row: ProductionPlan) => {
     setSelectedRow(row)

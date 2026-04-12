@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Plus } from 'lucide-react'
 import {
-  productionReportAPI,
-  productionOrderAPI,
-  codeAPI,
-} from '@/lib/production-api'
+  useProductionOrderCodes,
+  useProductionWorkers,
+  useGenerateReportCode,
+} from '@/queries/production/useProductionOptions'
+import { Plus } from 'lucide-react'
+import { productionReportAPI } from '@/lib/production-api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
@@ -28,56 +29,35 @@ export function ProductionReportList() {
     不良数量: 0,
   })
   const [addLoading, setAddLoading] = useState(false)
-  const [orderOptions, setOrderOptions] = useState<string[]>([])
-  const [workerOptions, setWorkerOptions] = useState<string[]>([])
   const [reportCodeGenerated, setReportCodeGenerated] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    const generateReportCode = async () => {
-      if (showAddDialog && !reportCodeGenerated) {
-        try {
-          const res = await codeAPI.generate('BG')
-          if (res.data.code === 0) {
-            setAddForm((prev) => ({
-              ...prev,
-              报工编号: res.data.data.code,
-            }))
-            setReportCodeGenerated(true)
-          }
-        } catch (error) {
-          console.error('生成报工编号失败:', error)
-        }
+  const { data: orderCodesData } = useProductionOrderCodes()
+  const orderOptions = orderCodesData?.data?.data || []
+  const { data: workersData } = useProductionWorkers()
+  const workerOptions = workersData?.data?.data || []
+
+  const { mutate: generateReportCode } = useGenerateReportCode({
+    onSuccess: (res) => {
+      if (res.data.code === 0) {
+        setAddForm((prev) => ({
+          ...prev,
+          报工编号: res.data.data.code,
+        }))
+        setReportCodeGenerated(true)
       }
-      if (!showAddDialog) {
-        setReportCodeGenerated(false)
-      }
-    }
-    generateReportCode()
-  }, [showAddDialog, reportCodeGenerated])
+    },
+  })
 
   useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [orderRes, workerRes] = await Promise.all([
-          productionOrderAPI.getCodes(),
-          productionReportAPI.getWorkers(),
-        ])
-        if (orderRes.data.code === 0) {
-          setOrderOptions(orderRes.data.data || [])
-        }
-        if (workerRes.data.code === 0) {
-          setWorkerOptions(workerRes.data.data || [])
-        }
-      } catch (error) {
-        console.error('获取选项失败:', error)
-      }
+    if (showAddDialog && !reportCodeGenerated) {
+      generateReportCode()
     }
-    if (showAddDialog) {
-      fetchOptions()
+    if (!showAddDialog) {
+      setReportCodeGenerated(false)
     }
-  }, [showAddDialog])
+  }, [showAddDialog, reportCodeGenerated, generateReportCode])
 
   const handleView = (row: ProductionReport) => {
     setSelectedRow(row)

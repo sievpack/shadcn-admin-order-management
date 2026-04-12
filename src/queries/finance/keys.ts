@@ -42,3 +42,8 @@ export const financeVoucherKeys = {
   details: () => [...financeVoucherKeys.all, 'detail'] as const,
   detail: (id: number) => [...financeVoucherKeys.details(), id] as const,
 }
+
+export const financeStatsKeys = {
+  all: ['finance', 'stats'] as const,
+  income: (year?: number) => [...financeStatsKeys.all, 'income', year] as const,
+}

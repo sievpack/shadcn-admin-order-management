@@ -27,3 +27,10 @@ dist-ssr
 
 # Python
 backend/venv/
+
+# E2E / Test
+docs
+e2e
+playwright-report
+specs
+test-results

@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
+import {
+  useProductionWarehouses,
+  useGenerateInboundCode,
+} from '@/queries/production/useProductionOptions'
 import { Plus } from 'lucide-react'
-import { productInboundAPI, codeAPI } from '@/lib/production-api'
+import { productInboundAPI } from '@/lib/production-api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
@@ -22,49 +26,33 @@ export function ProductInboundList() {
     入库数量: 0,
   })
   const [addLoading, setAddLoading] = useState(false)
-  const [warehouseOptions, setWarehouseOptions] = useState<string[]>([])
   const [inboundCodeGenerated, setInboundCodeGenerated] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    const generateInboundCode = async () => {
-      if (showAddDialog && !inboundCodeGenerated) {
-        try {
-          const res = await codeAPI.generate('RK')
-          if (res.data.code === 0) {
-            setAddForm((prev) => ({
-              ...prev,
-              入库单号: res.data.data.code,
-            }))
-            setInboundCodeGenerated(true)
-          }
-        } catch (error) {
-          console.error('生成入库编号失败:', error)
-        }
+  const { data: warehousesData } = useProductionWarehouses()
+  const warehouseOptions = warehousesData?.data?.data || []
+
+  const { mutate: generateInboundCode } = useGenerateInboundCode({
+    onSuccess: (res) => {
+      if (res.data.code === 0) {
+        setAddForm((prev) => ({
+          ...prev,
+          入库单号: res.data.data.code,
+        }))
+        setInboundCodeGenerated(true)
       }
-      if (!showAddDialog) {
-        setInboundCodeGenerated(false)
-      }
-    }
-    generateInboundCode()
-  }, [showAddDialog, inboundCodeGenerated])
+    },
+  })
 
   useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const res = await productInboundAPI.getWarehouses()
-        if (res.data.code === 0) {
-          setWarehouseOptions(res.data.data || [])
-        }
-      } catch (error) {
-        console.error('获取选项失败:', error)
-      }
+    if (showAddDialog && !inboundCodeGenerated) {
+      generateInboundCode()
     }
-    if (showAddDialog) {
-      fetchOptions()
+    if (!showAddDialog) {
+      setInboundCodeGenerated(false)
     }
-  }, [showAddDialog])
+  }, [showAddDialog, inboundCodeGenerated, generateInboundCode])
 
   const handleView = (row: ProductInbound) => {
     setSelectedRow(row)
