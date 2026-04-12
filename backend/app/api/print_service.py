@@ -61,64 +61,62 @@ def resize_pdf_page(input_path: str, output_path: str, width_mm: float, height_m
 
 def fill_and_convert_shipping(shipping_info: dict) -> str:
     """
-    填充送货单模板并转换为PDF
+    填充送货单模板并转换为PDF（支持多页分页）
+    每页最多8行数据，超过则分页
     返回 PDF 文件路径
     """
     import win32com.client as win32
     
-    # 复制模板
     template_path = os.path.join(TEMPLATE_DIR, '送货单模板.xlsx')
     unique_id = uuid.uuid4().hex[:8]
     ship_id = shipping_info.get('发货单号', 'unknown')
-    excel_filename = f"shipping_{ship_id}_{unique_id}.xlsx"
-    excel_path = os.path.join(TEMP_DIR, excel_filename)
-    shutil.copy(template_path, excel_path)
     
-    # 用 win32com 直接操作 Excel
-    excel = win32.Dispatch('Excel.Application')
-    excel.Visible = False
-    excel.DisplayAlerts = False
+    ITEMS_PER_PAGE = 8
+    PAGE_HEADER_ROW = 5
+    PAGE_HEADER_ROW2 = 6
+    DATA_START_ROW = 8
+    TOTAL_ROW = 16
+    FOOTER_ROW = 18
     
-    try:
-        workbook = excel.Workbooks.Open(os.path.abspath(excel_path))
-        ws = workbook.Worksheets(1)
+    items = shipping_info.get('订单项目', [])
+    total_pages = (len(items) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE if items else 1
+    if total_pages == 0:
+        total_pages = 1
+    
+    base_info = {
+        '客户名称': shipping_info.get('客户名称', ''),
+        '发货单号': shipping_info.get('发货单号', ''),
+        '送货地址': shipping_info.get('送货地址', ''),
+        '发货日期': shipping_info.get('发货日期', ''),
+        '制单人': shipping_info.get('制单人', 'Admin'),
+    }
+    
+    def fill_single_sheet(sheet, page_num: int, page_items: list, page_total_qty: int):
+        sheet.Cells(PAGE_HEADER_ROW, 2).Value = f"客户名称：{base_info['客户名称']}"
+        sheet.Cells(PAGE_HEADER_ROW, 9).Value = f"送货单号：{base_info['发货单号']}"
+        sheet.Cells(PAGE_HEADER_ROW2, 2).Value = f"送货地址：{base_info['送货地址']}"
+        sheet.Cells(PAGE_HEADER_ROW2, 9).Value = f"送货日期：{base_info['发货日期']}"
         
-        # 填充基本信息
-        # B5: 客户名称, I5: 送货单号
-        # B6: 送货地址, I6: 送货日期
-        ws.Cells(5, 2).Value = f"客户名称：{shipping_info.get('客户名称', '')}"
-        ws.Cells(5, 9).Value = f"送货单号：{shipping_info.get('发货单号', '')}"
-        ws.Cells(6, 2).Value = f"送货地址：{shipping_info.get('送货地址', '')}"
-        ws.Cells(6, 9).Value = f"送货日期：{shipping_info.get('发货日期', '')}"
+        for i, item in enumerate(page_items):
+            row = DATA_START_ROW + i
+            sheet.Cells(row, 2).Value = i + 1
+            sheet.Cells(row, 3).Value = item.get('合同编号', '')
+            sheet.Cells(row, 4).Value = item.get('产品类型', '')
+            sheet.Cells(row, 5).Value = item.get('规格', '')
+            sheet.Cells(row, 6).Value = item.get('型号', '')
+            sheet.Cells(row, 7).Value = item.get('单位', '')
+            sheet.Cells(row, 8).Value = item.get('数量', 0)
+            sheet.Cells(row, 9).Value = item.get('备注', '')
         
-        # 填充数据行 (第8-15行)
-        # B: 序号, C: 合同编号, D: 产品类型, E: 规格, F: 型号, G: 单位, H: 数量, I: 备注
-        items = shipping_info.get('订单项目', [])
-        for i, item in enumerate(items[:8]):  # 最多8行
-            row = 8 + i
-            ws.Cells(row, 2).Value = i + 1  # 序号
-            ws.Cells(row, 3).Value = item.get('合同编号', '')
-            ws.Cells(row, 4).Value = item.get('产品类型', '')
-            ws.Cells(row, 5).Value = item.get('规格', '')
-            ws.Cells(row, 6).Value = item.get('型号', '')
-            ws.Cells(row, 7).Value = item.get('单位', '')
-            ws.Cells(row, 8).Value = item.get('数量', 0)
-            ws.Cells(row, 9).Value = item.get('备注', '')
+        if page_items:
+            sheet.Cells(TOTAL_ROW, 7).Value = page_total_qty
         
-        # 计算并填充总数量 (G16)
-        if items:
-            total_qty = sum(item.get('数量', 0) for item in items)
-            ws.Cells(16, 7).Value = total_qty
+        sheet.Cells(FOOTER_ROW, 2).Value = f"制单：{base_info['制单人']}"
+        sheet.Cells(FOOTER_ROW, 5).Value = f"第{page_num}页/共{total_pages}页"
         
-        # 填充页脚 (第18行)
-        # B18: 制单人, E18: 页码
-        ws.Cells(18, 2).Value = f"制单：{shipping_info.get('制单人', 'Admin')}"
-        ws.Cells(18, 5).Value = "第1页/共1页"
-        
-        # 设置页面尺寸为二等分连续纸 (161)
-        page_setup = ws.PageSetup
-        page_setup.PaperSize = 161  # 二等分连续纸
-        page_setup.Orientation = 1  # 纵向
+        page_setup = sheet.PageSetup
+        page_setup.PaperSize = 161
+        page_setup.Orientation = 1
         page_setup.Zoom = False
         page_setup.FitToPagesWide = 1
         page_setup.FitToPagesTall = False
@@ -126,26 +124,80 @@ def fill_and_convert_shipping(shipping_info: dict) -> str:
         page_setup.RightMargin = 20
         page_setup.TopMargin = 20
         page_setup.BottomMargin = 20
+    
+    excel = win32.Dispatch('Excel.Application')
+    excel.Visible = False
+    excel.DisplayAlerts = False
+    
+    temp_pdf_paths = []
+    
+    try:
+        if total_pages == 1:
+            shutil.copy(template_path, os.path.join(TEMP_DIR, f"shipping_{ship_id}_{unique_id}.xlsx"))
+            workbook = excel.Workbooks.Open(os.path.abspath(os.path.join(TEMP_DIR, f"shipping_{ship_id}_{unique_id}.xlsx")))
+            ws = workbook.Worksheets(1)
+            
+            page_items = items[:ITEMS_PER_PAGE]
+            page_qty = sum(item.get('数量', 0) for item in page_items)
+            fill_single_sheet(ws, 1, page_items, page_qty)
+            workbook.Save()
+            
+            pdf_filename = f"shipping_{ship_id}_{unique_id}.pdf"
+            pdf_path = os.path.join(TEMP_DIR, pdf_filename)
+            workbook.Worksheets(1).ExportAsFixedFormat(0, os.path.abspath(pdf_path))
+            workbook.Close(False)
+            excel.Quit()
+            
+            os.remove(os.path.join(TEMP_DIR, f"shipping_{ship_id}_{unique_id}.xlsx"))
+            
+            logger.info(f"PDF created: {pdf_path}, pages: {total_pages}")
+            return f"/temp/{pdf_filename}"
         
-        # 保存 Excel
-        workbook.Save()
+        for page_num in range(1, total_pages + 1):
+            start_idx = (page_num - 1) * ITEMS_PER_PAGE
+            end_idx = start_idx + ITEMS_PER_PAGE
+            page_items = items[start_idx:end_idx]
+            page_qty = sum(item.get('数量', 0) for item in page_items)
+            
+            shutil.copy(template_path, os.path.join(TEMP_DIR, f"shipping_{ship_id}_{unique_id}_page{page_num}.xlsx"))
+            workbook = excel.Workbooks.Open(os.path.abspath(os.path.join(TEMP_DIR, f"shipping_{ship_id}_{unique_id}_page{page_num}.xlsx")))
+            ws = workbook.Worksheets(1)
+            
+            fill_single_sheet(ws, page_num, page_items, page_qty)
+            workbook.Save()
+            
+            temp_pdf = os.path.join(TEMP_DIR, f"shipping_{ship_id}_{unique_id}_page{page_num}.pdf")
+            workbook.Worksheets(1).ExportAsFixedFormat(0, os.path.abspath(temp_pdf))
+            workbook.Close(False)
+            
+            os.remove(os.path.join(TEMP_DIR, f"shipping_{ship_id}_{unique_id}_page{page_num}.xlsx"))
+            temp_pdf_paths.append(temp_pdf)
         
-        # 转换为 PDF
+        excel.Quit()
+        
         pdf_filename = f"shipping_{ship_id}_{unique_id}.pdf"
         pdf_path = os.path.join(TEMP_DIR, pdf_filename)
-        workbook.Worksheets(1).ExportAsFixedFormat(0, os.path.abspath(pdf_path))
         
-        workbook.Close(False)
+        from PyPDF2 import PdfMerger
+        merger = PdfMerger()
+        for temp_pdf in temp_pdf_paths:
+            merger.append(temp_pdf)
+        merger.write(pdf_path)
+        merger.close()
         
-    finally:
-        excel.Quit()
-    
-    # 删除临时 Excel 文件
-    if os.path.exists(excel_path):
-        os.remove(excel_path)
-    
-    logger.info(f"PDF created: {pdf_path}")
-    return f"/temp/{pdf_filename}"
+        for temp_pdf in temp_pdf_paths:
+            if os.path.exists(temp_pdf):
+                os.remove(temp_pdf)
+        
+        logger.info(f"PDF created: {pdf_path}, pages: {total_pages}")
+        return f"/temp/{pdf_filename}"
+        
+    except Exception as e:
+        try:
+            excel.Quit()
+        except:
+            pass
+        raise e
 
 
 @router.get("/shipping/{ship_id}")
