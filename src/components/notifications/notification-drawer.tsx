@@ -35,7 +35,10 @@ export function NotificationDrawer() {
 
   return (
     <Sheet open={isDrawerOpen} onOpenChange={setDrawerOpen}>
-      <SheetContent className='w-full p-0 sm:max-w-[480px]'>
+      <SheetContent
+        className='flex w-full flex-col p-0 sm:max-w-[480px]'
+        showClose={false}
+      >
         <SheetHeader className='border-b px-6 py-4'>
           <div className='flex items-center justify-between'>
             <SheetTitle>消息中心</SheetTitle>
@@ -70,8 +73,8 @@ export function NotificationDrawer() {
             </TabsList>
           </div>
 
-          <TabsContent value={filter} className='m-0'>
-            <ScrollArea className='h-[calc(100vh-180px)]'>
+          <TabsContent value={filter} className='m-0 flex-1'>
+            <ScrollArea className='h-[calc(100vh-240px)]'>
               {filteredNotifications.length === 0 ? (
                 <div className='flex h-[200px] items-center justify-center text-sm text-muted-foreground'>
                   {filter === 'unread' ? '暂无未读通知' : '暂无通知'}
@@ -111,6 +114,16 @@ export function NotificationDrawer() {
             </ScrollArea>
           </TabsContent>
         </Tabs>
+
+        <div className='border-t p-4'>
+          <Button
+            variant='default'
+            className='w-full'
+            onClick={() => setDrawerOpen(false)}
+          >
+            关闭
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   )
