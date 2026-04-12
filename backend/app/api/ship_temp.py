@@ -11,6 +11,7 @@ from app.db.database import get_db_jns
 from app.models.order import Order, OrderList
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.schemas.order import (
     OrderResponse, OrderCreate, OrderUpdate,
     OrderListResponse, OrderListCreate, OrderListUpdate,
@@ -21,9 +22,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# 简单的内存缓存实现
 class SimpleCache:
-    def __init__(self, ttl=300):  # 默认5分钟过期
+    def __init__(self, ttl=300):
         self.cache = {}
         self.ttl = ttl
     
@@ -42,7 +42,6 @@ class SimpleCache:
     def clear(self):
         self.cache.clear()
 
-# 创建缓存实例
 cache = SimpleCache(ttl=300)
 
 
@@ -62,10 +61,8 @@ async def get_order_data(
     current_user: User = Depends(get_current_active_user)
 ):
     """获取订单数据 - 优化版本"""
-    # 构建缓存键
     cache_key = f"order_data:{query}:{客户名称}:{型号}:{规格}:{合同编号}:{发货单号}:{id}:{发货状态}:{page}:{limit}"
     
-    # 尝试从缓存获取
     cached_result = cache.get(cache_key)
     if cached_result:
         return cached_result
@@ -86,17 +83,13 @@ async def get_order_data(
         logger.info(f"添加发货单号筛选条件: {发货单号}")
     
     if query == "list":
-        # 查询订单列表 - 使用优化查询
         if id:
             filters.append(OrderList.id == id)
         
-        # 使用更高效的查询方式
         query_obj = db.query(OrderList).filter(*filters).order_by(desc(OrderList.id))
         
-        # 使用更高效的计数方式
         total = query_obj.count()
         
-        # 只选择需要的字段
         items = query_obj.offset((page - 1) * limit).limit(limit).all()
         
         data = [{
@@ -109,22 +102,18 @@ async def get_order_data(
         } for item in items]
         
     elif query == "items":
-        # 查询订单详情 - 使用joinedload优化关联查询
         if id:
             filters.append(Order.id == id)
         if 合同编号:
             filters.append(Order.合同编号.contains(合同编号))
         
-        # 根据发货状态筛选
         if 发货状态 == 0:
             filters.append(Order.ship_id == None)
         elif 发货状态 == 1:
             filters.append(Order.ship_id.isnot(None))
         
-        # 打印筛选条件，用于调试
         logger.info(f"筛选条件: {filters}")
         
-        # 使用joinedload优化关联查询
         query_obj = db.query(Order, OrderList).outerjoin(
             OrderList, Order.oid == OrderList.id
         ).filter(*filters).order_by(desc(Order.id))
@@ -154,7 +143,6 @@ async def get_order_data(
         } for order, order_list in results]
         
     elif query == "undone":
-        # 查询未发货订单
         query_obj = db.query(Order, OrderList).filter(
             Order.ship_id == None
         ).filter(*filters).join(
@@ -177,16 +165,10 @@ async def get_order_data(
             '客户名称': order_list.客户名称,
         } for order, order_list in results]
     else:
-        return {"code": 1, "msg": "无效的查询类型", "count": 0, "data": []}
+        return error_response(msg="无效的查询类型")
     
-    result = {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    result = success_response(data=data, count=total)
     
-    # 缓存结果
     cache.set(cache_key, result)
     
     return result
@@ -206,41 +188,28 @@ async def delete_shipping(
     try:
         from app.models.ship import Ship
         
-        # 1. 将订单表中对应发货单号的记录更新为NULL
         updated = db.query(Order).filter(Order.发货单号 == 发货单号).update({
             '发货单号': None,
             '快递单号': None,
             'ship_id': None
         })
         
-        # 2. 检查该快递单号是否还存在于订单表中
         express_number_exists = db.query(Order).filter(Order.快递单号 == 快递单号).first()
         
-        # 3. 如果快递单号不存在于订单表中，删除发货表中的对应记录
         if not express_number_exists:
             ship_deleted = db.query(Ship).filter(Ship.快递单号 == 快递单号).delete()
             logger.info(f"删除发货表记录: {ship_deleted} 条")
         
-        # 提交事务
         db.commit()
         
-        # 清除缓存
         cache.clear()
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {"updated": updated}
-        }
+        return success_response(data={"updated": updated})
         
     except Exception as e:
         logger.error(f"删除发货单号失败: {e}")
         db.rollback()
-        return {
-            "code": 1,
-            "msg": f"删除失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"删除失败: {str(e)}")
 
 
 @router.delete("/shipping/delete-item", response_model=dict)
@@ -253,7 +222,6 @@ async def delete_shipping_item(
     将指定订单的发货单号、快递单号、ship_id三个字段设置为NULL
     """
     try:
-        # 将订单表中对应ID的记录更新为NULL
         updated = db.query(Order).filter(Order.id == order_id).update({
             '发货单号': None,
             '快递单号': None,
@@ -261,32 +229,18 @@ async def delete_shipping_item(
         })
         
         if updated == 0:
-            return {
-                "code": 1,
-                "msg": "未找到该订单记录",
-                "data": {}
-            }
+            return error_response(msg="未找到该订单记录")
         
-        # 提交事务
         db.commit()
         
-        # 清除缓存
         cache.clear()
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {"updated": updated}
-        }
+        return success_response(data={"updated": updated})
         
     except Exception as e:
         logger.error(f"删除发货项目失败: {e}")
         db.rollback()
-        return {
-            "code": 1,
-            "msg": f"删除失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"删除失败: {str(e)}")
 
 
 @router.get("/stats", response_model=dict)
@@ -297,7 +251,6 @@ async def get_sales_stats_optimized(
     """获取销售统计数据 - 优化版本"""
     cache_key = "sales_stats"
     
-    # 尝试从缓存获取
     cached_result = cache.get(cache_key)
     if cached_result:
         return cached_result
@@ -305,15 +258,11 @@ async def get_sales_stats_optimized(
     try:
         from app.models.ship import Ship
         
-        # 获取当前日期
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
         
-        # 取得当前年月
         target_month = datetime.datetime.now().month
         target_year = datetime.datetime.now().year
         
-        # 使用单个查询获取所有统计数据
-        # 今日发货金额
         today_shipped_amount = db.query(func.sum(Order.金额)).outerjoin(
             Ship, Order.ship_id == Ship.id
         ).filter(
@@ -321,7 +270,6 @@ async def get_sales_stats_optimized(
             Order.外购 == 0
         ).scalar() or 0
         
-        # 今日订单金额
         today_order_amount = db.query(func.sum(Order.金额)).outerjoin(
             OrderList, Order.oid == OrderList.id
         ).filter(
@@ -329,7 +277,6 @@ async def get_sales_stats_optimized(
             Order.外购 == 0
         ).scalar() or 0
         
-        # 当前月发货金额
         this_month_shipped_amount = db.query(func.sum(Order.金额)).outerjoin(
             Ship, Order.ship_id == Ship.id
         ).filter(
@@ -338,7 +285,6 @@ async def get_sales_stats_optimized(
             Order.外购 == 0
         ).scalar() or 0
         
-        # 当前月订单总金额
         this_month_order_amount = db.query(func.sum(Order.金额)).outerjoin(
             OrderList, Order.oid == OrderList.id
         ).filter(
@@ -347,7 +293,6 @@ async def get_sales_stats_optimized(
             Order.外购 == 0
         ).scalar() or 0
         
-        # 获取未付订单金额
         unpaid_amount = db.query(func.sum(Order.金额)).outerjoin(
             OrderList, Order.oid == OrderList.id
         ).filter(
@@ -356,19 +301,16 @@ async def get_sales_stats_optimized(
             Order.外购 == 0
         ).scalar() or 0
         
-        # 获取未发货订单金额
         unshipped_amount = db.query(func.sum(Order.金额)).filter(
             Order.ship_id == None,
             Order.外购 == 0
         ).scalar() or 0
         
-        # 获取近12个月的销售数据 - 使用批量查询
         sales_data = []
         for i in range(11, -1, -1):
             month = datetime.datetime.now() - datetime.timedelta(days=i*30)
             month_str = month.strftime('%Y-%m')
             
-            # 生成模拟数据
             base_amount = 80000 + i * 5000
             actual_amount = base_amount * (0.95 + 0.1 * (i % 3))
             target_amount = actual_amount * 1.05
@@ -379,28 +321,22 @@ async def get_sales_stats_optimized(
                 "actual": round(actual_amount, 2)
             })
         
-        result = {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "today_order_amount": round(today_order_amount, 2),
-                "today_shipped_amount": round(today_shipped_amount, 2),
-                "this_month_order_amount": round(this_month_order_amount, 2),
-                "this_month_shipped_amount": round(this_month_shipped_amount, 2),
-                "unpaid_amount": round(unpaid_amount, 2),
-                "unshipped_amount": round(unshipped_amount, 2),
-                "sales_data": sales_data
-            }
-        }
+        result = success_response(data={
+            "today_order_amount": round(today_order_amount, 2),
+            "today_shipped_amount": round(today_shipped_amount, 2),
+            "this_month_order_amount": round(this_month_order_amount, 2),
+            "this_month_shipped_amount": round(this_month_shipped_amount, 2),
+            "unpaid_amount": round(unpaid_amount, 2),
+            "unshipped_amount": round(unshipped_amount, 2),
+            "sales_data": sales_data
+        })
         
-        # 缓存结果（1分钟）
         cache.set(cache_key, result)
         
         return result
         
     except Exception as e:
         logger.error(f"获取销售统计数据失败: {e}")
-        # 返回默认数据
         sales_data = []
         for i in range(11, -1, -1):
             month = datetime.datetime.now() - datetime.timedelta(days=i*30)
@@ -414,29 +350,24 @@ async def get_sales_stats_optimized(
                 "actual": round(actual_amount, 2)
             })
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "today_order_amount": 17404.82,
-                "today_shipped_amount": 995.78,
-                "this_month_order_amount": 52214.46,
-                "this_month_shipped_amount": 995.78,
-                "unpaid_amount": 1083044.51,
-                "unshipped_amount": 343063.92,
-                "sales_data": sales_data
-            }
-        }
+        return success_response(data={
+            "today_order_amount": 17404.82,
+            "today_shipped_amount": 995.78,
+            "this_month_order_amount": 52214.46,
+            "this_month_shipped_amount": 995.78,
+            "unpaid_amount": 1083044.51,
+            "unshipped_amount": 343063.92,
+            "sales_data": sales_data
+        })
 
 
-# 清除缓存的端点（用于数据更新后）
 @router.post("/cache/clear")
 async def clear_cache(
     current_user: User = Depends(get_current_active_user)
 ):
     """清除所有缓存"""
     cache.clear()
-    return {"code": 0, "msg": "缓存已清除"}
+    return success_response(msg="缓存已清除")
 
 
 @router.get("/shipping/detail", response_model=dict)
@@ -449,7 +380,6 @@ async def get_shipping_detail(
     try:
         from app.models.ship import Ship
         
-        # 查询该发货单号的所有订单项目
         query_obj = db.query(Order, OrderList, Ship).outerjoin(
             OrderList, Order.oid == OrderList.id
         ).outerjoin(
@@ -461,13 +391,8 @@ async def get_shipping_detail(
         results = query_obj.all()
         
         if not results:
-            return {
-                "code": 1,
-                "msg": "未找到该发货单号的记录",
-                "data": {}
-            }
+            return error_response(msg="未找到该发货单号的记录")
         
-        # 构建发货单基本信息
         first_order, first_order_list, first_ship = results[0]
         shipping_info = {
             "发货单号": 发货单号,
@@ -479,7 +404,6 @@ async def get_shipping_detail(
             "备注": first_ship.备注 if first_ship else None
         }
         
-        # 构建订单项目列表
         order_items = []
         total_amount = 0
         for order, order_list, _ in results:
@@ -502,19 +426,11 @@ async def get_shipping_detail(
         shipping_info["总金额"] = total_amount
         shipping_info["订单项目"] = order_items
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": shipping_info
-        }
+        return success_response(data=shipping_info)
         
     except Exception as e:
         logger.error(f"获取发货单详情失败: {e}")
-        return {
-            "code": 1,
-            "msg": f"获取失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.get("/shipping/list", response_model=dict)
@@ -531,10 +447,8 @@ async def get_shipping_list(
     current_user: User = Depends(get_current_active_user)
 ):
     """获取发货列表 - 按发货单号去重"""
-    # 构建缓存键
     cache_key = f"shipping_list:{发货单号}:{客户名称}:{快递单号}:{开始日期}:{结束日期}:{page}:{limit}"
     
-    # 尝试从缓存获取
     cached_result = cache.get(cache_key)
     if cached_result:
         return cached_result
@@ -543,7 +457,6 @@ async def get_shipping_list(
     
     filters = []
     
-    # 只查询已发货的订单
     filters.append(Order.ship_id.isnot(None))
     
     if 发货单号:
@@ -555,15 +468,12 @@ async def get_shipping_list(
     if 快递单号:
         filters.append(Order.快递单号.contains(快递单号))
     
-    # 日期范围筛选
     if 开始日期:
         filters.append(Ship.发货日期 >= 开始日期)
     
     if 结束日期:
         filters.append(Ship.发货日期 <= 结束日期)
     
-    # 使用 SQL 聚合查询按发货单号分组
-    # 同时连接 OrderList 和 Ship 表获取所需信息
     shipping_query = db.query(
         Order.发货单号,
         func.max(Order.快递单号).label('快递单号'),
@@ -582,16 +492,13 @@ async def get_shipping_list(
         func.max(Ship.发货日期).desc()
     )
     
-    # 计算总数
     total = shipping_query.count()
     
-    # 根据 all 参数决定是否分页
     if all:
         shipping_results = shipping_query.all()
     else:
         shipping_results = shipping_query.offset((page - 1) * limit).limit(limit).all()
     
-    # 转换结果
     shipping_list = []
     for result in shipping_results:
         shipping_list.append({
@@ -604,14 +511,8 @@ async def get_shipping_list(
             '发货日期': result.发货日期.strftime('%Y-%m-%d') if result.发货日期 else None
         })
     
-    result = {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": shipping_list
-    }
+    result = success_response(count=total, data=shipping_list)
     
-    # 缓存结果
     cache.set(cache_key, result)
     
     return result
@@ -631,41 +532,28 @@ async def delete_shipping(
     try:
         from app.models.ship import Ship
         
-        # 1. 将订单表中对应发货单号的记录更新为NULL
         updated = db.query(Order).filter(Order.发货单号 == 发货单号).update({
             '发货单号': None,
             '快递单号': None,
             'ship_id': None
         })
         
-        # 2. 检查该快递单号是否还存在于订单表中
         express_number_exists = db.query(Order).filter(Order.快递单号 == 快递单号).first()
         
-        # 3. 如果快递单号不存在于订单表中，删除发货表中的对应记录
         if not express_number_exists:
             ship_deleted = db.query(Ship).filter(Ship.快递单号 == 快递单号).delete()
             logger.info(f"删除发货表记录: {ship_deleted} 条")
         
-        # 提交事务
         db.commit()
         
-        # 清除缓存
         cache.clear()
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {"updated": updated}
-        }
+        return success_response(data={"updated": updated})
         
     except Exception as e:
         logger.error(f"删除发货单号失败: {e}")
         db.rollback()
-        return {
-            "code": 1,
-            "msg": f"删除失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"删除失败: {str(e)}")
 
 
 @router.delete("/shipping/delete-item", response_model=dict)
@@ -678,7 +566,6 @@ async def delete_shipping_item(
     将指定订单的发货单号、快递单号、ship_id三个字段设置为NULL
     """
     try:
-        # 将订单表中对应ID的记录更新为NULL
         updated = db.query(Order).filter(Order.id == order_id).update({
             '发货单号': None,
             '快递单号': None,
@@ -686,29 +573,15 @@ async def delete_shipping_item(
         })
         
         if updated == 0:
-            return {
-                "code": 1,
-                "msg": "未找到该订单记录",
-                "data": {}
-            }
+            return error_response(msg="未找到该订单记录")
         
-        # 提交事务
         db.commit()
         
-        # 清除缓存
         cache.clear()
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {"updated": updated}
-        }
+        return success_response(data={"updated": updated})
         
     except Exception as e:
         logger.error(f"删除发货项目失败: {e}")
         db.rollback()
-        return {
-            "code": 1,
-            "msg": f"删除失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"删除失败: {str(e)}")

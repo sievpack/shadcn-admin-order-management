@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.dict_service import dict_type_service, dict_data_service
 
 router = APIRouter()
@@ -31,7 +32,7 @@ async def get_dict_type_list(
         'updated_at': item.updated_at.isoformat() if item.updated_at else None,
     } for item in items]
 
-    return {"code": 0, "msg": "success", "count": total, "data": data, "page": page, "page_size": limit}
+    return success_response(data=data, count=total, msg="success")
 
 
 @router.get("/type/all")
@@ -44,7 +45,7 @@ async def get_all_dict_types(
 
     data = [{'id': item.id, 'dict_name': item.dict_name, 'dict_type': item.dict_type} for item in items]
 
-    return {"code": 0, "msg": "success", "data": data}
+    return success_response(data=data)
 
 
 @router.post("/type")
@@ -62,15 +63,15 @@ async def create_dict_type(
         description=description, available=available, creator_id=current_user.id
     )
     if error:
-        raise HTTPException(status_code=400, detail=error)
+        return error_response(msg=error)
 
-    return {"code": 0, "msg": "success", "data": {
+    return success_response(data={
         'id': dict_type_obj.id,
         'dict_name': dict_type_obj.dict_name,
         'dict_type': dict_type_obj.dict_type,
         'available': dict_type_obj.available,
         'description': dict_type_obj.description,
-    }}
+    })
 
 
 @router.put("/type/{type_id}")
@@ -89,15 +90,15 @@ async def update_dict_type(
         description=description, available=available
     )
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        return error_response(msg=error)
 
-    return {"code": 0, "msg": "success", "data": {
+    return success_response(data={
         'id': dict_type_obj.id,
         'dict_name': dict_type_obj.dict_name,
         'dict_type': dict_type_obj.dict_type,
         'available': dict_type_obj.available,
         'description': dict_type_obj.description,
-    }}
+    })
 
 
 @router.delete("/type/{type_id}")
@@ -109,9 +110,9 @@ async def delete_dict_type(
     """删除字典类型"""
     success, error = dict_type_service.delete_type(db, type_id)
     if not success:
-        raise HTTPException(status_code=404, detail=error)
+        return error_response(msg=error)
 
-    return {"code": 0, "msg": "success"}
+    return success_response(msg="success")
 
 
 @router.get("/data")
@@ -143,7 +144,7 @@ async def get_dict_data_list(
         'updated_at': item.updated_at.isoformat() if item.updated_at else None,
     } for item in items]
 
-    return {"code": 0, "msg": "success", "count": total, "data": data, "page": page, "page_size": limit}
+    return success_response(data=data, count=total, msg="success")
 
 
 @router.get("/data/type/{dict_type}")
@@ -167,7 +168,7 @@ async def get_dict_data_by_type(
         'available': item.available,
     } for item in items]
 
-    return {"code": 0, "msg": "success", "data": data}
+    return success_response(data=data)
 
 
 @router.post("/data")
@@ -192,12 +193,12 @@ async def create_dict_data(
         creator_id=current_user.id
     )
 
-    return {"code": 0, "msg": "success", "data": {
+    return success_response(data={
         'id': dict_data_obj.id,
         'dict_label': dict_data_obj.dict_label,
         'dict_value': dict_data_obj.dict_value,
         'dict_type': dict_data_obj.dict_type,
-    }}
+    })
 
 
 @router.put("/data/{data_id}")
@@ -222,14 +223,14 @@ async def update_dict_data(
         is_default=is_default, description=description, available=available
     )
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        return error_response(msg=error)
 
-    return {"code": 0, "msg": "success", "data": {
+    return success_response(data={
         'id': dict_data_obj.id,
         'dict_label': dict_data_obj.dict_label,
         'dict_value': dict_data_obj.dict_value,
         'dict_type': dict_data_obj.dict_type,
-    }}
+    })
 
 
 @router.delete("/data/{data_id}")
@@ -241,7 +242,7 @@ async def delete_dict_data(
     """删除字典数据"""
     dict_data_obj = dict_data_service.get(db, data_id)
     if not dict_data_obj:
-        raise HTTPException(status_code=404, detail="字典数据不存在")
+        return error_response(msg="字典数据不存在")
 
     dict_data_service.delete(db, data_id)
-    return {"code": 0, "msg": "success"}
+    return success_response(msg="success")

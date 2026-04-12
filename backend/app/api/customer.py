@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.customer_service import customer_service
 
 logger = logging.getLogger(__name__)
@@ -58,15 +59,15 @@ async def get_customer_data(
                 'update_at': item.update_at.strftime('%Y-%m-%d %H:%M:%S') if item.update_at else None
             } for item in items]
 
-            return {"code": 0, "msg": "success", "count": total, "data": data}
+            return success_response(data=data, count=total)
 
         elif query == "detail":
             if not id:
-                return {"code": 1, "msg": "缺少客户ID", "count": 0, "data": []}
+                return error_response(msg="缺少客户ID")
 
             item = customer_service.get(db, id)
             if not item:
-                return {"code": 1, "msg": "客户不存在", "count": 0, "data": []}
+                return error_response(msg="客户不存在")
 
             data = [{
                 'id': item.id,
@@ -89,11 +90,11 @@ async def get_customer_data(
                 'update_at': item.update_at.strftime('%Y-%m-%d %H:%M:%S') if item.update_at else None
             }]
 
-            return {"code": 0, "msg": "success", "count": 1, "data": data}
+            return success_response(data=data, count=1)
 
-        return {"code": 1, "msg": "无效的查询类型", "count": 0, "data": []}
+        return error_response(msg="无效的查询类型")
     except Exception as e:
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.post("/create")
@@ -106,11 +107,11 @@ async def create_customer(
     try:
         customer, error = customer_service.create(db, data)
         if error:
-            return {"code": 1, "msg": error, "data": {}}
-        return {"code": 0, "msg": "创建成功", "data": {"id": customer.id}}
+            return error_response(msg=error)
+        return success_response(data={"id": customer.id}, msg="创建成功")
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"创建失败: {str(e)}", "data": {}}
+        return error_response(msg=f"创建失败: {str(e)}")
 
 
 @router.put("/update")
@@ -122,36 +123,31 @@ async def update_customer(
     """更新客户"""
     customer_id = data.get("id")
     if not customer_id:
-        return {"code": 1, "msg": "缺少客户ID", "data": {}}
+        return error_response(msg="缺少客户ID")
 
     try:
         customer, error = customer_service.update_customer(db, customer_id, data)
         if error:
-            return {"code": 1, "msg": error, "data": {}}
+            return error_response(msg=error)
         
-        # 强制刷新确保获取最新数据
         db.refresh(customer)
         
-        return {
-            "code": 0,
-            "msg": "更新成功",
-            "data": {
-                "id": customer.id,
-                "客户名称": customer.客户名称,
-                "简称": customer.简称,
-                "联系人": customer.联系人,
-                "联系电话": customer.联系电话,
-                "手机": customer.手机,
-                "结算方式": customer.结算方式,
-                "是否含税": customer.是否含税,
-                "收货地址": customer.收货地址,
-                "备注": customer.备注,
-                "状态": customer.状态,
-            }
-        }
+        return success_response(data={
+            "id": customer.id,
+            "客户名称": customer.客户名称,
+            "简称": customer.简称,
+            "联系人": customer.联系人,
+            "联系电话": customer.联系电话,
+            "手机": customer.手机,
+            "结算方式": customer.结算方式,
+            "是否含税": customer.是否含税,
+            "收货地址": customer.收货地址,
+            "备注": customer.备注,
+            "状态": customer.状态,
+        }, msg="更新成功")
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"更新失败: {str(e)}", "data": {}}
+        return error_response(msg=f"更新失败: {str(e)}")
 
 
 @router.delete("/delete/{id}")
@@ -164,12 +160,12 @@ async def delete_customer(
     try:
         customer = customer_service.get(db, id)
         if not customer:
-            return {"code": 1, "msg": "客户不存在", "data": {}}
+            return error_response(msg="客户不存在")
         customer_service.delete(db, id)
-        return {"code": 0, "msg": "删除成功", "data": {}}
+        return success_response(msg="删除成功")
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"删除失败: {str(e)}", "data": {}}
+        return error_response(msg=f"删除失败: {str(e)}")
 
 
 @router.get("/names")
@@ -180,6 +176,6 @@ async def get_customer_names(
     """获取所有客户名称列表"""
     try:
         names = customer_service.get_all_names(db)
-        return {"code": 0, "msg": "success", "count": len(names), "data": names}
+        return success_response(data=names, count=len(names))
     except Exception as e:
-        return {"code": 1, "msg": f"获取客户名称失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取客户名称失败: {str(e)}")

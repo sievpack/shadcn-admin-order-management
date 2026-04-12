@@ -8,6 +8,7 @@ from sqlalchemy import desc
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.finance_service import accounts_receivable_service, accounts_payable_service, collection_record_service, payment_record_service, voucher_service, accounts_receivable_batch_service, finance_stats_service
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ async def get_ar_list(
         db, query=query, 应收单号=应收单号, 客户名称=客户名称, 收款状态=status, page=page, page_size=limit
     )
     data = [accounts_receivable_service.to_dict(item) for item in items]
-    return {"code": 0, "msg": "success", "count": total, "data": data}
+    return success_response(data=data, count=total)
 
 
 @router.get("/ar/export-monthly-shipment")
@@ -100,12 +101,7 @@ async def export_monthly_shipment(
 
     result_list.sort(key=lambda x: x["发货金额"], reverse=True)
 
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": len(result_list),
-        "data": result_list
-    }
+    return success_response(data=result_list, count=len(result_list))
 
 
 @router.get("/ar/{ar_id}")
@@ -116,8 +112,8 @@ async def get_ar_detail(
 ):
     item = accounts_receivable_service.get_by_id(db, ar_id)
     if not item:
-        return {"code": 1, "msg": "应收账款不存在", "data": {}}
-    return {"code": 0, "msg": "success", "count": 1, "data": accounts_receivable_service.to_dict(item)}
+        return error_response(msg="应收账款不存在")
+    return success_response(data=accounts_receivable_service.to_dict(item), count=1)
 
 
 @router.post("/ar/create")
@@ -143,9 +139,8 @@ async def create_ar(
     )
 
     if error:
-        raise HTTPException(status_code=400, detail=error)
-
-    return {"code": 0, "msg": "创建成功", "data": {"id": ar.id}}
+        return error_response(msg=error)
+    return success_response(data={"id": ar.id}, msg="创建成功")
 
 
 @router.put("/ar/update")
@@ -156,7 +151,7 @@ async def update_ar(
 ):
     ar_id = data.get("id")
     if not ar_id:
-        return {"code": 1, "msg": "缺少ID", "data": {}}
+        return error_response(msg="缺少ID")
 
     ar, error = accounts_receivable_service.update(
         db, ar_id,
@@ -173,25 +168,8 @@ async def update_ar(
     )
 
     if error:
-        raise HTTPException(status_code=400, detail=error)
-
-    return {
-        "code": 0,
-        "msg": "更新成功",
-        "data": {
-            "id": ar.id,
-            "关联订单": ar.关联订单,
-            "客户名称": ar.客户名称,
-            "应收金额": float(ar.应收金额) if ar.应收金额 else 0,
-            "已收金额": float(ar.已收金额) if ar.已收金额 else 0,
-            "应收余额": float(ar.应收余额) if ar.应收余额 else 0,
-            "应收日期": ar.应收日期.strftime('%Y-%m-%d') if ar.应收日期 else None,
-            "到期日期": ar.到期日期.strftime('%Y-%m-%d') if ar.到期日期 else None,
-            "账期类型": ar.账期类型,
-            "收款状态": ar.收款状态,
-            "备注": ar.备注,
-        }
-    }
+        return error_response(msg=error)
+    return success_response(data=accounts_receivable_service.to_dict(ar), msg="更新成功")
 
 
 @router.delete("/ar/{ar_id}")
@@ -203,9 +181,8 @@ async def delete_ar(
     success, error = accounts_receivable_service.delete(db, ar_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail=error)
-
-    return {"code": 0, "msg": "删除成功", "data": {}}
+        return error_response(msg=error or "删除失败")
+    return success_response(msg="删除成功")
 
 
 @router.get("/ar/aging")
@@ -214,7 +191,7 @@ async def get_ar_aging(
     current_user: User = Depends(get_current_active_user)
 ):
     result = accounts_receivable_service.get_aging(db)
-    return {"code": 0, "msg": "success", "count": len(result), "data": result}
+    return success_response(data=result, count=len(result))
 
 
 # ==================== 应付账款 API ====================
@@ -232,7 +209,7 @@ async def get_ap_list(
         db, 应付单号=应付单号, 供应商名称=供应商名称, 付款状态=付款状态, page=page, page_size=limit
     )
     data = [accounts_payable_service.to_dict(item) for item in items]
-    return {"code": 0, "msg": "success", "count": total, "data": data}
+    return success_response(data=data, count=total)
 
 
 @router.post("/ap/create")
@@ -258,9 +235,8 @@ async def create_ap(
     )
 
     if error:
-        raise HTTPException(status_code=400, detail=error)
-
-    return {"code": 0, "msg": "创建成功", "data": {"id": ap.id}}
+        return error_response(msg=error)
+    return success_response(data={"id": ap.id}, msg="创建成功")
 
 
 @router.get("/ap/aging")
@@ -269,7 +245,7 @@ async def get_ap_aging(
     current_user: User = Depends(get_current_active_user)
 ):
     result = accounts_payable_service.get_aging(db)
-    return {"code": 0, "msg": "success", "count": len(result), "data": result}
+    return success_response(data=result, count=len(result))
 
 
 # ==================== 收款记录 API ====================
@@ -287,7 +263,7 @@ async def get_collection_list(
         db, 收款单号=收款单号, 关联应收=关联应收, 核销状态=核销状态, page=page, page_size=limit
     )
     data = [collection_record_service.to_dict(item) for item in items]
-    return {"code": 0, "msg": "success", "count": total, "data": data}
+    return success_response(data=data, count=total)
 
 
 @router.post("/collection/create")
@@ -310,9 +286,8 @@ async def create_collection(
     )
 
     if error:
-        return {"code": 1, "msg": f"创建失败: {error}", "data": {}}
-
-    return {"code": 0, "msg": "创建成功", "data": {"id": new_item.id}}
+        return error_response(msg=f"创建失败: {error}")
+    return success_response(data={"id": new_item.id}, msg="创建成功")
 
 
 # ==================== 付款记录 API ====================
@@ -329,7 +304,7 @@ async def get_payment_list(
         db, 付款单号=付款单号, 关联应付=关联应付, page=page, page_size=limit
     )
     data = [payment_record_service.to_dict(item) for item in items]
-    return {"code": 0, "msg": "success", "count": total, "data": data}
+    return success_response(data=data, count=total)
 
 
 @router.post("/payment/create")
@@ -352,9 +327,8 @@ async def create_payment(
     )
 
     if error:
-        return {"code": 1, "msg": f"创建失败: {error}", "data": {}}
-
-    return {"code": 0, "msg": "创建成功", "data": {"id": new_item.id}}
+        return error_response(msg=f"创建失败: {error}")
+    return success_response(data={"id": new_item.id}, msg="创建成功")
 
 
 # ==================== 凭证 API ====================
@@ -371,7 +345,7 @@ async def get_voucher_list(
         db, 凭证编号=凭证编号, 审核状态=审核状态, page=page, page_size=limit
     )
     data = [voucher_service.to_dict(item) for item in items]
-    return {"code": 0, "msg": "success", "count": total, "data": data}
+    return success_response(data=data, count=total)
 
 
 @router.post("/voucher/create")
@@ -397,9 +371,8 @@ async def create_voucher(
     )
 
     if error:
-        return {"code": 1, "msg": f"创建失败: {error}", "data": {}}
-
-    return {"code": 0, "msg": "创建成功", "data": {"id": new_item.id}}
+        return error_response(msg=f"创建失败: {error}")
+    return success_response(data={"id": new_item.id}, msg="创建成功")
 
 
 @router.put("/voucher/approve/{voucher_id}")
@@ -410,8 +383,8 @@ async def approve_voucher(
 ):
     success, error = voucher_service.approve(db, voucher_id)
     if not success:
-        return {"code": 1, "msg": error or "审核失败", "data": {}}
-    return {"code": 0, "msg": "审核成功", "data": {}}
+        return error_response(msg=error or "审核失败")
+    return success_response(msg="审核成功")
 
 
 # ==================== 收入统计 API ====================
@@ -422,7 +395,7 @@ async def get_income_stats(
     current_user: User = Depends(get_current_active_user)
 ):
     months = finance_stats_service.get_income_stats(db, year)
-    return {"code": 0, "msg": "success", "count": 12, "data": months}
+    return success_response(data=months, count=12)
 
 
 # ==================== 批量生成应收账款 API ====================
@@ -443,12 +416,11 @@ async def batch_create_ar_from_shipment(
         db, year, month, receivable_date, customer_name
     )
 
-    return {
-        "code": 0,
-        "msg": f"成功创建{len(created_records)}条应收单，跳过{len(skipped_records)}条",
-        "data": {
+    return success_response(
+        data={
             "created": created_records,
             "skipped": skipped_records
-        }
-    }
+        },
+        msg=f"成功创建{len(created_records)}条应收单，跳过{len(skipped_records)}条"
+    )
 

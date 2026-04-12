@@ -6,6 +6,7 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.production_service import production_report_service
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -29,13 +30,7 @@ async def get_report_list(
         start_date=start_date, end_date=end_date, page=page, page_size=limit
     )
     data = [production_report_service.to_dict(item) for item in items]
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    return success_response(data=data, count=total)
 
 
 @router.get("/workers")
@@ -46,9 +41,9 @@ async def get_workers(
     """获取所有报工人列表"""
     try:
         workers = production_report_service.get_all_报工人(db)
-        return {"code": 0, "msg": "success", "count": len(workers), "data": workers}
+        return success_response(data=workers, count=len(workers))
     except Exception as e:
-        return {"code": 1, "msg": f"获取报工人列表失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取报工人列表失败: {str(e)}")
 
 
 @router.get("/stats")
@@ -66,19 +61,15 @@ async def get_report_stats(
         qualified_quantity = db.query(func.sum(ProductionReport.合格数量)).scalar() or 0
         defect_quantity = db.query(func.sum(ProductionReport.不良数量)).scalar() or 0
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "报工次数": total_reports,
-                "报工数量": total_quantity,
-                "合格数量": qualified_quantity,
-                "不良数量": defect_quantity,
-                "合格率": round(qualified_quantity / total_quantity * 100, 2) if total_quantity > 0 else 0
-            }
-        }
+        return success_response(data={
+            "报工次数": total_reports,
+            "报工数量": total_quantity,
+            "合格数量": qualified_quantity,
+            "不良数量": defect_quantity,
+            "合格率": round(qualified_quantity / total_quantity * 100, 2) if total_quantity > 0 else 0
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取统计失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取统计失败: {str(e)}")
 
 
 @router.post("/create")
@@ -114,11 +105,7 @@ async def create_report(
     if result_info and result_info.get("is_completed"):
         msg = "创建成功，工单已完成"
     
-    return {
-        "code": 0,
-        "msg": msg,
-        "data": response_data
-    }
+    return success_response(data=response_data, msg=msg)
 
 
 @router.delete("/{report_id}")
@@ -132,4 +119,4 @@ async def delete_report(
     if not success:
         raise HTTPException(status_code=404, detail=error)
 
-    return {"code": 0, "msg": "删除成功", "data": {}}
+    return success_response(msg="删除成功")

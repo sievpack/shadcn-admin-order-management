@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.user_service import user_service
 from app.schemas.user import UserResponse
 
@@ -30,26 +31,21 @@ async def get_user_list(
         page=page, page_size=limit
     )
     
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": [
-            {
-                "id": item.id,
-                "username": item.username,
-                "first_name": item.first_name,
-                "last_name": item.last_name,
-                "email": item.email,
-                "phone": item.phone,
-                "role": item.role,
-                "status": item.status,
-                "created_at": item.created_at.isoformat() if item.created_at else None,
-                "updated_at": item.updated_at.isoformat() if item.updated_at else None
-            }
-            for item in items
-        ]
-    }
+    return success_response(data=[
+        {
+            "id": item.id,
+            "username": item.username,
+            "first_name": item.first_name,
+            "last_name": item.last_name,
+            "email": item.email,
+            "phone": item.phone,
+            "role": item.role,
+            "status": item.status,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+            "updated_at": item.updated_at.isoformat() if item.updated_at else None
+        }
+        for item in items
+    ], count=total)
 
 
 @router.get("/detail")
@@ -61,24 +57,20 @@ async def get_user_detail(
     """获取用户详情"""
     user = user_service.get(db, id)
     if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
+        return error_response(msg="用户不存在")
     
-    return {
-        "code": 0,
-        "msg": "success",
-        "data": {
-            "id": user.id,
-            "username": user.username,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "phone": user.phone,
-            "role": user.role,
-            "status": user.status,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
-            "updated_at": user.updated_at.isoformat() if user.updated_at else None
-        }
-    }
+    return success_response(data={
+        "id": user.id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "phone": user.phone,
+        "role": user.role,
+        "status": user.status,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None
+    })
 
 
 @router.post("/create")
@@ -106,9 +98,9 @@ async def create_user(
     )
 
     if error:
-        raise HTTPException(status_code=400, detail=error)
+        return error_response(msg=error)
 
-    return {"code": 0, "msg": "用户创建成功", "data": {"id": user.id}}
+    return success_response(data={"id": user.id}, msg="用户创建成功")
 
 
 @router.put("/update")
@@ -126,7 +118,7 @@ async def update_user(
     """更新用户"""
     user = user_service.get(db, id)
     if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
+        return error_response(msg="用户不存在")
     
     update_data = {}
     if first_name is not None:
@@ -146,7 +138,7 @@ async def update_user(
         updated_user = user_service.update(db, user.id, update_data)
         user = updated_user
 
-    return {"code": 0, "msg": "用户更新成功", "data": {
+    return success_response(data={
         "id": user.id,
         "username": user.username,
         "first_name": user.first_name,
@@ -155,7 +147,7 @@ async def update_user(
         "phone": user.phone,
         "role": user.role,
         "status": user.status,
-    }}
+    }, msg="用户更新成功")
 
 
 @router.delete("/delete/{user_id}")
@@ -166,13 +158,13 @@ async def delete_user(
 ):
     """删除用户"""
     if user_id == current_user.id:
-        raise HTTPException(status_code=400, detail="不能删除自己")
+        return error_response(msg="不能删除自己")
     
     success = user_service.delete(db, user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="用户不存在")
+        return error_response(msg="用户不存在")
 
-    return {"code": 0, "msg": "用户删除成功"}
+    return success_response(msg="用户删除成功")
 
 
 @router.post("/reset-password")
@@ -185,9 +177,9 @@ async def reset_password(
     """重置密码"""
     success = user_service.reset_password(db, user_id, new_password)
     if not success:
-        raise HTTPException(status_code=404, detail="用户不存在")
+        return error_response(msg="用户不存在")
 
-    return {"code": 0, "msg": "密码重置成功"}
+    return success_response(msg="密码重置成功")
 
 
 @router.put("/update-password")
@@ -203,6 +195,6 @@ async def update_password(
     )
 
     if not success:
-        raise HTTPException(status_code=400, detail=msg)
+        return error_response(msg=msg)
 
-    return {"code": 0, "msg": msg}
+    return success_response(msg=msg)

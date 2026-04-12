@@ -73,7 +73,7 @@ class ProductionPlanRepository(BaseRepository):
     def create(self, db: Session, **kwargs) -> ProductionPlan:
         plan = ProductionPlan(**kwargs)
         db.add(plan)
-        db.commit()
+        db.flush()
         db.refresh(plan)
         return plan
 
@@ -81,7 +81,7 @@ class ProductionPlanRepository(BaseRepository):
         for key, value in kwargs.items():
             if value is not None:
                 setattr(plan, key, value)
-        db.commit()
+        db.flush()
         db.refresh(plan)
         return plan
 
@@ -90,7 +90,6 @@ class ProductionPlanRepository(BaseRepository):
         if not plan:
             return False
         db.delete(plan)
-        db.commit()
         return True
 
     def to_dict(self, plan: ProductionPlan) -> dict:
@@ -199,7 +198,6 @@ class ProductionOrderRepository(BaseRepository):
         if not order:
             return False
         db.delete(order)
-        db.commit()
         return True
 
     def to_dict(self, order: ProductionOrder) -> dict:
@@ -277,7 +275,7 @@ class QualityInspectionRepository(BaseRepository):
     def create(self, db: Session, **kwargs) -> QualityInspection:
         qc = QualityInspection(**kwargs)
         db.add(qc)
-        db.commit()
+        db.flush()
         db.refresh(qc)
         return qc
 
@@ -285,7 +283,7 @@ class QualityInspectionRepository(BaseRepository):
         for key, value in kwargs.items():
             if value is not None:
                 setattr(qc, key, value)
-        db.commit()
+        db.flush()
         db.refresh(qc)
         return qc
 
@@ -294,7 +292,6 @@ class QualityInspectionRepository(BaseRepository):
         if not qc:
             return False
         db.delete(qc)
-        db.commit()
         return True
 
     def to_dict(self, qc: QualityInspection) -> dict:
@@ -375,7 +372,7 @@ class ProductInboundRepository(BaseRepository):
     def create(self, db: Session, **kwargs) -> ProductInbound:
         inbound = ProductInbound(**kwargs)
         db.add(inbound)
-        db.commit()
+        db.flush()
         db.refresh(inbound)
         return inbound
 
@@ -383,7 +380,7 @@ class ProductInboundRepository(BaseRepository):
         for key, value in kwargs.items():
             if value is not None:
                 setattr(inbound, key, value)
-        db.commit()
+        db.flush()
         db.refresh(inbound)
         return inbound
 
@@ -392,7 +389,6 @@ class ProductInboundRepository(BaseRepository):
         if not inbound:
             return False
         db.delete(inbound)
-        db.commit()
         return True
 
     def to_dict(self, inbound: ProductInbound) -> dict:
@@ -469,7 +465,7 @@ class MaterialConsumptionRepository(BaseRepository):
     def create(self, db: Session, **kwargs) -> MaterialConsumption:
         material = MaterialConsumption(**kwargs)
         db.add(material)
-        db.commit()
+        db.flush()
         db.refresh(material)
         return material
 
@@ -478,7 +474,6 @@ class MaterialConsumptionRepository(BaseRepository):
         if not material:
             return False
         db.delete(material)
-        db.commit()
         return True
 
     def to_dict(self, material: MaterialConsumption) -> dict:
@@ -544,7 +539,7 @@ class ProductionReportRepository(BaseRepository):
     def create(self, db: Session, **kwargs) -> ProductionReport:
         report = ProductionReport(**kwargs)
         db.add(report)
-        db.commit()
+        db.flush()
         db.refresh(report)
         return report
 
@@ -553,7 +548,6 @@ class ProductionReportRepository(BaseRepository):
         if not report:
             return False
         db.delete(report)
-        db.commit()
         return True
 
     def to_dict(self, report: ProductionReport) -> dict:

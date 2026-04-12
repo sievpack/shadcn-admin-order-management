@@ -8,6 +8,7 @@ import os
 import platform
 
 from app.db.database import get_db_jns
+from app.core.response import success_response, error_response
 
 logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
@@ -151,28 +152,20 @@ async def get_product_export_data(
         
         yearly_total = sum(product["amount"] for product in product_stats)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "year": year,
-                "month": month,
-                "products": product_stats,
-                "monthly_totals": monthly_totals,
-                "yearly_total": round(yearly_total, 2),
-                "total_amount": round(total_amount, 2),
-                "months": month_list
-            }
-        }
+        return success_response(data={
+            "year": year,
+            "month": month,
+            "products": product_stats,
+            "monthly_totals": monthly_totals,
+            "yearly_total": round(yearly_total, 2),
+            "total_amount": round(total_amount, 2),
+            "months": month_list
+        })
     except Exception as e:
         logger.error(f"获取产品统计导出数据失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"获取产品统计导出数据失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"获取产品统计导出数据失败: {str(e)}")
 
 
 @router.get("/product", response_model=dict)
@@ -314,42 +307,23 @@ async def get_product_report(
         
         yearly_total = sum(product["amount"] for product in paginated_products)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "year": year,
-                "month": month,
-                "products": paginated_products,
-                "monthly_totals": monthly_totals,
-                "yearly_total": round(yearly_total, 2),
-                "total_products": len(product_stats),
-                "current_page": page,
-                "total_pages": (len(product_stats) + limit - 1) // limit,
-                "limit": limit,
-                "months": month_list
-            }
-        }
+        return success_response(data={
+            "year": year,
+            "month": month,
+            "products": paginated_products,
+            "monthly_totals": monthly_totals,
+            "yearly_total": round(yearly_total, 2),
+            "total_products": len(product_stats),
+            "current_page": page,
+            "total_pages": (len(product_stats) + limit - 1) // limit,
+            "limit": limit,
+            "months": month_list
+        })
     except Exception as e:
         logger.error(f"获取产品统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"获取产品统计报表数据失败: {str(e)}",
-            "data": {
-                "year": year or datetime.datetime.now().year,
-                "month": month or datetime.datetime.now().month,
-                "products": [],
-                "monthly_totals": {},
-                "yearly_total": 0,
-                "total_products": 0,
-                "current_page": page,
-                "total_pages": 0,
-                "limit": limit,
-                "months": []
-            }
-        }
+        return error_response(msg=f"获取产品统计报表数据失败: {str(e)}")
 
 
 @router.get("/product/types")
@@ -363,24 +337,14 @@ async def get_product_types(
         types = [pt[0] for pt in product_types if pt[0]]
         types.sort()
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "types": types
-            }
-        }
+        return success_response(data={
+            "types": types
+        })
     except Exception as e:
         logger.error(f"获取产品类型列表失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"获取产品类型列表失败: {str(e)}",
-            "data": {
-                "types": []
-            }
-        }
+        return error_response(msg=f"获取产品类型列表失败: {str(e)}")
 
 
 @router.get("/product/detail")
@@ -508,25 +472,17 @@ async def get_product_detail(
         
         width_stats.sort(key=lambda x: float(x["width"]) if x["width"] != "未知" and x["width"].replace('.', '', 1).isdigit() else (float('inf') if x["width"] == "未知" else 0))
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "widths": width_stats,
-                "monthly_totals": monthly_totals,
-                "yearly_total": round(total_amount, 2),
-                "months": month_list
-            }
-        }
+        return success_response(data={
+            "widths": width_stats,
+            "monthly_totals": monthly_totals,
+            "yearly_total": round(total_amount, 2),
+            "months": month_list
+        })
     except Exception as e:
         logger.error(f"获取产品详情失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"获取产品详情失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"获取产品详情失败: {str(e)}")
 
 
 @router.get("/product/export")
@@ -751,8 +707,4 @@ async def export_product_report(
         logger.error(f"导出产品统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"导出产品统计报表数据失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"导出产品统计报表数据失败: {str(e)}")

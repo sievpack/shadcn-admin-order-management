@@ -6,6 +6,7 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.production_service import production_plan_service, production_order_service
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -29,13 +30,7 @@ async def get_plan_list(
         计划状态=计划状态, 优先级=优先级, page=page, page_size=limit
     )
     data = [production_plan_service.to_dict(item) for item in items]
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    return success_response(data=data, count=total)
 
 
 @router.get("/names")
@@ -46,9 +41,9 @@ async def get_plan_codes(
     """获取所有计划编号列表"""
     try:
         codes = production_plan_service.get_all_计划编号(db)
-        return {"code": 0, "msg": "success", "count": len(codes), "data": codes}
+        return success_response(data=codes, count=len(codes))
     except Exception as e:
-        return {"code": 1, "msg": f"获取计划编号失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取计划编号失败: {str(e)}")
 
 
 @router.get("/product-types")
@@ -59,9 +54,9 @@ async def get_product_types(
     """获取所有产品类型列表"""
     try:
         types = production_plan_service.get_all_产品类型(db)
-        return {"code": 0, "msg": "success", "count": len(types), "data": types}
+        return success_response(data=types, count=len(types))
     except Exception as e:
-        return {"code": 1, "msg": f"获取产品类型失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取产品类型失败: {str(e)}")
 
 
 @router.get("/product-models")
@@ -72,9 +67,9 @@ async def get_product_models(
     """获取所有产品型号列表"""
     try:
         models = production_plan_service.get_all_产品型号(db)
-        return {"code": 0, "msg": "success", "count": len(models), "data": models}
+        return success_response(data=models, count=len(models))
     except Exception as e:
-        return {"code": 1, "msg": f"获取产品型号失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取产品型号失败: {str(e)}")
 
 
 @router.get("/{plan_id}")
@@ -86,14 +81,8 @@ async def get_plan_detail(
     """获取生产计划详情"""
     plan = production_plan_service.get_by_id(db, plan_id)
     if not plan:
-        return {"code": 1, "msg": "生产计划不存在", "count": 0, "data": {}}
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": 1,
-        "data": production_plan_service.to_dict(plan)
-    }
+        return error_response(msg="生产计划不存在")
+    return success_response(data=production_plan_service.to_dict(plan), count=1)
 
 
 @router.get("/{plan_id}/orders")
@@ -105,17 +94,10 @@ async def get_plan_orders(
     """获取生产计划关联的工单列表"""
     plan = production_plan_service.get_by_id(db, plan_id)
     if not plan:
-        return {"code": 1, "msg": "生产计划不存在", "count": 0, "data": []}
-
+        return error_response(msg="生产计划不存在")
     orders, total = production_plan_service.get_orders_by_plan(db, plan_id)
     data = [production_order_service.to_dict(order) for order in orders]
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    return success_response(data=data, count=total)
 
 
 @router.post("/create")
@@ -150,11 +132,7 @@ async def create_plan(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "创建成功",
-        "data": {"id": plan.id, "计划编号": plan.计划编号}
-    }
+    return success_response(data={"id": plan.id, "计划编号": plan.计划编号}, msg="创建成功")
 
 
 @router.put("/update")
@@ -166,7 +144,7 @@ async def update_plan(
     """更新生产计划"""
     plan_id = data.get("id")
     if not plan_id:
-        return {"code": 1, "msg": "缺少计划ID", "data": {}}
+        return error_response(msg="缺少计划ID")
 
     plan, error = production_plan_service.update(
         db, plan_id,
@@ -192,30 +170,7 @@ async def update_plan(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "更新成功",
-        "data": {
-            "id": plan.id,
-            "计划编号": plan.计划编号,
-            "计划名称": plan.计划名称,
-            "关联订单": plan.关联订单,
-            "产品类型": plan.产品类型,
-            "产品型号": plan.产品型号,
-            "规格": plan.规格,
-            "计划数量": plan.计划数量,
-            "已排数量": plan.已排数量,
-            "单位": plan.单位,
-            "计划开始日期": plan.计划开始日期.strftime('%Y-%m-%d') if plan.计划开始日期 else None,
-            "计划完成日期": plan.计划完成日期.strftime('%Y-%m-%d') if plan.计划完成日期 else None,
-            "实际开始日期": plan.实际开始日期.strftime('%Y-%m-%d') if plan.实际开始日期 else None,
-            "实际完成日期": plan.实际完成日期.strftime('%Y-%m-%d') if plan.实际完成日期 else None,
-            "优先级": plan.优先级,
-            "计划状态": plan.计划状态,
-            "负责人": plan.负责人,
-            "备注": plan.备注,
-        }
-    }
+    return success_response(data=production_plan_service.to_dict(plan), msg="更新成功")
 
 
 @router.put("/approve/{plan_id}")
@@ -230,7 +185,7 @@ async def approve_plan(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "审核成功", "data": {}}
+    return success_response(msg="审核成功")
 
 
 @router.put("/reject/{plan_id}")
@@ -245,7 +200,7 @@ async def reject_plan(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "驳回成功", "data": {}}
+    return success_response(msg="驳回成功")
 
 
 @router.delete("/{plan_id}")
@@ -260,4 +215,4 @@ async def delete_plan(
     if not success:
         raise HTTPException(status_code=404, detail=error)
 
-    return {"code": 0, "msg": "删除成功", "data": {}}
+    return success_response(msg="删除成功")

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.core.code_generator import generate_code, CODE_PREFIXES
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -43,22 +44,14 @@ async def generate_code_api(
     """
     prefix = prefix.upper()
     if prefix not in CODE_PREFIXES:
-        return {
-            "code": 1,
-            "msg": f"无效的前缀，可用前缀: {', '.join(CODE_PREFIXES.keys())}",
-            "data": {}
-        }
+        return error_response(msg=f"无效的前缀，可用前缀: {', '.join(CODE_PREFIXES.keys())}")
     
     generated_code = generate_code(prefix)
-    return {
-        "code": 0,
-        "msg": "success",
-        "data": {
-            "code": generated_code,
-            "prefix": prefix,
-            "name": CODE_PREFIXES[prefix]
-        }
-    }
+    return success_response(data={
+        "code": generated_code,
+        "prefix": prefix,
+        "name": CODE_PREFIXES[prefix]
+    })
 
 
 @router.get("/generate-codes")
@@ -86,11 +79,7 @@ async def generate_codes_api(
     invalid_prefixes = [p for p in prefix_list if p not in CODE_PREFIXES]
     
     if invalid_prefixes:
-        return {
-            "code": 1,
-            "msg": f"无效的前缀: {', '.join(invalid_prefixes)}，可用前缀: {', '.join(CODE_PREFIXES.keys())}",
-            "data": []
-        }
+        return error_response(msg=f"无效的前缀: {', '.join(invalid_prefixes)}，可用前缀: {', '.join(CODE_PREFIXES.keys())}")
     
     codes = []
     for prefix in prefix_list:
@@ -100,8 +89,4 @@ async def generate_codes_api(
             "name": CODE_PREFIXES[prefix]
         })
     
-    return {
-        "code": 0,
-        "msg": "success",
-        "data": codes
-    }
+    return success_response(data=codes)

@@ -10,6 +10,7 @@ from app.models.production import (
 )
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 
 
 router = APIRouter()
@@ -36,21 +37,17 @@ async def get_production_summary(
             ProductionOrder.工单状态 == '已完工'
         ).scalar()
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "生产计划数": plan_count,
-                "生产工单数": order_count,
-                "报工记录数": report_count,
-                "质检记录数": qc_count,
-                "入库记录数": inbound_count,
-                "进行中工单": active_orders,
-                "已完成工单": completed_orders,
-            }
-        }
+        return success_response(data={
+            "生产计划数": plan_count,
+            "生产工单数": order_count,
+            "报工记录数": report_count,
+            "质检记录数": qc_count,
+            "入库记录数": inbound_count,
+            "进行中工单": active_orders,
+            "已完成工单": completed_orders,
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取概览失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取概览失败: {str(e)}")
 
 
 @router.get("/monthly", response_model=dict)
@@ -89,14 +86,9 @@ async def get_monthly_stats(
                 '完成率': round(complete_qty / plan_qty * 100, 2) if plan_qty > 0 else 0
             })
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": len(data),
-            "data": data
-        }
+        return success_response(data=data, count=len(data))
     except Exception as e:
-        return {"code": 1, "msg": f"获取月度统计失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取月度统计失败: {str(e)}")
 
 
 @router.get("/product", response_model=dict)
@@ -123,14 +115,9 @@ async def get_product_stats(
                 '完成率': round(complete_qty / plan_qty * 100, 2) if plan_qty > 0 else 0
             })
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": len(data),
-            "data": data
-        }
+        return success_response(data=data, count=len(data))
     except Exception as e:
-        return {"code": 1, "msg": f"获取产品统计失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取产品统计失败: {str(e)}")
 
 
 @router.get("/line", response_model=dict)
@@ -160,14 +147,9 @@ async def get_line_stats(
                 '平均完成': round(avg_complete, 2)
             })
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": len(data),
-            "data": data
-        }
+        return success_response(data=data, count=len(data))
     except Exception as e:
-        return {"code": 1, "msg": f"获取产线统计失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取产线统计失败: {str(e)}")
 
 
 @router.get("/qc", response_model=dict)
@@ -197,14 +179,9 @@ async def get_qc_stats(
                 '合格率': round(qualified / inspected * 100, 2) if inspected > 0 else 0
             })
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": len(data),
-            "data": data
-        }
+        return success_response(data=data, count=len(data))
     except Exception as e:
-        return {"code": 1, "msg": f"获取质检统计失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取质检统计失败: {str(e)}")
 
 
 @router.get("/plan-status", response_model=dict)
@@ -221,14 +198,9 @@ async def get_plan_status_stats(
         
         data = [{'状态': item.计划状态, '数量': item.数量} for item in query]
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": len(data),
-            "data": data
-        }
+        return success_response(data=data, count=len(data))
     except Exception as e:
-        return {"code": 1, "msg": f"获取状态统计失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取状态统计失败: {str(e)}")
 
 
 @router.get("/order-status", response_model=dict)
@@ -245,11 +217,6 @@ async def get_order_status_stats(
         
         data = [{'状态': item.工单状态, '数量': item.数量} for item in query]
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": len(data),
-            "data": data
-        }
+        return success_response(data=data, count=len(data))
     except Exception as e:
-        return {"code": 1, "msg": f"获取状态统计失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取状态统计失败: {str(e)}")

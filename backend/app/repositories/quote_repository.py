@@ -72,7 +72,7 @@ class QuoteRepository(BaseRepository):
             del kwargs['含税总价']
         quote = Quote(**kwargs)
         db.add(quote)
-        db.commit()
+        db.flush()
         db.refresh(quote)
         return quote
 
@@ -82,7 +82,7 @@ class QuoteRepository(BaseRepository):
         for key, value in kwargs.items():
             if value is not None:
                 setattr(quote, key, value)
-        db.commit()
+        db.flush()
         db.refresh(quote)
         return quote
 
@@ -91,7 +91,6 @@ class QuoteRepository(BaseRepository):
         if not quote:
             return False
         db.delete(quote)
-        db.commit()
         return True
 
 

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.quote_service import quote_service
 
 logger = logging.getLogger(__name__)
@@ -31,33 +32,23 @@ async def get_quote_data(
             page=page, page_size=limit
         )
         data = [quote_service.to_dict(item) for item in items]
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": total,
-            "data": data
-        }
+        return success_response(data=data, count=total)
 
     elif query == "detail":
         if not id:
-            return {"code": 1, "msg": "缺少报价单ID", "count": 0, "data": []}
+            return error_response(msg="缺少报价单ID")
 
         quote = quote_service.get_by_id(db, id)
         if not quote:
-            return {"code": 1, "msg": "报价单不存在", "count": 0, "data": []}
+            return error_response(msg="报价单不存在")
 
         items, total = quote_service.search(db, 报价单号=quote.报价单号, page=1, page_size=1000)
         quote_dict = quote_service.to_dict(quote)
         quote_dict['items'] = [quote_service.to_item_dict(item) for item in items]
-        return {
-            "code": 0,
-            "msg": "success",
-            "count": 1,
-            "data": [quote_dict]
-        }
+        return success_response(data=[quote_dict], count=1)
 
     else:
-        return {"code": 1, "msg": "无效的查询类型", "count": 0, "data": []}
+        return error_response(msg="无效的查询类型")
 
 
 @router.post("/create")
@@ -87,13 +78,8 @@ async def create_quote(
     )
 
     if error:
-        raise HTTPException(status_code=400, detail=error)
-
-    return {
-        "code": 0,
-        "msg": "创建成功",
-        "data": {"id": quote.id}
-    }
+        return error_response(msg=error)
+    return success_response(data={"id": quote.id}, msg="创建成功")
 
 
 @router.put("/update")
@@ -105,7 +91,7 @@ async def update_quote(
     """更新报价单"""
     quote_id = data.get("id")
     if not quote_id:
-        return {"code": 1, "msg": "缺少报价单ID", "data": {}}
+        return error_response(msg="缺少报价单ID")
 
     quote, error = quote_service.update(
         db, quote_id,
@@ -127,28 +113,23 @@ async def update_quote(
     )
 
     if error:
-        raise HTTPException(status_code=400, detail=error)
-
-    return {
-        "code": 0,
-        "msg": "更新成功",
-        "data": {
-            "id": quote.id,
-            "客户名称": quote.客户名称,
-            "报价项目": quote.报价项目,
-            "报价单号": quote.报价单号,
-            "客户物料编码": quote.客户物料编码,
-            "客户物料名称": quote.客户物料名称,
-            "客户规格型号": quote.客户规格型号,
-            "嘉尼索规格": quote.嘉尼索规格,
-            "嘉尼索型号": quote.嘉尼索型号,
-            "单位": quote.单位,
-            "数量": quote.数量,
-            "未税单价": float(quote.未税单价) if quote.未税单价 else 0,
-            "含税单价": float(quote.含税单价) if quote.含税单价 else 0,
-            "备注": quote.备注,
-        }
-    }
+        return error_response(msg=error)
+    return success_response(data={
+        "id": quote.id,
+        "客户名称": quote.客户名称,
+        "报价项目": quote.报价项目,
+        "报价单号": quote.报价单号,
+        "客户物料编码": quote.客户物料编码,
+        "客户物料名称": quote.客户物料名称,
+        "客户规格型号": quote.客户规格型号,
+        "嘉尼索规格": quote.嘉尼索规格,
+        "嘉尼索型号": quote.嘉尼索型号,
+        "单位": quote.单位,
+        "数量": quote.数量,
+        "未税单价": float(quote.未税单价) if quote.未税单价 else 0,
+        "含税单价": float(quote.含税单价) if quote.含税单价 else 0,
+        "备注": quote.备注,
+    }, msg="更新成功")
 
 
 @router.delete("/delete/{id}")
@@ -161,6 +142,5 @@ async def delete_quote(
     success, error = quote_service.delete(db, id)
 
     if not success:
-        raise HTTPException(status_code=404, detail=error)
-
-    return {"code": 0, "msg": "删除成功", "data": {}}
+        return error_response(msg=error or "删除失败")
+    return success_response(msg="删除成功")

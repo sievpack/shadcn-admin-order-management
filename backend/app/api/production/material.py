@@ -6,6 +6,7 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.production_service import material_consumption_service
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -29,13 +30,7 @@ async def get_material_list(
         start_date=start_date, end_date=end_date, page=page, page_size=limit
     )
     data = [material_consumption_service.to_dict(item) for item in items]
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    return success_response(data=data, count=total)
 
 
 @router.get("/materials")
@@ -65,9 +60,9 @@ async def get_materials(
             }
             for m in materials if m[0]
         ]
-        return {"code": 0, "msg": "success", "count": len(material_list), "data": material_list}
+        return success_response(data=material_list, count=len(material_list))
     except Exception as e:
-        return {"code": 1, "msg": f"获取物料列表失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取物料列表失败: {str(e)}")
 
 
 @router.get("/stats")
@@ -83,16 +78,12 @@ async def get_material_stats(
         total_records = db.query(func.count(MaterialConsumption.id)).scalar()
         total_quantity = db.query(func.sum(MaterialConsumption.消耗数量)).scalar() or 0
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "消耗记录数": total_records,
-                "消耗总数量": float(total_quantity),
-            }
-        }
+        return success_response(data={
+            "消耗记录数": total_records,
+            "消耗总数量": float(total_quantity),
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取统计失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取统计失败: {str(e)}")
 
 
 @router.post("/create")
@@ -118,11 +109,7 @@ async def create_material(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "创建成功",
-        "data": {"id": material.id}
-    }
+    return success_response(data={"id": material.id}, msg="创建成功")
 
 
 @router.delete("/{material_id}")
@@ -137,4 +124,4 @@ async def delete_material(
     if not success:
         raise HTTPException(status_code=404, detail=error)
 
-    return {"code": 0, "msg": "删除成功", "data": {}}
+    return success_response(msg="删除成功")

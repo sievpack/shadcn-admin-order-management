@@ -1,8 +1,18 @@
-from typing import Generic, TypeVar, Type, Optional, List
+from typing import Generic, TypeVar, Type, Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from datetime import datetime, date
 
 ModelType = TypeVar("ModelType")
+
+
+def format_value(value: Any) -> Any:
+    """格式化值用于 to_dict"""
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M:%S')
+    elif isinstance(value, date):
+        return value.strftime('%Y-%m-%d')
+    return value
 
 
 class BaseRepository(Generic[ModelType]):
@@ -54,3 +64,13 @@ class BaseRepository(Generic[ModelType]):
     def count(self, db: Session) -> int:
         """获取记录总数"""
         return db.query(self.model).count()
+
+    def to_dict(self, obj: ModelType) -> Dict[str, Any]:
+        """将模型对象转换为字典"""
+        if obj is None:
+            return {}
+        result = {}
+        for column in obj.__table__.columns:
+            value = getattr(obj, column.name)
+            result[column.name] = format_value(value)
+        return result

@@ -10,6 +10,7 @@ from app.models.user import User
 from app.services.user_service import user_service
 from app.schemas.user import UserResponse
 from app.schemas.common import APIResponse
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -69,38 +70,30 @@ async def login(
         expires_delta=access_token_expires
     )
     
-    return {
-        "code": 0,
-        "msg": "登录成功",
-        "data": {
-            "token": access_token,
-            "token_type": "bearer",
-            "user": UserResponse.model_validate(user)
-        }
-    }
+    return success_response(data={
+        "token": access_token,
+        "token_type": "bearer",
+        "user": UserResponse.model_validate(user)
+    }, msg="登录成功")
 
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_active_user)):
     """用户登出"""
-    return {"code": 0, "msg": "登出成功"}
+    return success_response(msg="登出成功")
 
 
 @router.get("/me")
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     """获取当前用户信息"""
-    return {
-        "code": 0,
-        "msg": "success",
-        "data": {
-            "id": current_user.id,
-            "username": current_user.username,
-            "first_name": current_user.first_name,
-            "last_name": current_user.last_name,
-            "email": current_user.email,
-            "phone": current_user.phone,
-            "role": current_user.role,
-            "status": current_user.status,
-            "created_at": current_user.created_at.isoformat() if current_user.created_at else None
-        }
-    }
+    return success_response(data={
+        "id": current_user.id,
+        "username": current_user.username,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "email": current_user.email,
+        "phone": current_user.phone,
+        "role": current_user.role,
+        "status": current_user.status,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None
+    })

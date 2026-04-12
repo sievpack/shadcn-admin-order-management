@@ -6,6 +6,7 @@ from sqlalchemy import func
 import datetime
 
 from app.db.database import get_db_jns
+from app.core.response import success_response, error_response
 
 logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
@@ -132,37 +133,18 @@ async def get_monthly_report(
         jiebodai_percentage = round((jiebodai_count / total_spec_count * 100), 2) if total_spec_count > 0 else 0
         kaikoudai_percentage = round((kaikoudai_count / total_spec_count * 100), 2) if total_spec_count > 0 else 0
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "daily_stats": daily_order_stats,
-                "summary": {
-                    "total_order_count": total_order_count,
-                    "total_order_amount": round(total_order_amount, 2),
-                    "total_ship_amount": round(total_ship_amount, 2),
-                    "jiebodai_percentage": jiebodai_percentage,
-                    "kaikoudai_percentage": kaikoudai_percentage
-                },
-                "year": year,
-                "month": month
-            }
-        }
+        return success_response(data={
+            "daily_stats": daily_order_stats,
+            "summary": {
+                "total_order_count": total_order_count,
+                "total_order_amount": round(total_order_amount, 2),
+                "total_ship_amount": round(total_ship_amount, 2),
+                "jiebodai_percentage": jiebodai_percentage,
+                "kaikoudai_percentage": kaikoudai_percentage
+            },
+            "year": year,
+            "month": month
+        })
     except Exception as e:
         logger.error(f"获取月度统计报表数据失败: {e}")
-        return {
-            "code": 1,
-            "msg": f"获取月度统计报表数据失败: {str(e)}",
-            "data": {
-                "daily_stats": [],
-                "summary": {
-                    "total_order_count": 0,
-                    "total_order_amount": 0,
-                    "total_ship_amount": 0,
-                    "jiebodai_percentage": 0,
-                    "kaikoudai_percentage": 0
-                },
-                "year": year or datetime.datetime.now().year,
-                "month": month or datetime.datetime.now().month
-            }
-        }
+        return error_response(msg=f"获取月度统计报表数据失败: {str(e)}")

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.ship_service import ship_service
 
 logger = logging.getLogger(__name__)
@@ -24,11 +25,11 @@ async def delete_shipping(
     try:
         updated, error = ship_service.delete_shipping(db, 发货单号, 快递单号)
         if error:
-            return {"code": 1, "msg": error, "data": {}}
-        return {"code": 0, "msg": "success", "data": {"updated": updated}}
+            return error_response(msg=error)
+        return success_response(data={"updated": updated})
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"删除失败: {str(e)}", "data": {}}
+        return error_response(msg=f"删除失败: {str(e)}")
 
 
 @router.delete("/shipping/delete-item")
@@ -41,13 +42,13 @@ async def delete_shipping_item(
     try:
         updated, error = ship_service.delete_shipping_item(db, order_id)
         if error:
-            return {"code": 1, "msg": error, "data": {}}
+            return error_response(msg=error)
         if updated == 0:
-            return {"code": 1, "msg": "未找到该订单记录", "data": {}}
-        return {"code": 0, "msg": "success", "data": {"updated": updated}}
+            return error_response(msg="未找到该订单记录")
+        return success_response(data={"updated": updated})
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"删除失败: {str(e)}", "data": {}}
+        return error_response(msg=f"删除失败: {str(e)}")
 
 
 @router.get("/shipping/detail")
@@ -60,10 +61,10 @@ async def get_shipping_detail(
     try:
         shipping_info, error = ship_service.get_shipping_detail(db, 发货单号)
         if error:
-            return {"code": 1, "msg": error, "data": {}}
-        return {"code": 0, "msg": "success", "data": shipping_info}
+            return error_response(msg=error)
+        return success_response(data=shipping_info)
     except Exception as e:
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.get("/shipping/list")
@@ -107,9 +108,9 @@ async def get_shipping_list(
             '发货日期': item.发货日期.strftime('%Y-%m-%d') if item.发货日期 else None
         } for item in items]
 
-        return {"code": 0, "msg": "success", "count": total, "data": shipping_list}
+        return success_response(data=shipping_list, count=total)
     except Exception as e:
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "data": []}
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.post("/shipping/create")
@@ -132,11 +133,11 @@ async def create_shipping(
             备注=request.get("备注")
         )
         if error:
-            return {"code": 1, "msg": error, "data": {}}
-        return {"code": 0, "msg": "success", "data": {"ship_id": ship.id}}
+            return error_response(msg=error)
+        return success_response(data={"ship_id": ship.id})
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"创建失败: {str(e)}", "data": {}}
+        return error_response(msg=f"创建失败: {str(e)}")
 
 
 @router.post("/shipping/add-items")
@@ -152,7 +153,7 @@ async def add_shipping_items(
         订单项目 = request.get("订单项目", [])
 
         if not 发货单号 or not 快递单号:
-            return {"code": 1, "msg": "缺少发货单号或快递单号", "data": {}}
+            return error_response(msg="缺少发货单号或快递单号")
 
         updated, error = ship_service.add_shipping_items(
             db,
@@ -162,12 +163,12 @@ async def add_shipping_items(
         )
 
         if error:
-            return {"code": 1, "msg": error, "data": {}}
+            return error_response(msg=error)
 
-        return {"code": 0, "msg": f"成功添加 {updated} 个分项", "data": {"updated": updated}}
+        return success_response(data={"updated": updated}, msg=f"成功添加 {updated} 个分项")
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"添加失败: {str(e)}", "data": {}}
+        return error_response(msg=f"添加失败: {str(e)}")
 
 
 @router.put("/shipping/update-date")
@@ -182,17 +183,17 @@ async def update_shipping_date(
         发货日期 = request.get("发货日期")
 
         if not 发货单号 or not 发货日期:
-            return {"code": 1, "msg": "缺少发货单号或发货日期", "data": {}}
+            return error_response(msg="缺少发货单号或发货日期")
 
         success, error = ship_service.update_shipping_date(db, 发货单号, 发货日期)
 
         if not success:
-            return {"code": 1, "msg": error, "data": {}}
+            return error_response(msg=error)
 
-        return {"code": 0, "msg": "更新成功", "data": {}}
+        return success_response(msg="更新成功")
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"更新失败: {str(e)}", "data": {}}
+        return error_response(msg=f"更新失败: {str(e)}")
 
 
 @router.put("/shipping/update")
@@ -211,16 +212,16 @@ async def update_shipping(
         备注 = request.get("备注")
 
         if not 发货单号 or not 快递单号:
-            return {"code": 1, "msg": "缺少发货单号或快递单号", "data": {}}
+            return error_response(msg="缺少发货单号或快递单号")
 
         success, error = ship_service.update_shipping(
             db, 发货单号, 快递单号, 快递公司, 发货日期, 快递费用, 备注
         )
 
         if not success:
-            return {"code": 1, "msg": error, "data": {}}
+            return error_response(msg=error)
 
-        return {"code": 0, "msg": "更新成功", "data": {}}
+        return success_response(msg="更新成功")
     except Exception as e:
         db.rollback()
-        return {"code": 1, "msg": f"更新失败: {str(e)}", "data": {}}
+        return error_response(msg=f"更新失败: {str(e)}")

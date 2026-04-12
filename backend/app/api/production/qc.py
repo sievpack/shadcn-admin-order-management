@@ -6,6 +6,7 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.production_service import quality_inspection_service
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -31,13 +32,7 @@ async def get_qc_list(
         page=page, page_size=limit
     )
     data = [quality_inspection_service.to_dict(item) for item in items]
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    return success_response(data=data, count=total)
 
 
 @router.get("/inspectors")
@@ -48,9 +43,9 @@ async def get_inspectors(
     """获取所有质检员列表"""
     try:
         inspectors = quality_inspection_service.get_all_质检员(db)
-        return {"code": 0, "msg": "success", "count": len(inspectors), "data": inspectors}
+        return success_response(data=inspectors, count=len(inspectors))
     except Exception as e:
-        return {"code": 1, "msg": f"获取质检员列表失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取质检员列表失败: {str(e)}")
 
 
 @router.get("/stats")
@@ -72,20 +67,16 @@ async def get_qc_stats(
             QualityInspection.质检结果 == '合格'
         ).scalar()
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "质检次数": total_qc,
-                "送检数量": total_inspected,
-                "合格数量": total_qualified,
-                "不良数量": total_defect,
-                "合格次数": qualified_count,
-                "合格率": round(total_qualified / total_inspected * 100, 2) if total_inspected > 0 else 0
-            }
-        }
+        return success_response(data={
+            "质检次数": total_qc,
+            "送检数量": total_inspected,
+            "合格数量": total_qualified,
+            "不良数量": total_defect,
+            "合格次数": qualified_count,
+            "合格率": round(total_qualified / total_inspected * 100, 2) if total_inspected > 0 else 0
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取统计失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取统计失败: {str(e)}")
 
 
 @router.get("/{qc_id}")
@@ -97,14 +88,8 @@ async def get_qc_detail(
     """获取质检记录详情"""
     qc = quality_inspection_service.get_by_id(db, qc_id)
     if not qc:
-        return {"code": 1, "msg": "质检记录不存在", "count": 0, "data": {}}
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": 1,
-        "data": quality_inspection_service.to_dict(qc)
-    }
+        return error_response(msg="质检记录不存在")
+    return success_response(data=quality_inspection_service.to_dict(qc), count=1)
 
 
 @router.post("/create")
@@ -136,11 +121,7 @@ async def create_qc(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "创建成功",
-        "data": {"id": qc.id, "质检单号": qc.质检单号}
-    }
+    return success_response(data={"id": qc.id, "质检单号": qc.质检单号}, msg="创建成功")
 
 
 @router.put("/update")
@@ -152,7 +133,7 @@ async def update_qc(
     """更新质检记录"""
     qc_id = data.get("id")
     if not qc_id:
-        return {"code": 1, "msg": "缺少质检ID", "data": {}}
+        return error_response(msg="缺少质检ID")
 
     qc, error = quality_inspection_service.update(
         db, qc_id,
@@ -169,28 +150,7 @@ async def update_qc(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "更新成功",
-        "data": {
-            "id": qc.id,
-            "质检单号": qc.质检单号,
-            "关联报工": qc.关联报工,
-            "工单编号": qc.工单编号,
-            "产品类型": qc.产品类型,
-            "产品型号": qc.产品型号,
-            "批次号": qc.批次号,
-            "送检数量": qc.送检数量,
-            "合格数量": qc.合格数量,
-            "不良数量": qc.不良数量,
-            "质检结果": qc.质检结果,
-            "不良分类": qc.不良分类,
-            "不良描述": qc.不良描述,
-            "质检员": qc.质检员,
-            "质检日期": qc.质检日期.strftime('%Y-%m-%d %H:%M:%S') if qc.质检日期 else None,
-            "备注": qc.备注,
-        }
-    }
+    return success_response(data=quality_inspection_service.to_dict(qc), msg="更新成功")
 
 
 @router.delete("/{qc_id}")
@@ -205,4 +165,4 @@ async def delete_qc(
     if not success:
         raise HTTPException(status_code=404, detail=error)
 
-    return {"code": 0, "msg": "删除成功", "data": {}}
+    return success_response(msg="删除成功")

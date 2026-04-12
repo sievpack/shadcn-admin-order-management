@@ -6,6 +6,7 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.production_service import production_order_service
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -29,13 +30,7 @@ async def get_order_list(
         产线=产线, 工单状态=工单状态, page=page, page_size=limit
     )
     data = [production_order_service.to_dict(item) for item in items]
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    return success_response(data=data, count=total)
 
 
 @router.get("/codes")
@@ -46,9 +41,9 @@ async def get_order_codes(
     """获取所有工单编号列表"""
     try:
         codes = production_order_service.get_all_工单编号(db)
-        return {"code": 0, "msg": "success", "count": len(codes), "data": codes}
+        return success_response(data=codes, count=len(codes))
     except Exception as e:
-        return {"code": 1, "msg": f"获取工单编号失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取工单编号失败: {str(e)}")
 
 
 @router.get("/lines")
@@ -59,9 +54,9 @@ async def get_production_lines(
     """获取所有产线列表"""
     try:
         lines = production_order_service.get_all_产线(db)
-        return {"code": 0, "msg": "success", "count": len(lines), "data": lines}
+        return success_response(data=lines, count=len(lines))
     except Exception as e:
-        return {"code": 1, "msg": f"获取产线失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取产线失败: {str(e)}")
 
 
 @router.get("/{order_id}")
@@ -73,14 +68,8 @@ async def get_order_detail(
     """获取生产工单详情"""
     order = production_order_service.get_by_id(db, order_id)
     if not order:
-        return {"code": 1, "msg": "生产工单不存在", "count": 0, "data": {}}
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": 1,
-        "data": production_order_service.to_dict(order)
-    }
+        return error_response(msg="生产工单不存在")
+    return success_response(data=production_order_service.to_dict(order), count=1)
 
 
 @router.post("/create")
@@ -114,11 +103,7 @@ async def create_order(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "创建成功",
-        "data": {"id": order.id, "工单编号": order.工单编号}
-    }
+    return success_response(data={"id": order.id, "工单编号": order.工单编号}, msg="创建成功")
 
 
 @router.post("/create-from-plan")
@@ -133,11 +118,11 @@ async def create_order_from_plan(
     产线 = data.get("产线")
 
     if not plan_id:
-        return {"code": 1, "msg": "缺少计划ID", "data": {}}
+        return error_response(msg="缺少计划ID")
     if not 工单数量 or 工单数量 <= 0:
-        return {"code": 1, "msg": "工单数量必须大于0", "data": {}}
+        return error_response(msg="工单数量必须大于0")
     if not 产线:
-        return {"code": 1, "msg": "请选择产线", "data": {}}
+        return error_response(msg="请选择产线")
 
     order, error = production_order_service.create_from_plan(
         db, plan_id=plan_id, 工单数量=工单数量, 产线=产线
@@ -146,11 +131,7 @@ async def create_order_from_plan(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "创建成功",
-        "data": {"id": order.id, "工单编号": order.工单编号, "计划编号": order.计划编号}
-    }
+    return success_response(data={"id": order.id, "工单编号": order.工单编号, "计划编号": order.计划编号}, msg="创建成功")
 
 
 @router.put("/update")
@@ -162,7 +143,7 @@ async def update_order(
     """更新生产工单"""
     order_id = data.get("id")
     if not order_id:
-        return {"code": 1, "msg": "缺少工单ID", "data": {}}
+        return error_response(msg="缺少工单ID")
 
     order, error = production_order_service.update(
         db, order_id,
@@ -188,30 +169,7 @@ async def update_order(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "更新成功",
-        "data": {
-            "id": order.id,
-            "工单编号": order.工单编号,
-            "计划编号": order.计划编号,
-            "产品类型": order.产品类型,
-            "产品型号": order.产品型号,
-            "规格": order.规格,
-            "工单数量": order.工单数量,
-            "已完成数量": order.已完成数量,
-            "单位": order.单位,
-            "产线": order.产线,
-            "工单状态": order.工单状态,
-            "计划开始": order.计划开始.strftime('%Y-%m-%d') if order.计划开始 else None,
-            "计划结束": order.计划结束.strftime('%Y-%m-%d') if order.计划结束 else None,
-            "实际开始": order.实际开始.strftime('%Y-%m-%d') if order.实际开始 else None,
-            "实际结束": order.实际结束.strftime('%Y-%m-%d') if order.实际结束 else None,
-            "工序": order.工序,
-            "总工序": order.总工序,
-            "报工备注": order.报工备注,
-        }
-    }
+    return success_response(data=production_order_service.to_dict(order), msg="更新成功")
 
 
 @router.put("/start/{order_id}")
@@ -226,7 +184,7 @@ async def start_production(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "开始生产成功", "data": {}}
+    return success_response(msg="开始生产成功")
 
 
 @router.put("/finish/{order_id}")
@@ -241,7 +199,7 @@ async def finish_production(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "完工确认成功", "data": {}}
+    return success_response(msg="完工确认成功")
 
 
 @router.put("/pause/{order_id}")
@@ -256,7 +214,7 @@ async def pause_production(
     if not success:
         raise HTTPException(status_code=400, detail=error)
 
-    return {"code": 0, "msg": "暂停成功", "data": {}}
+    return success_response(msg="暂停成功")
 
 
 @router.delete("/{order_id}")
@@ -271,4 +229,4 @@ async def delete_order(
     if not success:
         raise HTTPException(status_code=404, detail=error)
 
-    return {"code": 0, "msg": "删除成功", "data": {}}
+    return success_response(msg="删除成功")

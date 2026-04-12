@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.notification_service import notification_service
 
 router = APIRouter()
@@ -25,14 +26,7 @@ async def get_notifications(
     notifications, total = notification_service.get_list(
         current_user.id, page, page_size
     )
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": notifications,
-        "page": page,
-        "page_size": page_size
-    }
+    return success_response(data=notifications, count=total, msg="success")
 
 
 @router.post("/mark-read")
@@ -48,8 +42,8 @@ async def mark_notification_read(
     """
     success = notification_service.mark_read(current_user.id, req.notification_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Notification not found")
-    return {"code": 0, "msg": "success"}
+        return error_response(msg="Notification not found")
+    return success_response(msg="success")
 
 
 @router.post("/mark-all-read")
@@ -58,7 +52,7 @@ async def mark_all_read(
 ):
     """标记全部已读"""
     count = notification_service.mark_all_read(current_user.id)
-    return {"code": 0, "msg": f"marked {count} notifications as read"}
+    return success_response(msg=f"marked {count} notifications as read")
 
 
 @router.get("/unread-count")
@@ -67,4 +61,4 @@ async def get_unread_count(
 ):
     """获取未读数量"""
     count = notification_service.get_unread_count(current_user.id)
-    return {"code": 0, "msg": "success", "data": count}
+    return success_response(data=count)

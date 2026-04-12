@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 import datetime
 
 from app.db.database import get_db_jns
+from app.core.response import success_response, error_response
 
 logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
@@ -94,36 +95,19 @@ async def get_customer_yearly_report(
         
         yearly_total = sum(customer["total_amount"] for customer in paginated_customers)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "year": year,
-                "customers": paginated_customers,
-                "monthly_totals": monthly_totals,
-                "yearly_total": round(yearly_total, 2),
-                "total_customers": total_customers,
-                "current_page": page,
-                "total_pages": (total_customers + limit - 1) // limit,
-                "limit": limit
-            }
-        }
+        return success_response(data={
+            "year": year,
+            "customers": paginated_customers,
+            "monthly_totals": monthly_totals,
+            "yearly_total": round(yearly_total, 2),
+            "total_customers": total_customers,
+            "current_page": page,
+            "total_pages": (total_customers + limit - 1) // limit,
+            "limit": limit
+        })
     except Exception as e:
         logger.error(f"获取客户年度统计报表数据失败: {e}")
-        return {
-            "code": 1,
-            "msg": f"获取客户年度统计报表数据失败: {str(e)}",
-            "data": {
-                "year": year or datetime.datetime.now().year,
-                "customers": [],
-                "monthly_totals": {},
-                "yearly_total": 0,
-                "total_customers": 0,
-                "current_page": page,
-                "total_pages": 0,
-                "limit": limit
-            }
-        }
+        return error_response(msg=f"获取客户年度统计报表数据失败: {str(e)}")
 
 
 @router.get("/customer-yearly/shipment", response_model=dict)
@@ -207,35 +191,18 @@ async def get_customer_yearly_shipment_report(
         
         yearly_total = sum(customer["total_amount"] for customer in paginated_customers)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "year": year,
-                "customers": paginated_customers,
-                "monthly_totals": monthly_totals,
-                "yearly_total": round(yearly_total, 2),
-                "total_customers": total_customers,
-                "current_page": page,
-                "total_pages": (total_customers + limit - 1) // limit,
-                "limit": limit
-            }
-        }
+        return success_response(data={
+            "year": year,
+            "customers": paginated_customers,
+            "monthly_totals": monthly_totals,
+            "yearly_total": round(yearly_total, 2),
+            "total_customers": total_customers,
+            "current_page": page,
+            "total_pages": (total_customers + limit - 1) // limit,
+            "limit": limit
+        })
     except Exception as e:
         logger.error(f"获取客户年度发货统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"获取客户年度发货统计报表数据失败: {str(e)}",
-            "data": {
-                "year": year or datetime.datetime.now().year,
-                "customers": [],
-                "monthly_totals": {},
-                "yearly_total": 0,
-                "total_customers": 0,
-                "current_page": page,
-                "total_pages": 0,
-                "limit": limit
-            }
-        }
+        return error_response(msg=f"获取客户年度发货统计报表数据失败: {str(e)}")

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.customer_sample_service import customer_sample_service
 
 router = APIRouter()
@@ -29,9 +30,9 @@ async def get_list(
             page=page, page_size=limit
         )
         data = [customer_sample_service.to_dict(item) for item in items]
-        return {"code": 0, "msg": "success", "count": total, "data": data}
+        return success_response(data=data, count=total)
     except Exception as e:
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.get("/{id}")
@@ -44,10 +45,10 @@ async def get_detail(
     try:
         obj = customer_sample_service.get(db, id)
         if not obj:
-            return {"code": 1, "msg": "记录不存在", "count": 0, "data": {}}
-        return {"code": 0, "msg": "success", "count": 1, "data": customer_sample_service.to_dict(obj)}
+            return error_response(msg="记录不存在")
+        return success_response(data=customer_sample_service.to_dict(obj), count=1)
     except Exception as e:
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "count": 0, "data": {}}
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.post("/create")
@@ -59,8 +60,8 @@ async def create(
     """创建客户样品"""
     obj, error = customer_sample_service.create(db, **data)
     if error:
-        return {"code": 1, "msg": error, "data": {}}
-    return {"code": 0, "msg": "创建成功", "data": {"id": obj.id}}
+        return error_response(msg=error)
+    return success_response(data={"id": obj.id}, msg="创建成功")
 
 
 @router.put("/update")
@@ -72,11 +73,11 @@ async def update(
     """更新客户样品"""
     id = data.get('id')
     if not id:
-        return {"code": 1, "msg": "缺少ID", "data": {}}
+        return error_response(msg="缺少ID")
     obj, error = customer_sample_service.update(db, id, **{k: v for k, v in data.items() if k != 'id'})
     if error:
-        return {"code": 1, "msg": error, "data": {}}
-    return {"code": 0, "msg": "更新成功", "data": {"id": obj.id}}
+        return error_response(msg=error)
+    return success_response(data={"id": obj.id}, msg="更新成功")
 
 
 @router.delete("/{id}")
@@ -88,5 +89,5 @@ async def delete(
     """删除客户样品"""
     success, error = customer_sample_service.delete(db, id)
     if not success:
-        return {"code": 1, "msg": error, "data": {}}
-    return {"code": 0, "msg": "删除成功", "data": {}}
+        return error_response(msg=error)
+    return success_response(msg="删除成功")

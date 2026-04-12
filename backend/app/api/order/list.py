@@ -7,6 +7,7 @@ from datetime import datetime
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 from app.services.order_service import order_list_service, order_service, generate_order_number
 from app.schemas.common import APIResponse, PageResult
 
@@ -70,7 +71,7 @@ async def get_orders(
                 '客户名称': order_list.客户名称 if order_list else None,
             } for order, order_list in results]
 
-            return {"code": 0, "msg": "success", "count": total, "data": data}
+            return success_response(data=data, count=total)
 
         start = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
         end = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
@@ -88,7 +89,7 @@ async def get_orders(
                 return 'partial'
             return 'pending'
 
-        return {"code": 0, "msg": "success", "count": total, "data": [
+        return success_response(data=[
             {
                 "id": item.id,
                 "订单编号": item.订单编号,
@@ -98,10 +99,10 @@ async def get_orders(
                 "发货状态": map_status(item.status)
             }
             for item in orders
-        ]}
+        ], count=total)
     except Exception as e:
         logger.error(f"获取订单列表失败: {e}")
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.get("/all")
@@ -112,7 +113,7 @@ async def get_all_orders(
     """获取所有订单"""
     try:
         orders = order_list_service.get_all(db)
-        return {"code": 0, "msg": "success", "data": [
+        return success_response(data=[
             {
                 "id": order.id,
                 "订单编号": order.订单编号,
@@ -122,10 +123,10 @@ async def get_all_orders(
                 "status": order.status
             }
             for order in orders
-        ]}
+        ])
     except Exception as e:
         logger.error(f"获取所有订单失败: {e}")
-        return {"code": 1, "msg": f"获取失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取失败: {str(e)}")
 
 
 @router.post("/create")
@@ -137,9 +138,8 @@ async def create_order(
     """创建订单"""
     order, error = order_list_service.create(db, data)
     if error:
-        return {"code": 1, "msg": error, "data": {}}
-
-    return {"code": 0, "msg": "创建成功", "data": {"id": order.id}}
+        return error_response(msg=error)
+    return success_response(data={"id": order.id}, msg="创建成功")
 
 
 @router.put("/update")
@@ -151,20 +151,19 @@ async def update_order(
     """更新订单"""
     order_id = data.get('id')
     if not order_id:
-        return {"code": 1, "msg": "缺少订单ID", "data": {}}
+        return error_response(msg="缺少订单ID")
 
     order, error = order_list_service.update_order(db, order_id, data)
     if error:
-        return {"code": 1, "msg": error, "data": {}}
-
-    return {"code": 0, "msg": "更新成功", "data": {
+        return error_response(msg=error)
+    return success_response(data={
         "id": order.id,
         "订单编号": order.订单编号,
         "客户名称": order.客户名称,
         "订单日期": order.订单日期.strftime('%Y-%m-%d') if order.订单日期 else None,
         "交货日期": order.交货日期.strftime('%Y-%m-%d') if order.交货日期 else None,
         "status": order.status
-    }}
+    }, msg="更新成功")
 
 
 @router.delete("/delete/{id}")
@@ -176,10 +175,10 @@ async def delete_order(
     """删除订单"""
     order = order_list_service.get(db, id)
     if not order:
-        return {"code": 1, "msg": "订单不存在", "data": {}}
+        return error_response(msg="订单不存在")
 
     order_list_service.delete(db, id)
-    return {"code": 0, "msg": "删除成功", "data": {}}
+    return success_response(msg="删除成功")
 
 
 @router.get("/generate-id")
@@ -187,7 +186,7 @@ async def generate_order_id(
     current_user: User = Depends(get_current_active_user)
 ):
     """生成订单编号"""
-    return {"code": 0, "msg": "success", "data": {"order_number": generate_order_number()}}
+    return success_response(data={"order_number": generate_order_number()})
 
 
 @router.post("/mark-shipped")
@@ -210,13 +209,12 @@ async def mark_as_shipped(
     )
 
     if error:
-        return {"code": 1, "msg": error, "data": {}}
+        return error_response(msg=error)
 
-    # 发送 WebSocket 通知
     if notification_msg:
         from app.services.notification_service import get_notification_manager
         manager = get_notification_manager()
         notification_msg["payload"]["user_id"] = current_user.id
         await manager.broadcast(notification_msg)
 
-    return {"code": 0, "msg": f"成功标记 {updated} 条订单为已发货", "data": {"updated": updated}}
+    return success_response(data={"updated": updated}, msg=f"成功标记 {updated} 条订单为已发货")

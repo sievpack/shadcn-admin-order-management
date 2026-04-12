@@ -9,6 +9,7 @@ from jinja2 import Template
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -170,7 +171,7 @@ async def print_workorder(
         order = db.query(ProductionOrder).filter(ProductionOrder.id == order_id).first()
         
         if not order:
-            return {"code": 1, "msg": "工单不存在", "data": {}}
+            return error_response(msg="工单不存在")
         
         data = {
             "工单编号": order.工单编号,
@@ -195,17 +196,13 @@ async def print_workorder(
         context = prepare_workorder_data(data)
         html = render_template('workorder.html', context)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "type": "workorder",
-                "html": html,
-                "title": f"生产工单 - {order.工单编号}"
-            }
-        }
+        return success_response(data={
+            "type": "workorder",
+            "html": html,
+            "title": f"生产工单 - {order.工单编号}"
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取打印数据失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取打印数据失败: {str(e)}")
 
 
 @router.get("/delivery/{ship_id}", response_model=dict)
@@ -221,7 +218,7 @@ async def print_delivery(
         
         ship = db.query(Ship).filter(Ship.id == ship_id).first()
         if not ship:
-            return {"code": 1, "msg": "发货记录不存在", "data": {}}
+            return error_response(msg="发货记录不存在")
         
         # 安全获取字段值
         def safe_str(value):
@@ -266,19 +263,15 @@ async def print_delivery(
         context = prepare_delivery_data(data)
         html = render_template('delivery.html', context)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "type": "delivery",
-                "html": html,
-                "title": f"送货单 - {ship.发货单号}"
-            }
-        }
+        return success_response(data={
+            "type": "delivery",
+            "html": html,
+            "title": f"送货单 - {ship.发货单号}"
+        })
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return {"code": 1, "msg": f"获取打印数据失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取打印数据失败: {str(e)}")
 
 
 @router.get("/order/{order_id}", response_model=dict)
@@ -293,7 +286,7 @@ async def print_order(
         
         order_list = db.query(OrderList).filter(OrderList.id == order_id).first()
         if not order_list:
-            return {"code": 1, "msg": "订单不存在", "data": {}}
+            return error_response(msg="订单不存在")
         
         orders = db.query(Order).filter(Order.oid == order_id).all()
         
@@ -321,17 +314,13 @@ async def print_order(
         context = prepare_order_data(data)
         html = render_template('order.html', context)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "type": "order",
-                "html": html,
-                "title": f"订单合同 - {order_list.订单编号}"
-            }
-        }
+        return success_response(data={
+            "type": "order",
+            "html": html,
+            "title": f"订单合同 - {order_list.订单编号}"
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取打印数据失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取打印数据失败: {str(e)}")
 
 
 @router.get("/report/{report_id}", response_model=dict)
@@ -346,7 +335,7 @@ async def print_report(
         report = db.query(ProductionReport).filter(ProductionReport.id == report_id).first()
         
         if not report:
-            return {"code": 1, "msg": "报工记录不存在", "data": {}}
+            return error_response(msg="报工记录不存在")
         
         data = {
             "报工编号": report.报工编号,
@@ -363,17 +352,13 @@ async def print_report(
         context = prepare_report_data(data)
         html = render_template('report.html', context)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "type": "report",
-                "html": html,
-                "title": f"报工记录 - {report.报工编号}"
-            }
-        }
+        return success_response(data={
+            "type": "report",
+            "html": html,
+            "title": f"报工记录 - {report.报工编号}"
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取打印数据失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取打印数据失败: {str(e)}")
 
 
 @router.post("/preview", response_model=dict)
@@ -391,21 +376,17 @@ async def print_preview(
     }
     
     if type not in type_map:
-        return {"code": 1, "msg": "无效的打印类型", "data": {}}
+        return error_response(msg="无效的打印类型")
     
     title, prepare_func, template_name = type_map[type]
     
     try:
         context = prepare_func(data)
         html = render_template(template_name, context)
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "type": type,
-                "html": html,
-                "title": title
-            }
-        }
+        return success_response(data={
+            "type": type,
+            "html": html,
+            "title": title
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"生成打印模板失败: {str(e)}", "data": {}}
+        return error_response(msg=f"生成打印模板失败: {str(e)}")

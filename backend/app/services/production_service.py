@@ -51,11 +51,13 @@ class ProductionPlanService:
         plan = self.repo.get_by_id(db, plan_id)
         if not plan:
             return [], 0
-        return production_order_repository.get_all_by_计划编号(db, plan.计划编号), 0
+        orders = production_order_repository.get_all_by_计划编号(db, plan.计划编号)
+        return orders, len(orders)
 
     def create(self, db: Session, **kwargs) -> Tuple[Optional[ProductionPlan], Optional[str]]:
         try:
             plan = self.repo.create(db, **kwargs)
+            db.commit()
             return plan, None
         except Exception as e:
             return None, str(e)
@@ -66,6 +68,7 @@ class ProductionPlanService:
             return None, "生产计划不存在"
         try:
             updated = self.repo.update(db, plan, **kwargs)
+            db.commit()
             return updated, None
         except Exception as e:
             return None, str(e)
@@ -102,6 +105,7 @@ class ProductionPlanService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "生产计划不存在"
+        db.commit()
         return True, None
 
     def to_dict(self, plan: ProductionPlan) -> Dict[str, Any]:
@@ -145,6 +149,7 @@ class ProductionOrderService:
     def create(self, db: Session, **kwargs) -> Tuple[Optional[ProductionOrder], Optional[str]]:
         try:
             order = self.repo.create(db, **kwargs)
+            db.commit()
             return order, None
         except Exception as e:
             return None, str(e)
@@ -184,7 +189,7 @@ class ProductionOrderService:
                 plan.计划状态 = '生产中'
             plan.update_at = datetime.now()
             
-            db.flush()
+            db.commit()
             return order, None
         except Exception as e:
             db.rollback()
@@ -368,6 +373,7 @@ class QualityInspectionService:
     def create(self, db: Session, **kwargs) -> Tuple[Optional[QualityInspection], Optional[str]]:
         try:
             qc = self.repo.create(db, **kwargs)
+            db.commit()
             return qc, None
         except Exception as e:
             return None, str(e)
@@ -378,6 +384,7 @@ class QualityInspectionService:
             return None, "质检记录不存在"
         try:
             updated = self.repo.update(db, qc, **kwargs)
+            db.commit()
             return updated, None
         except Exception as e:
             return None, str(e)
@@ -386,6 +393,7 @@ class QualityInspectionService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "质检记录不存在"
+        db.commit()
         return True, None
 
     def to_dict(self, qc: QualityInspection) -> Dict[str, Any]:
@@ -429,6 +437,7 @@ class ProductInboundService:
     def create(self, db: Session, **kwargs) -> Tuple[Optional[ProductInbound], Optional[str]]:
         try:
             inbound = self.repo.create(db, **kwargs)
+            db.commit()
             return inbound, None
         except Exception as e:
             return None, str(e)
@@ -439,6 +448,7 @@ class ProductInboundService:
             return None, "入库记录不存在"
         try:
             updated = self.repo.update(db, inbound, **kwargs)
+            db.commit()
             return updated, None
         except Exception as e:
             return None, str(e)
@@ -447,6 +457,7 @@ class ProductInboundService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "入库记录不存在"
+        db.commit()
         return True, None
 
     def to_dict(self, inbound: ProductInbound) -> Dict[str, Any]:
@@ -487,6 +498,7 @@ class MaterialConsumptionService:
     def create(self, db: Session, **kwargs) -> Tuple[Optional[MaterialConsumption], Optional[str]]:
         try:
             material = self.repo.create(db, **kwargs)
+            db.commit()
             return material, None
         except Exception as e:
             return None, str(e)
@@ -495,6 +507,7 @@ class MaterialConsumptionService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "物料消耗记录不存在"
+        db.commit()
         return True, None
 
     def to_dict(self, material: MaterialConsumption) -> Dict[str, Any]:
@@ -576,13 +589,6 @@ class ProductionReportService:
         if order:
             order.已完成数量 = max(0, (order.已完成数量 or 0) - report.合格数量)
             order.update_at = datetime.now()
-        
-        success = self.repo.delete(db, id)
-        if not success:
-            return False, "报工记录不存在"
-        
-        db.commit()
-        return True, None
         
         success = self.repo.delete(db, id)
         if not success:

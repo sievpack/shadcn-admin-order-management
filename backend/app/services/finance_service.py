@@ -47,6 +47,7 @@ class AccountsReceivableService:
             if not kwargs.get('应收单号'):
                 kwargs['应收单号'] = generate_code("AR")
             ar = self.repo.create(db, **kwargs)
+            db.commit()
             return ar, None
         except Exception as e:
             return None, str(e)
@@ -63,6 +64,7 @@ class AccountsReceivableService:
             if '应收余额' in kwargs and kwargs['应收余额'] is not None:
                 kwargs['应收余额'] = Decimal(str(kwargs['应收余额']))
             updated = self.repo.update(db, ar, **kwargs)
+            db.commit()
             return updated, None
         except Exception as e:
             return None, str(e)
@@ -71,6 +73,7 @@ class AccountsReceivableService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "应收账款不存在"
+        db.commit()
         return True, None
 
     def get_aging(self, db: Session) -> List[Dict[str, Any]]:
@@ -140,6 +143,7 @@ class AccountsPayableService:
             if not kwargs.get('应付单号'):
                 kwargs['应付单号'] = generate_code("AP")
             ap = self.repo.create(db, **kwargs)
+            db.commit()
             return ap, None
         except Exception as e:
             return None, str(e)
@@ -148,6 +152,7 @@ class AccountsPayableService:
         success = self.repo.delete(db, id)
         if not success:
             return False, "应付账款不存在"
+        db.commit()
         return True, None
 
     def get_aging(self, db: Session) -> List[Dict[str, Any]]:

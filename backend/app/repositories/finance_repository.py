@@ -56,7 +56,7 @@ class AccountsReceivableRepository(BaseRepository):
     def create(self, db: Session, **kwargs) -> AccountsReceivable:
         ar = AccountsReceivable(**kwargs)
         db.add(ar)
-        db.commit()
+        db.flush()
         db.refresh(ar)
         return ar
 
@@ -68,7 +68,7 @@ class AccountsReceivableRepository(BaseRepository):
                 else:
                     setattr(ar, key, value)
         ar.update_at = datetime.now()
-        db.commit()
+        db.flush()
         db.refresh(ar)
         return ar
 
@@ -77,7 +77,6 @@ class AccountsReceivableRepository(BaseRepository):
         if not ar:
             return False
         db.delete(ar)
-        db.commit()
         return True
 
     def to_dict(self, ar: AccountsReceivable) -> dict:
@@ -138,7 +137,7 @@ class AccountsPayableRepository(BaseRepository):
     def create(self, db: Session, **kwargs) -> AccountsPayable:
         ap = AccountsPayable(**kwargs)
         db.add(ap)
-        db.commit()
+        db.flush()
         db.refresh(ap)
         return ap
 
@@ -147,7 +146,6 @@ class AccountsPayableRepository(BaseRepository):
         if not ap:
             return False
         db.delete(ap)
-        db.commit()
         return True
 
     def to_dict(self, ap: AccountsPayable) -> dict:

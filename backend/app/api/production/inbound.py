@@ -6,6 +6,7 @@ from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.services.production_service import product_inbound_service
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -32,13 +33,7 @@ async def get_inbound_list(
         page=page, page_size=limit
     )
     data = [product_inbound_service.to_dict(item) for item in items]
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": total,
-        "data": data
-    }
+    return success_response(data=data, count=total)
 
 
 @router.get("/warehouses")
@@ -49,9 +44,9 @@ async def get_warehouses(
     """获取所有仓库列表"""
     try:
         warehouses = product_inbound_service.get_all_仓库(db)
-        return {"code": 0, "msg": "success", "count": len(warehouses), "data": warehouses}
+        return success_response(data=warehouses, count=len(warehouses))
     except Exception as e:
-        return {"code": 1, "msg": f"获取仓库列表失败: {str(e)}", "count": 0, "data": []}
+        return error_response(msg=f"获取仓库列表失败: {str(e)}")
 
 
 @router.get("/stats")
@@ -67,16 +62,12 @@ async def get_inbound_stats(
         total_inbound = db.query(func.count(ProductInbound.id)).scalar()
         total_quantity = db.query(func.sum(ProductInbound.入库数量)).scalar() or 0
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "入库次数": total_inbound,
-                "入库数量": total_quantity,
-            }
-        }
+        return success_response(data={
+            "入库次数": total_inbound,
+            "入库数量": total_quantity,
+        })
     except Exception as e:
-        return {"code": 1, "msg": f"获取统计失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取统计失败: {str(e)}")
 
 
 @router.get("/{inbound_id}")
@@ -88,14 +79,8 @@ async def get_inbound_detail(
     """获取成品入库详情"""
     inbound = product_inbound_service.get_by_id(db, inbound_id)
     if not inbound:
-        return {"code": 1, "msg": "入库记录不存在", "count": 0, "data": {}}
-
-    return {
-        "code": 0,
-        "msg": "success",
-        "count": 1,
-        "data": product_inbound_service.to_dict(inbound)
-    }
+        return error_response(msg="入库记录不存在")
+    return success_response(data=product_inbound_service.to_dict(inbound), count=1)
 
 
 @router.post("/create")
@@ -130,11 +115,7 @@ async def create_inbound(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "创建成功",
-        "data": {"id": inbound.id, "入库单号": inbound.入库单号}
-    }
+    return success_response(data={"id": inbound.id, "入库单号": inbound.入库单号}, msg="创建成功")
 
 
 @router.put("/update")
@@ -146,7 +127,7 @@ async def update_inbound(
     """更新成品入库"""
     inbound_id = data.get("id")
     if not inbound_id:
-        return {"code": 1, "msg": "缺少入库ID", "data": {}}
+        return error_response(msg="缺少入库ID")
 
     inbound, error = product_inbound_service.update(
         db, inbound_id,
@@ -172,31 +153,7 @@ async def update_inbound(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
-    return {
-        "code": 0,
-        "msg": "更新成功",
-        "data": {
-            "id": inbound.id,
-            "入库单号": inbound.入库单号,
-            "质检单号": inbound.质检单号,
-            "工单编号": inbound.工单编号,
-            "产品类型": inbound.产品类型,
-            "产品型号": inbound.产品型号,
-            "规格": inbound.规格,
-            "入库数量": inbound.入库数量,
-            "单位": inbound.单位,
-            "批次号": inbound.批次号,
-            "仓库": inbound.仓库,
-            "库位": inbound.库位,
-            "入库类型": inbound.入库类型,
-            "入库状态": inbound.入库状态,
-            "入库日期": inbound.入库日期.strftime('%Y-%m-%d') if inbound.入库日期 else None,
-            "入库员": inbound.入库员,
-            "收货人": inbound.收货人,
-            "关联订单": inbound.关联订单,
-            "备注": inbound.备注,
-        }
-    }
+    return success_response(data=product_inbound_service.to_dict(inbound), msg="更新成功")
 
 
 @router.delete("/{inbound_id}")
@@ -211,4 +168,4 @@ async def delete_inbound(
     if not success:
         raise HTTPException(status_code=404, detail=error)
 
-    return {"code": 0, "msg": "删除成功", "data": {}}
+    return success_response(msg="删除成功")

@@ -9,6 +9,7 @@ import os
 import platform
 
 from app.db.database import get_db_jns
+from app.core.response import success_response, error_response
 
 logger = logging.getLogger(__name__)
 from app.models.order import Order, OrderList
@@ -271,32 +272,17 @@ async def get_industry_report(
         paginated_customers = customer_stats[start_idx:end_idx]
         
         logger.debug("返回实际数据")
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "customers": paginated_customers,
-                "totalAmount": total_amount,
-                "industryStats": industry_stats,
-                "months": month_list
-            },
-            "count": len(customer_stats)
-        }
+        return success_response(data={
+            "customers": paginated_customers,
+            "totalAmount": total_amount,
+            "industryStats": industry_stats,
+            "months": month_list
+        }, count=len(customer_stats))
     except Exception as e:
         logger.error(f"获取行业统计报表数据失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"获取行业统计报表数据失败: {str(e)}",
-            "data": {
-                "customers": [],
-                "totalAmount": 0,
-                "industryStats": [],
-                "months": []
-            },
-            "count": 0
-        }
+        return error_response(msg=f"获取行业统计报表数据失败: {str(e)}")
 
 
 @router.get("/industry/export-data", response_model=dict)
@@ -536,32 +522,17 @@ async def get_industry_export_data(
         
         customer_stats.sort(key=lambda x: x["amount"], reverse=True)
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "customers": customer_stats,
-                "totalAmount": total_amount,
-                "industryStats": industry_stats,
-                "months": month_list
-            },
-            "count": len(customer_stats)
-        }
+        return success_response(data={
+            "customers": customer_stats,
+            "totalAmount": total_amount,
+            "industryStats": industry_stats,
+            "months": month_list
+        }, count=len(customer_stats))
     except Exception as e:
         logger.error(f"获取行业统计导出数据失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"获取行业统计导出数据失败: {str(e)}",
-            "data": {
-                "customers": [],
-                "totalAmount": 0,
-                "industryStats": [],
-                "months": []
-            },
-            "count": 0
-        }
+        return error_response(msg=f"获取行业统计导出数据失败: {str(e)}")
 
 
 @router.get("/industry/export")
@@ -910,8 +881,4 @@ async def export_industry_report(
         logger.error(f"导出行业统计报表失败: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            "code": 1,
-            "msg": f"导出行业统计报表失败: {str(e)}",
-            "data": {}
-        }
+        return error_response(msg=f"导出行业统计报表失败: {str(e)}")

@@ -5,6 +5,7 @@ from typing import Optional
 from app.db.database import get_db_jns
 from app.models.order import Order, OrderList
 from app.models.dict import DictData
+from app.core.response import success_response, error_response
 
 router = APIRouter()
 
@@ -70,13 +71,13 @@ async def get_processing_order_print(
         # 获取订单列表信息
         order_list = db.query(OrderList).filter(OrderList.id == order_id).first()
         if not order_list:
-            return {"code": 1, "msg": "订单不存在", "data": {}}
+            return error_response(msg="订单不存在")
         
         # 获取订单分项数据
         order_items = db.query(Order).filter(Order.oid == order_id).all()
         
         if not order_items:
-            return {"code": 1, "msg": "没有订单分项数据", "data": {}}
+            return error_response(msg="没有订单分项数据")
         
         # 处理每条分项数据
         processed_items = []
@@ -104,18 +105,14 @@ async def get_processing_order_print(
         total_items = len(processed_items)
         total_pages = (total_items + items_per_page - 1) // items_per_page if total_items > 0 else 1
         
-        return {
-            "code": 0,
-            "msg": "success",
-            "data": {
-                "工单编号": order_list.订单编号,
-                "客户名称": order_list.客户名称,
-                "items": processed_items,
-                "total_items": total_items,
-                "total_pages": total_pages,
-            }
-        }
+        return success_response(data={
+            "工单编号": order_list.订单编号,
+            "客户名称": order_list.客户名称,
+            "items": processed_items,
+            "total_items": total_items,
+            "total_pages": total_pages,
+        })
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return {"code": 1, "msg": f"获取打印数据失败: {str(e)}", "data": {}}
+        return error_response(msg=f"获取打印数据失败: {str(e)}")
