@@ -131,7 +131,7 @@ function StatCard({
     >
       <CardContent className='relative p-4'>
         <div className='flex items-start justify-between'>
-          <div className='space-y-1'>
+          <div className='flex flex-col gap-1'>
             <p className='text-xs font-medium text-muted-foreground'>{title}</p>
             <p className='text-2xl font-bold tracking-tight'>
               <AnimatedNumber value={value} />
@@ -213,7 +213,7 @@ function HeatmapCalendar({
   }
 
   return (
-    <div className='space-y-3'>
+    <div className='flex flex-col gap-3'>
       <div className='grid grid-cols-7 gap-1'>
         {WEEKDAYS.map((weekday) => (
           <div
@@ -429,7 +429,7 @@ export function MonthlyReport() {
             </div>
             <TabsContent value='heatmap' className='p-4 pt-3'>
               {isLoading ? (
-                <div className='space-y-3'>
+                <div className='flex flex-col gap-3'>
                   <div className='grid grid-cols-7 gap-1'>
                     {Array.from({ length: 7 }).map((_, i) => (
                       <Skeleton key={i} className='h-6 rounded-md' />

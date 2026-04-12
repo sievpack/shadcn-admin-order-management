@@ -39,6 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
@@ -455,51 +456,54 @@ export function IndustryReport() {
     if (totalCustomers <= pageSize) return null
 
     return (
-      <div className='flex items-center justify-between border-t px-6 py-4'>
-        <div className='text-sm text-muted-foreground'>
-          第 {currentPage} / {Math.ceil(totalCustomers / pageSize)} 页， 共{' '}
-          {totalCustomers} 条记录
-        </div>
-        <div className='flex items-center gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1 || loading}
-          >
-            上一页
-          </Button>
-          {Array.from(
-            { length: Math.ceil(totalCustomers / pageSize) },
-            (_, i) => i + 1
-          ).map((page) => (
+      <>
+        <Separator className='mx-6 my-4' />
+        <div className='flex items-center justify-between px-6 py-4'>
+          <div className='text-sm text-muted-foreground'>
+            第 {currentPage} / {Math.ceil(totalCustomers / pageSize)} 页， 共{' '}
+            {totalCustomers} 条记录
+          </div>
+          <div className='flex items-center gap-2'>
             <Button
-              key={page}
-              variant={currentPage === page ? 'default' : 'outline'}
+              variant='outline'
               size='sm'
-              onClick={() => setCurrentPage(page)}
-              disabled={loading}
-              className='min-w-[32px]'
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1 || loading}
             >
-              {page}
+              上一页
             </Button>
-          ))}
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() =>
-              setCurrentPage((p) =>
-                Math.min(Math.ceil(totalCustomers / pageSize), p + 1)
-              )
-            }
-            disabled={
-              currentPage === Math.ceil(totalCustomers / pageSize) || loading
-            }
-          >
-            下一页
-          </Button>
+            {Array.from(
+              { length: Math.ceil(totalCustomers / pageSize) },
+              (_, i) => i + 1
+            ).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? 'default' : 'outline'}
+                size='sm'
+                onClick={() => setCurrentPage(page)}
+                disabled={loading}
+                className='min-w-[32px]'
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() =>
+                setCurrentPage((p) =>
+                  Math.min(Math.ceil(totalCustomers / pageSize), p + 1)
+                )
+              }
+              disabled={
+                currentPage === Math.ceil(totalCustomers / pageSize) || loading
+              }
+            >
+              下一页
+            </Button>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 

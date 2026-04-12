@@ -5,13 +5,11 @@ import {
   ShoppingCart,
   Bell,
   Clock,
-  User,
   Building,
   FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -97,7 +95,7 @@ export function NotificationDetailDialog({
   const IconComponent = config.icon
   const detail = notification.detail || {}
 
-  const renderOrderItems = (items: any[], title: string) => {
+  const renderOrderItems = (items: any[], _title: string) => {
     if (!items || items.length === 0) {
       return (
         <div className='py-4 text-center text-muted-foreground'>
@@ -155,7 +153,7 @@ export function NotificationDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-2xl'>
-        <DialogHeader className='space-y-4'>
+        <DialogHeader className='flex flex-col gap-4'>
           <div className='flex items-start gap-4'>
             <div
               className={cn(
@@ -165,7 +163,7 @@ export function NotificationDetailDialog({
             >
               <IconComponent className='size-6' />
             </div>
-            <div className='flex-1 space-y-1'>
+            <div className='flex flex-1 flex-col gap-1'>
               <DialogTitle className='text-lg font-semibold'>
                 {notification.title}
               </DialogTitle>
@@ -304,7 +302,7 @@ export function NotificationDetailDialog({
 
           {/* 订单/发货项目 */}
           {detail.订单项目 && (
-            <div className='space-y-3'>
+            <div className='flex flex-col gap-3'>
               <h4 className='text-sm font-medium text-muted-foreground'>
                 订单项目
               </h4>
@@ -313,7 +311,7 @@ export function NotificationDetailDialog({
           )}
 
           {detail.发货项目 && (
-            <div className='space-y-3'>
+            <div className='flex flex-col gap-3'>
               <h4 className='text-sm font-medium text-muted-foreground'>
                 发货项目
               </h4>

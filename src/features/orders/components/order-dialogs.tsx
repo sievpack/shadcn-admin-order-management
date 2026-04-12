@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { Loader2, Printer } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -182,15 +183,6 @@ export function OrderEditDialog({
 }: OrderEditDialogProps) {
   if (!order) return null
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    onEditFormDataChange({ ...editFormData, [name]: value })
-  }
-
-  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onEditFormDataChange({ ...editFormData, status: e.target.checked })
-  }
-
   const handleDeliveryDateChange = (date: Date | undefined) => {
     if (date) {
       // 使用 getFullYear, getMonth, getDate 来获取本地日期，避免时区问题
@@ -275,13 +267,16 @@ export function OrderEditDialog({
                 />
               </div>
             </div>
-            <div className='flex items-center space-x-2'>
-              <input
-                type='checkbox'
+            <div className='flex items-center gap-2'>
+              <Checkbox
                 id='status'
                 checked={editFormData.status || false}
-                onChange={handleStatusChange}
-                className='h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary'
+                onCheckedChange={(checked) =>
+                  onEditFormDataChange({
+                    ...editFormData,
+                    status: checked === true,
+                  })
+                }
               />
               <Label htmlFor='status'>已完成</Label>
             </div>
@@ -414,7 +409,7 @@ export function OrderEditDialog({
             </div>
           </div>
         )}
-        <div className='flex justify-end space-x-2'>
+        <div className='flex justify-end gap-2'>
           <DialogClose asChild>
             <Button variant='outline'>取消</Button>
           </DialogClose>

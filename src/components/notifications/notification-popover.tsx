@@ -55,7 +55,7 @@ const categoryConfig: Record<
 }
 
 export function NotificationPopover() {
-  const { notifications, isDrawerOpen, setDrawerOpen, markRead, isRead } =
+  const { notifications, setDrawerOpen, markRead, isRead } =
     useNotificationStore()
   const { auth } = useAuthStore()
   const [selectedNotification, setSelectedNotification] =
@@ -218,7 +218,7 @@ export function NotificationPopover() {
                               </span>
                             )}
                           </div>
-                          <div className='min-w-0 flex-1 space-y-1.5'>
+                          <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
                             <div className='flex items-center justify-between gap-2'>
                               <div className='flex items-center gap-2'>
                                 <p className='truncate text-sm leading-none font-medium'>
@@ -263,15 +263,18 @@ export function NotificationPopover() {
           </ScrollArea>
 
           {notifications.length > 0 && (
-            <div className='border-t p-2'>
-              <Button
-                variant='ghost'
-                className='w-full text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
-                onClick={() => setDrawerOpen(true)}
-              >
-                查看全部通知
-              </Button>
-            </div>
+            <>
+              <Separator className='my-2' />
+              <div className='p-2'>
+                <Button
+                  variant='ghost'
+                  className='w-full text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
+                  onClick={() => setDrawerOpen(true)}
+                >
+                  查看全部通知
+                </Button>
+              </div>
+            </>
           )}
         </PopoverContent>
       </Popover>

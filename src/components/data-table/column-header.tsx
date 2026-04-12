@@ -30,16 +30,16 @@ export function DataTableColumnHeader<TData, TValue>({
 }: DataTableColumnHeaderProps<TData, TValue>) {
   // 使用 header 或 column
   const columnObj = header || column
-  
+
   // 获取标题
   const columnTitle = title || columnObj?.columnDef?.header || ''
-  
+
   if (!columnObj || !columnObj.getCanSort?.()) {
     return <div className={cn(className)}>{columnTitle}</div>
   }
 
   return (
-    <div className={cn('flex items-center space-x-2', className)}>
+    <div className={cn('flex items-center gap-2', className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -69,7 +69,9 @@ export function DataTableColumnHeader<TData, TValue>({
           {columnObj.getCanHide?.() && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => columnObj.toggleVisibility?.(false)}>
+              <DropdownMenuItem
+                onClick={() => columnObj.toggleVisibility?.(false)}
+              >
                 <EyeNoneIcon className='size-3.5 text-muted-foreground/70' />
                 Hide
               </DropdownMenuItem>

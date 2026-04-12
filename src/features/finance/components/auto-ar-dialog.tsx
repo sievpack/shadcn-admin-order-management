@@ -251,7 +251,7 @@ export function AutoARDialog({
             <TabsTrigger value='customer'>按客户生成</TabsTrigger>
           </TabsList>
 
-          <TabsContent value='month' className='space-y-4 py-4'>
+          <TabsContent value='month' className='flex flex-col gap-4 py-4'>
             <div className='grid grid-cols-3 gap-4'>
               <div className='flex flex-col gap-2'>
                 <Label>年份</Label>
@@ -330,7 +330,7 @@ export function AutoARDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value='customer' className='space-y-4 py-4'>
+          <TabsContent value='customer' className='flex flex-col gap-4 py-4'>
             <div className='flex flex-col gap-2'>
               <Label>选择客户</Label>
               <Combobox

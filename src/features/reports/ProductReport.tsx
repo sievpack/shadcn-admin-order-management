@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
   SheetContent,
@@ -629,55 +630,60 @@ export function ProductReport() {
             </div>
 
             {reportData.total_pages > 1 && (
-              <div className='flex items-center justify-between border-t px-6 py-4'>
-                <div className='text-sm text-muted-foreground'>
-                  第 {currentPage} / {reportData.total_pages} 页， 每页{' '}
-                  {pageSize} 条， 共 {reportData.total_products} 条记录
-                </div>
-                <div className='flex items-center gap-2'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1 || loading}
-                  >
-                    上一页
-                  </Button>
-
-                  <div className='flex items-center gap-1'>
-                    {getPageNumbers().map((page, index) => (
-                      <div key={index}>
-                        {page === '...' ? (
-                          <span className='px-2 text-muted-foreground'>
-                            ...
-                          </span>
-                        ) : (
-                          <Button
-                            variant={
-                              currentPage === page ? 'default' : 'outline'
-                            }
-                            size='sm'
-                            onClick={() => setCurrentPage(page as number)}
-                            disabled={loading}
-                            className='min-w-[32px]'
-                          >
-                            {page}
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+              <Fragment>
+                <Separator className='mx-6 my-4' />
+                <div className='flex items-center justify-between px-6 py-4'>
+                  <div className='text-sm text-muted-foreground'>
+                    第 {currentPage} / {reportData.total_pages} 页， 每页{' '}
+                    {pageSize} 条， 共 {reportData.total_products} 条记录
                   </div>
+                  <div className='flex items-center gap-2'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1 || loading}
+                    >
+                      上一页
+                    </Button>
 
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === reportData.total_pages || loading}
-                  >
-                    下一页
-                  </Button>
+                    <div className='flex items-center gap-1'>
+                      {getPageNumbers().map((page, index) => (
+                        <div key={index}>
+                          {page === '...' ? (
+                            <span className='px-2 text-muted-foreground'>
+                              ...
+                            </span>
+                          ) : (
+                            <Button
+                              variant={
+                                currentPage === page ? 'default' : 'outline'
+                              }
+                              size='sm'
+                              onClick={() => setCurrentPage(page as number)}
+                              disabled={loading}
+                              className='min-w-[32px]'
+                            >
+                              {page}
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={
+                        currentPage === reportData.total_pages || loading
+                      }
+                    >
+                      下一页
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </Fragment>
             )}
             {error && (
               <Alert variant='destructive'>

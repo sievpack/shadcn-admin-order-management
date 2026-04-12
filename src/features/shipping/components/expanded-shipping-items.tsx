@@ -105,7 +105,7 @@ export function ExpandedShippingItems({
   }
 
   return (
-    <div className='space-y-4'>
+    <div className='flex flex-col gap-4'>
       <div className='grid grid-cols-2 gap-4 rounded-lg bg-muted/50 p-4 md:grid-cols-4'>
         <div>
           <div className='text-xs text-muted-foreground'>快递公司</div>

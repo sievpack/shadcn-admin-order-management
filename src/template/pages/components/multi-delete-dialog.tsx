@@ -53,7 +53,7 @@ export function MultiDeleteDialog<TData>({
         <AlertDialogHeader>
           <AlertDialogTitle>确认批量删除</AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className='space-y-2'>
+            <div className='flex flex-col gap-2'>
               <p>
                 确定要删除选中的 {selectedRows.length} 个 {entityName}{' '}
                 吗？此操作无法撤销。
@@ -61,7 +61,7 @@ export function MultiDeleteDialog<TData>({
               <p className='font-medium text-destructive'>
                 此操作将永久删除数据，请谨慎操作。
               </p>
-              <div className='mt-4 space-y-2'>
+              <div className='mt-4 flex flex-col gap-2'>
                 <label className='text-sm font-medium'>
                   请输入{' '}
                   <span className='font-bold text-destructive'>DELETE </span>

@@ -30,7 +30,7 @@ export function AppHeader({
   children,
 }: AppHeaderProps) {
   const defaultRightContent = (
-    <div className='ms-auto flex items-center space-x-4'>
+    <div className='ms-auto flex items-center gap-4'>
       {showNotification && <NotificationPopover />}
       {showThemeSwitch && <ThemeSwitch />}
       {showConfigDrawer && <ConfigDrawer />}

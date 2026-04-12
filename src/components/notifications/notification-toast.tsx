@@ -85,7 +85,7 @@ export function NotificationToast() {
               >
                 <IconComponent className='size-5' />
               </div>
-              <div className='flex-1 space-y-1'>
+              <div className='flex flex-1 flex-col gap-1'>
                 <p className='text-sm font-medium'>{toast.title}</p>
                 <p className='text-xs text-muted-foreground'>{toast.content}</p>
               </div>

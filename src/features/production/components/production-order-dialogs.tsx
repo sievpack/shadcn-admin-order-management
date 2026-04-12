@@ -193,7 +193,7 @@ export function ProductionOrderFinishDialog({
             确定要将工单 &quot;{order.工单编号}&quot; 标记为已完成吗？
           </DialogDescription>
         </DialogHeader>
-        <div className='space-y-4 py-4'>
+        <div className='flex flex-col gap-4 py-4'>
           <div className='rounded-md bg-muted p-4'>
             <div className='grid grid-cols-2 gap-2 text-sm'>
               <div>

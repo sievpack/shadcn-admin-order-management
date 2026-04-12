@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -171,15 +172,6 @@ export function TemplateEditDialog({
 }: OrderEditDialogProps) {
   if (!order) return null
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    onEditFormDataChange({ ...editFormData, [name]: value })
-  }
-
-  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onEditFormDataChange({ ...editFormData, status: e.target.checked })
-  }
-
   const handleDeliveryDateChange = (date: Date | undefined) => {
     if (date) {
       const year = date.getFullYear()
@@ -263,13 +255,13 @@ export function TemplateEditDialog({
                 />
               </div>
             </div>
-            <div className='flex items-center space-x-2'>
-              <input
-                type='checkbox'
+            <div className='flex items-center gap-2'>
+              <Checkbox
                 id='status'
                 checked={editFormData.status || false}
-                onChange={handleStatusChange}
-                className='h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary'
+                onCheckedChange={(checked) =>
+                  setEditFormData({ ...editFormData, status: checked === true })
+                }
               />
               <Label htmlFor='status'>已完成</Label>
             </div>
@@ -402,7 +394,7 @@ export function TemplateEditDialog({
             </div>
           </div>
         )}
-        <div className='flex justify-end space-x-2'>
+        <div className='flex justify-end gap-2'>
           <DialogClose asChild>
             <Button variant='outline'>取消</Button>
           </DialogClose>

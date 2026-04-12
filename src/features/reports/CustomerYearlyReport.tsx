@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
@@ -257,36 +258,40 @@ export function CustomerYearlyReport() {
                   )}
                 </div>
                 {orderReportData.total_pages > 1 && (
-                  <div className='flex items-center justify-between border-t px-6 py-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      第 {orderReportData.current_page} /{' '}
-                      {orderReportData.total_pages} 页， 每页 {PAGE_SIZE} 条，
-                      共 {orderReportData.total_customers} 条记录
+                  <>
+                    <Separator className='mx-6 my-4' />
+                    <div className='flex items-center justify-between px-6 py-4'>
+                      <div className='text-sm text-muted-foreground'>
+                        第 {orderReportData.current_page} /{' '}
+                        {orderReportData.total_pages} 页， 每页 {PAGE_SIZE} 条，
+                        共 {orderReportData.total_customers} 条记录
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1 || loading}
+                        >
+                          上一页
+                        </Button>
+                        <span className='text-sm'>
+                          {currentPage} / {orderReportData.total_pages}
+                        </span>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={
+                            currentPage === orderReportData.total_pages ||
+                            loading
+                          }
+                        >
+                          下一页
+                        </Button>
+                      </div>
                     </div>
-                    <div className='flex items-center gap-2'>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1 || loading}
-                      >
-                        上一页
-                      </Button>
-                      <span className='text-sm'>
-                        {currentPage} / {orderReportData.total_pages}
-                      </span>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={
-                          currentPage === orderReportData.total_pages || loading
-                        }
-                      >
-                        下一页
-                      </Button>
-                    </div>
-                  </div>
+                  </>
                 )}
                 {error && (
                   <Alert variant='destructive'>
@@ -398,37 +403,40 @@ export function CustomerYearlyReport() {
                   )}
                 </div>
                 {shipmentReportData.total_pages > 1 && (
-                  <div className='flex items-center justify-between border-t px-6 py-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      第 {shipmentReportData.current_page} /{' '}
-                      {shipmentReportData.total_pages} 页， 每页 {PAGE_SIZE}{' '}
-                      条， 共 {shipmentReportData.total_customers} 条记录
+                  <>
+                    <Separator className='mx-6 my-4' />
+                    <div className='flex items-center justify-between px-6 py-4'>
+                      <div className='text-sm text-muted-foreground'>
+                        第 {shipmentReportData.current_page} /{' '}
+                        {shipmentReportData.total_pages} 页， 每页 {PAGE_SIZE}{' '}
+                        条， 共 {shipmentReportData.total_customers} 条记录
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1 || loading}
+                        >
+                          上一页
+                        </Button>
+                        <span className='text-sm'>
+                          {currentPage} / {shipmentReportData.total_pages}
+                        </span>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={
+                            currentPage === shipmentReportData.total_pages ||
+                            loading
+                          }
+                        >
+                          下一页
+                        </Button>
+                      </div>
                     </div>
-                    <div className='flex items-center gap-2'>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1 || loading}
-                      >
-                        上一页
-                      </Button>
-                      <span className='text-sm'>
-                        {currentPage} / {shipmentReportData.total_pages}
-                      </span>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={
-                          currentPage === shipmentReportData.total_pages ||
-                          loading
-                        }
-                      >
-                        下一页
-                      </Button>
-                    </div>
-                  </div>
+                  </>
                 )}
                 {error && (
                   <Alert variant='destructive'>

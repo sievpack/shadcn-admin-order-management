@@ -37,7 +37,7 @@ export function FinanceStats() {
           <>
             <div className='grid gap-4 md:grid-cols-3'>
               <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardHeader className='flex flex-row items-center justify-between gap-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
                     总应收金额
                   </CardTitle>
@@ -49,7 +49,7 @@ export function FinanceStats() {
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardHeader className='flex flex-row items-center justify-between gap-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
                     已收金额
                   </CardTitle>
@@ -61,7 +61,7 @@ export function FinanceStats() {
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardHeader className='flex flex-row items-center justify-between gap-0 pb-2'>
                   <CardTitle className='text-sm font-medium'>
                     应收余额
                   </CardTitle>

@@ -70,7 +70,7 @@ export const usersColumns: ColumnDef<User>[] = [
       <DataTableColumnHeader column={column} title='姓名' />
     ),
     cell: ({ row }) => {
-      const { last_name,first_name } = row.original
+      const { last_name, first_name } = row.original
       const fullName = `${last_name}${first_name}`
       return <LongText className='max-w-36'>{fullName}</LongText>
     },
@@ -110,11 +110,9 @@ export const usersColumns: ColumnDef<User>[] = [
       }
       const badgeColor = userStatuses.get(status as any)
       return (
-        <div className='flex space-x-2'>
-          <Badge variant='outline' className={cn(badgeColor)}>
-            {statusLabel[status] || status}
-          </Badge>
-        </div>
+        <Badge variant='outline' className={cn('w-fit', badgeColor)}>
+          {statusLabel[status] || status}
+        </Badge>
       )
     },
     filterFn: (row, id, value) => {

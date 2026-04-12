@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
   SheetContent,
@@ -111,7 +112,7 @@ export function NotificationDrawer() {
                         )}
                         onClick={() => handleNotificationClick(notification)}
                       >
-                        <div className='flex-1 space-y-1'>
+                        <div className='flex flex-1 flex-col gap-1'>
                           <div className='flex items-center justify-between'>
                             <p className='font-medium'>{notification.title}</p>
                             <p className='text-xs text-muted-foreground'>
@@ -136,7 +137,8 @@ export function NotificationDrawer() {
             </TabsContent>
           </Tabs>
 
-          <div className='border-t p-4'>
+          <Separator className='my-4' />
+          <div className='p-4'>
             <Button
               variant='default'
               className='w-full'
