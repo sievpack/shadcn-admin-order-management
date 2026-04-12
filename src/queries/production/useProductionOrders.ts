@@ -14,14 +14,19 @@ interface ProductionOrderListParams {
 interface UseProductionOrdersOptions {
   params?: ProductionOrderListParams
   enabled?: boolean
+  refreshKey?: number
 }
 
 export function useProductionOrders({
   params = {},
   enabled = true,
+  refreshKey = 0,
 }: UseProductionOrdersOptions = {}) {
   return useQuery({
-    queryKey: productionOrderKeys.list(params),
+    queryKey: [
+      ...productionOrderKeys.list(params),
+      { _refresh: refreshKey },
+    ] as const,
     queryFn: () => productionOrderAPI.getList(params),
     enabled,
     placeholderData: (previousData) => previousData,

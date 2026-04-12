@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 import { reportAPI, authAPI } from '@/lib/api'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   ChartContainer,
@@ -697,11 +698,11 @@ export function IndustryReport() {
                   {renderCustomerTable()}
                   {renderPagination()}
                   {error && (
-                    <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                      <p className='text-destructive'>
+                    <Alert variant='destructive'>
+                      <AlertDescription>
                         {error.message || '获取数据失败'}
-                      </p>
-                    </div>
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </div>
               </TabsContent>

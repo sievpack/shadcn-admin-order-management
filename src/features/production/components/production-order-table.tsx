@@ -43,6 +43,7 @@ interface ProductionOrderTableProps {
   onPause?: (row: ProductionOrder) => void
   onPrint?: (row: ProductionOrder) => void
   onReport?: (row: ProductionOrder) => void
+  refreshKey?: number
 }
 
 export function ProductionOrderTable({
@@ -54,6 +55,7 @@ export function ProductionOrderTable({
   onPause,
   onPrint,
   onReport,
+  refreshKey = 0,
 }: ProductionOrderTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -98,6 +100,7 @@ export function ProductionOrderTable({
       start_date: startDateParam,
       end_date: endDateParam,
     },
+    refreshKey,
   })
 
   const tableData =

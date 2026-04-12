@@ -13,6 +13,13 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DatePicker } from '@/components/date-picker'
 import { type ProductionPlan } from './production-plan-columns'
@@ -701,24 +708,26 @@ export function GenerateOrderDialog({
           </div>
           <div className='flex flex-col gap-2'>
             <Label htmlFor='产线'>产线</Label>
-            <select
-              id='产线'
-              className='flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none'
+            <Select
               value={formData.产线}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 onFormChange({
                   ...formData,
-                  产线: e.target.value,
+                  产线: value,
                 })
               }
             >
-              <option value=''>请选择产线</option>
-              {lines.map((line) => (
-                <option key={line.value} value={line.value}>
-                  {line.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id='产线'>
+                <SelectValue placeholder='请选择产线' />
+              </SelectTrigger>
+              <SelectContent>
+                {lines.map((line) => (
+                  <SelectItem key={line.value} value={line.value}>
+                    {line.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>

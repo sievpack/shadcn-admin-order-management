@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useSalesStats } from '@/queries/dashboard'
 import { Send } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
@@ -157,16 +158,16 @@ export function Dashboard() {
           <RecentOrders />
         </div>
         {error && (
-          <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-            <p className='text-destructive'>
+          <Alert variant='destructive'>
+            <AlertDescription>
               {error.message || '获取数据失败'}
-            </p>
-          </div>
+            </AlertDescription>
+          </Alert>
         )}
         {isLoading && (
-          <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
-            <p className='text-primary'>正在加载数据...</p>
-          </div>
+          <Alert>
+            <AlertDescription>正在加载数据...</AlertDescription>
+          </Alert>
         )}
       </Main>
     </>

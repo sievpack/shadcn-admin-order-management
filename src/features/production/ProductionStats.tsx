@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { productionStatsAPI } from '@/lib/production-api'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import {
   Card,
@@ -133,9 +134,9 @@ export function ProductionStats() {
         </div>
 
         {loading && (
-          <div className='mb-4 border-l-4 border-primary bg-primary/10 px-4 py-3'>
-            <p className='text-primary'>正在加载数据...</p>
-          </div>
+          <Alert>
+            <AlertDescription>正在加载数据...</AlertDescription>
+          </Alert>
         )}
 
         {!loading && (

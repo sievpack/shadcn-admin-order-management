@@ -4,6 +4,7 @@ import {
   useCustomerYearlyShipmentReport,
 } from '@/queries/reports'
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -288,11 +289,11 @@ export function CustomerYearlyReport() {
                   </div>
                 )}
                 {error && (
-                  <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                    <p className='text-destructive'>
+                  <Alert variant='destructive'>
+                    <AlertDescription>
                       {error.message || '获取数据失败'}
-                    </p>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
             </TabsContent>
@@ -430,11 +431,11 @@ export function CustomerYearlyReport() {
                   </div>
                 )}
                 {error && (
-                  <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                    <p className='text-destructive'>
+                  <Alert variant='destructive'>
+                    <AlertDescription>
                       {error.message || '获取数据失败'}
-                    </p>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
             </TabsContent>
