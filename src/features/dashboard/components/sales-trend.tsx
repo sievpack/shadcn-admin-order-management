@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useSalesTrend } from '@/queries/dashboard'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
-import { orderStatsAPI } from '@/lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import {
   Card,
@@ -44,34 +44,13 @@ const chartConfig = {
 export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = useState<string>(initialTimeRange)
-  const [trendLoading, setTrendLoading] = useState<boolean>(false)
-  const [salesTrendData, setSalesTrendData] = useState<any[]>([])
 
-  useEffect(() => {
-    const fetchSalesTrend = async () => {
-      setTrendLoading(true)
-      try {
-        let period = 'week'
-        if (timeRange === '年') {
-          period = 'year'
-        } else if (timeRange === '月') {
-          period = 'month'
-        }
+  const period =
+    timeRange === '年' ? 'year' : timeRange === '月' ? 'month' : 'week'
 
-        const response = await orderStatsAPI.getTrend({ period })
-        if (response.data.code === 0) {
-          setSalesTrendData(response.data.data || [])
-        }
-      } catch (error) {
-        console.error('获取销售趋势数据失败:', error)
-        setSalesTrendData([])
-      } finally {
-        setTrendLoading(false)
-      }
-    }
-
-    fetchSalesTrend()
-  }, [timeRange])
+  const { data: salesTrendData, isLoading: trendLoading } = useSalesTrend({
+    period,
+  })
 
   return (
     <Card className='@container/card'>
@@ -120,7 +99,7 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
           <div className='flex h-[300px] items-center justify-center'>
             <Skeleton className='h-10 w-10 rounded-full' />
           </div>
-        ) : salesTrendData.length > 0 ? (
+        ) : salesTrendData && salesTrendData.length > 0 ? (
           <ChartContainer
             config={chartConfig}
             className='aspect-auto h-[300px] w-full'

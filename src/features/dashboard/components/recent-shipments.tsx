@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useSalesTrend } from '@/queries/dashboard'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
-import { orderStatsAPI } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   ChartContainer,
@@ -18,29 +17,9 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function RecentShipments() {
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: rawData, isLoading } = useSalesTrend({ period: 'week' })
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const response = await orderStatsAPI.getTrend({ period: 'week' })
-        if (response.data.code === 0) {
-          const rawData = response.data.data || []
-          const last7 = rawData.slice(-7)
-          setData(last7)
-        }
-      } catch (error) {
-        console.error('获取发货数据失败:', error)
-        setData([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+  const last7Days = rawData ? rawData.slice(-7) : []
 
   return (
     <Card className='transition-shadow hover:shadow-sm'>
@@ -48,16 +27,16 @@ export function RecentShipments() {
         <CardTitle>最近发货</CardTitle>
       </CardHeader>
       <CardContent className='px-2 pt-4 sm:px-6 sm:pt-6'>
-        {loading ? (
+        {isLoading ? (
           <div className='flex h-[250px] items-center justify-center'>
             <Skeleton className='h-10 w-10 rounded-full' />
           </div>
-        ) : data.length > 0 ? (
+        ) : last7Days.length > 0 ? (
           <ChartContainer
             config={chartConfig}
             className='aspect-auto h-[250px] w-full'
           >
-            <BarChart data={data}>
+            <BarChart data={last7Days}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey='date'

@@ -74,3 +74,10 @@ export * from './users/useCreateUser'
 export * from './users/useUpdateUser'
 export * from './users/useDeleteUser'
 export * from './users/useResetPassword'
+
+// Dashboard module
+export * from './dashboard/keys'
+export * from './dashboard/useSalesStats'
+export * from './dashboard/useRecentOrders'
+export * from './dashboard/useRecentShipments'
+export * from './dashboard/useSalesTrend'
