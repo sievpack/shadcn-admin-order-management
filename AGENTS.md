@@ -1,3 +1,22 @@
+# 开发流程规范
+
+## 后端开发
+
+使用 **fastapi-templates** skill：
+```
+开发新功能 → 使用 skill 创建标准 FastAPI 项目结构
+```
+
+## 前端页面开发
+
+按以下顺序使用 skill：
+
+1. **frontend-design** - 创建高质量前端界面
+2. **shadcn** - 使用 shadcn/ui 组件检查
+3. **vercel-react-best-practices** - 检查 React/Next.js 最佳实践
+
+---
+
 # 项目技术栈
 
 - React 19 + Vite 8
@@ -96,10 +115,10 @@ onFilterChange={(columnId, value) => {
 
 除非提前声明不以此模板开发，否则所有新增或修改的前端页面都必须遵循此规范。
 
-# 后台统一事务管理 
+# 后台统一事务管理
 
-- Service 层调用 db.commit()
-- API 层不再调用 db.commit()务管理 
+- Service 层调用 `db.commit()`
+- API 层不再调用 `db.commit()` 
 
 # Follow these steps for each interaction:
 
