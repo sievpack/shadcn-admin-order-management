@@ -125,14 +125,7 @@ export function NotificationDetailDialog({
                 className='transition-colors hover:bg-muted/30'
               >
                 <TableCell className='font-medium'>
-                  <div className='flex flex-col'>
-                    <span>{item.产品类型 || item.spec || '-'}</span>
-                    {(item.规格 || item.型号) && (
-                      <span className='text-xs text-muted-foreground'>
-                        {item.规格 || item.型号}
-                      </span>
-                    )}
-                  </div>
+                  {item.产品类型 || item.spec || '-'}
                 </TableCell>
                 <TableCell className='text-right'>{item.数量 || 0}</TableCell>
                 <TableCell className='text-right'>
@@ -173,9 +166,6 @@ export function NotificationDetailDialog({
                 {notification.content}
               </DialogDescription>
             </div>
-            <Badge variant='secondary' className='shrink-0'>
-              {config.label}
-            </Badge>
           </div>
           {notification.timestamp && (
             <div className='flex items-center gap-2 text-xs text-muted-foreground'>
