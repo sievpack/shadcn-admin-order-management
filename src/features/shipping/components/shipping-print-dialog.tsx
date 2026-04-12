@@ -89,18 +89,18 @@ export function ShippingPrintDialog({
 
         <div className='flex justify-center rounded-md bg-[#525252] p-4'>
           {isLoading ? (
-            <div className='flex h-[600px] items-center justify-center rounded bg-white px-4'>
+            <div className='flex h-[570px] items-center justify-center rounded bg-white px-4'>
               <Loader2 className='h-8 w-8 animate-spin text-primary' />
               <span className='ml-2'>正在生成送货单...</span>
             </div>
           ) : pdfUrl ? (
-            <embed
+            <iframe
+              id='shipping-pdf-iframe'
               src={pdfUrl}
-              type='application/pdf'
-              className='h-[600px] w-full rounded bg-white'
+              className='h-[570px] w-full rounded bg-white'
             />
           ) : (
-            <div className='flex h-[600px] items-center justify-center rounded bg-white px-4'>
+            <div className='flex h-[570px] items-center justify-center rounded bg-white px-4'>
               <p className='text-muted-foreground'>
                 点击&quot;打印&quot;按钮生成预览
               </p>
@@ -115,22 +115,15 @@ export function ShippingPrintDialog({
           {pdfUrl ? (
             <Button
               onClick={() => {
-                const embedEl = document.querySelector(
-                  'embed[type="application/pdf"]'
-                ) as HTMLEmbedElement
-                if (embedEl && embedEl.contentWindow) {
-                  embedEl.contentWindow.print()
+                const iframe = document.getElementById(
+                  'shipping-pdf-iframe'
+                ) as HTMLIFrameElement
+                if (iframe && iframe.contentWindow) {
+                  iframe.contentWindow.print()
                 }
               }}
             >
               打印
-            </Button>
-          ) : (
-            <Button
-              onClick={handlePrint}
-              disabled={!shippingNumber || isLoading}
-            >
-              {isLoading ? '生成中...' : '打印'}
             </Button>
           )}
         </div>
