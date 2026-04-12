@@ -89,7 +89,7 @@ export function ShippingPrintDialog({
 
         <div className='flex justify-center rounded-md bg-[#525252] p-4'>
           {isLoading ? (
-            <div className='flex h-[450px] items-center justify-center rounded bg-white px-4'>
+            <div className='flex h-[600px] items-center justify-center rounded bg-white px-4'>
               <Loader2 className='h-8 w-8 animate-spin text-primary' />
               <span className='ml-2'>正在生成送货单...</span>
             </div>
@@ -97,10 +97,10 @@ export function ShippingPrintDialog({
             <embed
               src={pdfUrl}
               type='application/pdf'
-              className='h-[450px] w-full rounded bg-white'
+              className='h-[600px] w-full rounded bg-white'
             />
           ) : (
-            <div className='flex h-[450px] items-center justify-center rounded bg-white px-4'>
+            <div className='flex h-[600px] items-center justify-center rounded bg-white px-4'>
               <p className='text-muted-foreground'>
                 点击&quot;打印&quot;按钮生成预览
               </p>
