@@ -47,6 +47,12 @@ export function ShippingPrintDialog({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [pdfPath])
 
+  useEffect(() => {
+    if (open && shippingNumber && !pdfUrl && !isLoading) {
+      handlePrint()
+    }
+  }, [open, shippingNumber])
+
   const handlePrint = async () => {
     if (!shippingNumber) {
       toast.error('缺少发货单号')
@@ -96,7 +102,7 @@ export function ShippingPrintDialog({
           ) : (
             <div className='flex h-[397px] items-center justify-center rounded bg-white px-4'>
               <p className='text-muted-foreground'>
-                点击&quot;生成预览&quot;查看送货单
+                点击&quot;打印&quot;按钮生成预览
               </p>
             </div>
           )}
@@ -106,14 +112,7 @@ export function ShippingPrintDialog({
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          {!pdfUrl ? (
-            <Button
-              onClick={handlePrint}
-              disabled={!shippingNumber || isLoading}
-            >
-              {isLoading ? '生成中...' : '生成预览'}
-            </Button>
-          ) : (
+          {pdfUrl ? (
             <Button
               onClick={() => {
                 const embedEl = document.querySelector(
@@ -125,6 +124,13 @@ export function ShippingPrintDialog({
               }}
             >
               打印
+            </Button>
+          ) : (
+            <Button
+              onClick={handlePrint}
+              disabled={!shippingNumber || isLoading}
+            >
+              {isLoading ? '生成中...' : '打印'}
             </Button>
           )}
         </div>
