@@ -240,11 +240,17 @@ export function AllOrdersTable({
   const handleSyncBeltTypeFilterChange = useCallback(
     (_columnId: string, value: string | undefined) => {
       if (serverPagination) {
-        if (_columnId === '产品类型') {
-          onSyncBeltTypeFilterChange?.(value)
-        } else if (_columnId === '规格') {
-          onSpecFilterChange?.(value)
+        const currentFilters = columnFilters || []
+        const otherFilters = currentFilters.filter((f) => f.id !== _columnId)
+        const newFilters = value
+          ? [...otherFilters, { id: _columnId, value: value.split(',') }]
+          : otherFilters
+        const allFilterValues: Record<string, string | undefined> = {}
+        for (const f of newFilters) {
+          allFilterValues[f.id] = (f.value as string[]).join(',')
         }
+        onSyncBeltTypeFilterChange?.(allFilterValues['产品类型'])
+        onSpecFilterChange?.(allFilterValues['规格'])
       }
     },
     [serverPagination, onSyncBeltTypeFilterChange, onSpecFilterChange]
