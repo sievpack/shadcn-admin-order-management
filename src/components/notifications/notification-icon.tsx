@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function NotificationIcon() {
-  const { notifications, unreadCount, wsConnected, setDrawerOpen, markAsRead } =
+  const { notifications, unreadCount, wsConnected, setDrawerOpen, markRead } =
     useNotificationStore()
 
   return (
@@ -60,7 +60,7 @@ export function NotificationIcon() {
                     'flex cursor-pointer gap-3 px-4 py-3 hover:bg-muted/50',
                     !notification.read && 'bg-muted/30'
                   )}
-                  onClick={() => markAsRead(notification.id)}
+                  onClick={() => markRead(notification.id)}
                 >
                   <div className='flex-1 space-y-1'>
                     <p className='text-sm font-medium'>{notification.title}</p>
