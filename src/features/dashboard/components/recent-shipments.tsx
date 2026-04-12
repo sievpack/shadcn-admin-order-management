@@ -1,6 +1,5 @@
 import { useSalesTrend } from '@/queries/dashboard'
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts'
-import { useSalesTrend } from '@/queries/dashboard'
+import { Bar, BarChart, CartesianGrid, Cell, XAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   ChartContainer,
@@ -23,10 +22,10 @@ export function RecentShipments() {
   const last7Days = rawData ? rawData.slice(-7) : []
 
   return (
-    <Card className='overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20'>
-      <CardHeader className='bg-muted/30'>
+    <Card className='overflow-hidden transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5'>
+      <CardHeader>
         <CardTitle className='flex items-center gap-2'>
-          <span className='inline-block w-2 h-2 rounded-full bg-primary animate-pulse' />
+          <span className='inline-block h-2 w-2 animate-pulse rounded-full bg-primary' />
           最近发货
         </CardTitle>
       </CardHeader>
@@ -43,23 +42,28 @@ export function RecentShipments() {
             <BarChart data={last7Days} barCategoryGap='30%'>
               <defs>
                 <linearGradient id='barGradient' x1='0' y1='0' x2='0' y2='1'>
-                  <stop offset='0%' stopColor='var(--color-ship_value)' stopOpacity={1} />
-                  <stop offset='100%' stopColor='var(--color-ship_value)' stopOpacity={0.6} />
+                  <stop
+                    offset='0%'
+                    stopColor='var(--color-ship_value)'
+                    stopOpacity={1}
+                  />
+                  <stop
+                    offset='100%'
+                    stopColor='var(--color-ship_value)'
+                    stopOpacity={0.6}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} strokeDasharray='3 3' className='stroke-muted' />
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray='3 3'
+                className='stroke-muted'
+              />
               <XAxis
                 dataKey='date'
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `¥${value.toLocaleString()}`}
-                width={80}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
               />
               <ChartTooltip
@@ -88,23 +92,6 @@ export function RecentShipments() {
                   />
                 ))}
               </Bar>
-            </BarChart>
-          </ChartContainer>
-        ) : (
-          <div className='flex h-[250px] items-center justify-center'>
-            <p className='text-muted-foreground'>暂无发货数据</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-              />
-              <Bar
-                dataKey='ship_value'
-                fill='var(--color-ship_value)'
-                radius={[4, 4, 0, 0]}
-              />
             </BarChart>
           </ChartContainer>
         ) : (

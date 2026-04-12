@@ -54,7 +54,7 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
 
   return (
     <Card className='@container/card overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5'>
-      <CardHeader className='bg-muted/30'>
+      <CardHeader>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
           <div>
             <CardTitle className='flex items-center gap-2'>
@@ -143,21 +143,12 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
                 strokeDasharray='3 3'
                 className='stroke-muted'
               />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tickFormatter={(value) => `¥${(value / 1000).toFixed(0)}k`}
-                width={50}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-              />
               <XAxis
                 dataKey='date'
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                minTickGap={50}
-                padding={{ left: 20, right: 20 }}
+                interval={timeRange === '年' ? 0 : timeRange === '月' ? 0 : 2}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                 tickFormatter={(value) => {
                   return `${value}`
@@ -179,19 +170,17 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
               />
               <Area
                 dataKey='order_value'
-                type='natural'
+                type='monotone'
                 fill='url(#fillOrder)'
                 stroke='var(--color-order_value)'
-                stackId='a'
                 strokeWidth={2}
                 className='transition-all duration-300'
               />
               <Area
                 dataKey='ship_value'
-                type='natural'
+                type='monotone'
                 fill='url(#fillShip)'
                 stroke='var(--color-ship_value)'
-                stackId='a'
                 strokeWidth={2}
                 className='transition-all duration-300'
               />
