@@ -125,7 +125,14 @@ export function NotificationDetailDialog({
                 className='transition-colors hover:bg-muted/30'
               >
                 <TableCell className='font-medium'>
-                  {item.产品类型 || item.spec || '-'}
+                  <div className='flex flex-col'>
+                    <span>{item.产品类型 || item.spec || '-'}</span>
+                    {(item.规格 || item.型号) && (
+                      <span className='text-xs text-muted-foreground'>
+                        {item.规格 || item.型号}
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className='text-right'>{item.数量 || 0}</TableCell>
                 <TableCell className='text-right'>
