@@ -8,9 +8,12 @@ export function RecentOrders() {
   const { data: orders, isLoading } = useRecentOrders()
 
   return (
-    <Card className='transition-shadow hover:shadow-sm'>
-      <CardHeader>
-        <CardTitle>最近订单</CardTitle>
+    <Card className='overflow-hidden transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5'>
+      <CardHeader className='bg-muted/30'>
+        <CardTitle className='flex items-center gap-2'>
+          <span className='inline-block h-2 w-2 animate-pulse rounded-full bg-primary' />
+          最近订单
+        </CardTitle>
       </CardHeader>
       <CardContent className='px-6 py-4'>
         {isLoading ? (
@@ -29,32 +32,35 @@ export function RecentOrders() {
             ))}
           </div>
         ) : orders && orders.length > 0 ? (
-          <div>
+          <div className='divide-y divide-border/50'>
             {orders.map((order: any, index: number) => (
-              <div key={index}>
-                <div className='flex items-center gap-4 py-3'>
-                  <Avatar className='h-9 w-9'>
-                    <AvatarImage
-                      src={`/avatars/0${index + 1}.png`}
-                      alt='Avatar'
-                    />
-                    <AvatarFallback>{index + 1}</AvatarFallback>
-                  </Avatar>
-                  <div className='flex flex-1 flex-wrap items-center justify-between'>
-                    <div className='flex flex-col gap-1'>
-                      <p className='text-sm leading-none font-medium'>
-                        {order.客户名称}
-                      </p>
-                      <p className='text-sm text-muted-foreground'>
-                        {order.合同编号}
-                      </p>
-                    </div>
-                    <div className='font-medium'>
-                      +¥{order.订单金额.toLocaleString()}
-                    </div>
+              <div
+                key={index}
+                className='-mx-2 flex items-center gap-4 rounded-lg px-2 py-3 transition-all duration-200 hover:bg-muted/30'
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <Avatar className='h-9 w-9 ring-2 ring-transparent transition-all duration-200 hover:scale-110 hover:ring-primary/30'>
+                  <AvatarImage
+                    src={`/avatars/0${index + 1}.png`}
+                    alt='Avatar'
+                  />
+                  <AvatarFallback className='bg-primary/10 font-semibold text-primary'>
+                    {index + 1}
+                  </AvatarFallback>
+                </Avatar>
+                <div className='flex flex-1 flex-wrap items-center justify-between'>
+                  <div className='flex flex-col gap-1'>
+                    <p className='text-sm leading-none font-medium transition-colors duration-200 group-hover:text-primary'>
+                      {order.客户名称}
+                    </p>
+                    <p className='text-sm text-muted-foreground'>
+                      {order.合同编号}
+                    </p>
+                  </div>
+                  <div className='font-medium text-primary tabular-nums'>
+                    +¥{order.订单金额.toLocaleString()}
                   </div>
                 </div>
-                {index < orders.length - 1 && <Separator />}
               </div>
             ))}
           </div>

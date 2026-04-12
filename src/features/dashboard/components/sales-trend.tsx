@@ -53,46 +53,53 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
   })
 
   return (
-    <Card className='@container/card'>
-      <CardHeader>
-        <CardTitle>销售趋势</CardTitle>
-        <CardDescription>
-          <span className='hidden @[540px]/card:block'>销售趋势统计</span>
-          <span className='@[540px]/card:hidden'>销售趋势</span>
-        </CardDescription>
-        <CardAction>
-          <ToggleGroup
-            type='single'
-            value={timeRange}
-            onValueChange={(value) => value && setTimeRange(value)}
-            variant='outline'
-            className='hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex'
-          >
-            <ToggleGroupItem value='年'>年</ToggleGroupItem>
-            <ToggleGroupItem value='月'>月</ToggleGroupItem>
-            <ToggleGroupItem value='周'>周</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className='flex w-32 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden'
-              size='sm'
-              aria-label='选择时间范围'
+    <Card className='@container/card overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5'>
+      <CardHeader className='bg-muted/30'>
+        <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div>
+            <CardTitle className='flex items-center gap-2'>
+              <span className='inline-block h-2 w-2 animate-pulse rounded-full bg-primary' />
+              销售趋势
+            </CardTitle>
+            <CardDescription>
+              <span className='hidden @[540px]/card:block'>销售趋势统计</span>
+              <span className='@[540px]/card:hidden'>销售趋势</span>
+            </CardDescription>
+          </div>
+          <CardAction>
+            <ToggleGroup
+              type='single'
+              value={timeRange}
+              onValueChange={(value) => value && setTimeRange(value)}
+              variant='outline'
+              className='hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex'
             >
-              <SelectValue placeholder='月' />
-            </SelectTrigger>
-            <SelectContent className='rounded-xl'>
-              <SelectItem value='年' className='rounded-lg'>
-                年
-              </SelectItem>
-              <SelectItem value='月' className='rounded-lg'>
-                月
-              </SelectItem>
-              <SelectItem value='周' className='rounded-lg'>
-                周
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </CardAction>
+              <ToggleGroupItem value='年'>年</ToggleGroupItem>
+              <ToggleGroupItem value='月'>月</ToggleGroupItem>
+              <ToggleGroupItem value='周'>周</ToggleGroupItem>
+            </ToggleGroup>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className='flex w-32 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden'
+                size='sm'
+                aria-label='选择时间范围'
+              >
+                <SelectValue placeholder='月' />
+              </SelectTrigger>
+              <SelectContent className='rounded-xl'>
+                <SelectItem value='年' className='rounded-lg'>
+                  年
+                </SelectItem>
+                <SelectItem value='月' className='rounded-lg'>
+                  月
+                </SelectItem>
+                <SelectItem value='周' className='rounded-lg'>
+                  周
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </CardAction>
+        </div>
       </CardHeader>
       <CardContent className='px-2 pt-4 sm:px-6 sm:pt-6'>
         {trendLoading ? (
@@ -131,13 +138,18 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
                   />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} />
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray='3 3'
+                className='stroke-muted'
+              />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 tickFormatter={(value) => `¥${(value / 1000).toFixed(0)}k`}
                 width={50}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
               />
               <XAxis
                 dataKey='date'
@@ -146,12 +158,13 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
                 tickMargin={8}
                 minTickGap={50}
                 padding={{ left: 20, right: 20 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                 tickFormatter={(value) => {
                   return `${value}`
                 }}
               />
               <ChartTooltip
-                cursor={false}
+                cursor={{ stroke: 'hsl(var(--primary) / 0.3)', strokeWidth: 2 }}
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => `${value}`}
@@ -170,6 +183,8 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
                 fill='url(#fillOrder)'
                 stroke='var(--color-order_value)'
                 stackId='a'
+                strokeWidth={2}
+                className='transition-all duration-300'
               />
               <Area
                 dataKey='ship_value'
@@ -177,6 +192,8 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
                 fill='url(#fillShip)'
                 stroke='var(--color-ship_value)'
                 stackId='a'
+                strokeWidth={2}
+                className='transition-all duration-300'
               />
             </AreaChart>
           </ChartContainer>
