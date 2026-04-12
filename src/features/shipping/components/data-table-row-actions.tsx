@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
-import { Eye, Edit, Trash2, Plus, Download, Printer } from 'lucide-react'
-import { printAPI } from '@/lib/api'
+import { Eye, Edit, Trash2, Plus, Download, Printer, Tag } from 'lucide-react'
+import { printAPI, shippingAPI } from '@/lib/api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +13,20 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  ShippingLabelLink,
+  generateShippingLabel,
+} from './label/ShippingLabelPdf'
 import { type ShippingItem, useShipping } from './shipping-provider'
+
+type LabelItem = {
+  客户名称: string
+  合同编号: string
+  规格: string
+  型号: string
+  物料编号: string
+  发货日期: string
+}
 
 type DataTableRowActionsProps = {
   row: Row<ShippingItem>
@@ -28,6 +41,7 @@ export function DataTableRowActions({
 }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useShipping()
   const [exporting, setExporting] = useState(false)
+  const [printingLabel, setPrintingLabel] = useState(false)
 
   const handleExport = async () => {
     if (exporting) return
@@ -80,6 +94,55 @@ export function DataTableRowActions({
         }).catch(() => {})
       }
       setExporting(false)
+    }
+  }
+
+  const handlePrintLabel = async () => {
+    if (printingLabel) return
+    setPrintingLabel(true)
+
+    try {
+      const shipId = row.original.发货单号
+      const detailResponse = await shippingAPI.getShippingDetail(shipId)
+
+      if (detailResponse.data.code !== 0) {
+        showToastWithData({
+          type: 'error',
+          title: '获取发货单详情失败',
+          data: detailResponse.data,
+        })
+        return
+      }
+
+      const detail = detailResponse.data.data
+      const items = detail.订单项目 || []
+
+      if (items.length === 0) {
+        showToastWithData({ type: 'warning', title: '没有可打印的标签数据' })
+        return
+      }
+
+      const labelItems: LabelItem[] = items.map((item: any) => ({
+        客户名称: detail.客户名称 || '',
+        合同编号: item.合同编号 || '',
+        规格: item.规格 || '',
+        型号: item.型号 || '',
+        物料编号: item.客户物料编号 || '',
+        发货日期: detail.发货日期 || '',
+      }))
+
+      const filename = `标签_${shipId}.pdf`
+      await generateShippingLabel(labelItems, filename)
+
+      showToastWithData({
+        type: 'success',
+        title: `已生成包含 ${labelItems.length} 个标签的PDF`,
+      })
+    } catch (error) {
+      console.error('打印标签失败:', error)
+      showToastWithData({ type: 'error', title: '打印标签失败' })
+    } finally {
+      setPrintingLabel(false)
     }
   }
 
@@ -152,9 +215,19 @@ export function DataTableRowActions({
               setOpen('print')
             }}
           >
-            打印
+            打印送货单
             <DropdownMenuShortcut>
               <Printer size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handlePrintLabel}
+            disabled={printingLabel}
+            className='text-blue-600'
+          >
+            {printingLabel ? '生成中...' : '打印标签'}
+            <DropdownMenuShortcut>
+              <Tag size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
