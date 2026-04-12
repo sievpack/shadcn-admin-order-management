@@ -1,0 +1,16 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: api.spec.ts >> 后台接口测试（只读+新建，不删除） >> 17. 报表接口 - 产品统计
+- Location: e2e\api.spec.ts:223:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```

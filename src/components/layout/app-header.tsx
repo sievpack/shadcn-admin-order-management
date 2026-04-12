@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { ConfigDrawer } from '@/components/config-drawer'
-import { NotificationIcon } from '@/components/notifications/notification-icon'
+import { NotificationPopover } from '@/components/notifications/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search as SearchComponent } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
@@ -31,7 +31,7 @@ export function AppHeader({
 }: AppHeaderProps) {
   const defaultRightContent = (
     <div className='ms-auto flex items-center space-x-4'>
-      {showNotification && <NotificationIcon />}
+      {showNotification && <NotificationPopover />}
       {showThemeSwitch && <ThemeSwitch />}
       {showConfigDrawer && <ConfigDrawer />}
       {showProfileDropdown && <ProfileDropdown />}
