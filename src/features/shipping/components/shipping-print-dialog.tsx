@@ -26,33 +26,6 @@ export function ShippingPrintDialog({
   const [pdfPath, setPdfPath] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    return () => {
-      if (pdfPath) {
-        printAPI.cleanupPdf([pdfPath]).catch(console.warn)
-      }
-    }
-  }, [pdfPath])
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (pdfPath) {
-        navigator.sendBeacon(
-          '/api/print/cleanup',
-          JSON.stringify({ paths: [pdfPath] })
-        )
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [pdfPath])
-
-  useEffect(() => {
-    if (open && shippingNumber && !pdfUrl && !isLoading) {
-      handlePrint()
-    }
-  }, [open, shippingNumber])
-
   const handlePrint = async () => {
     if (!shippingNumber) {
       toast.error('缺少发货单号')
@@ -78,6 +51,47 @@ export function ShippingPrintDialog({
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (pdfPath) {
+        printAPI.cleanupPdf([pdfPath]).catch(console.warn)
+      }
+    }
+  }, [pdfPath])
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (pdfPath) {
+        navigator.sendBeacon(
+          '/api/print/cleanup',
+          JSON.stringify({ paths: [pdfPath] })
+        )
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [pdfPath])
+
+  // 当对话框关闭或发货单号变化时，重置状态
+  useEffect(() => {
+    if (!open) {
+      setPdfUrl(null)
+      setPdfPath(null)
+    }
+  }, [open])
+
+  // 当 shippingNumber 变化时，如果已经有 pdfUrl，清除它
+  useEffect(() => {
+    setPdfUrl(null)
+    setPdfPath(null)
+  }, [shippingNumber])
+
+  useEffect(() => {
+    if (open && shippingNumber && !pdfUrl && !isLoading) {
+      handlePrint()
+    }
+  }, [open, shippingNumber, pdfUrl, isLoading])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
