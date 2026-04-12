@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { printAPI } from '@/lib/api'
@@ -26,6 +26,32 @@ export function ShippingPrintDialog({
   const [pdfPath, setPdfPath] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  const handlePrint = useCallback(async () => {
+    if (!shippingNumber) {
+      toast.error('缺少发货单号')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await printAPI.printShipping(shippingNumber)
+
+      if (response.data.code !== 0) {
+        toast.error(response.data.msg || '打印失败')
+        return
+      }
+
+      const path = response.data.data.pdf_path
+      setPdfPath(path)
+      setPdfUrl(`/api/print/preview-pdf?path=${encodeURIComponent(path)}`)
+    } catch (error) {
+      console.error('打印失败', error)
+      toast.error('打印失败，请稍后重试')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [shippingNumber])
+
   useEffect(() => {
     return () => {
       if (pdfPath) {
@@ -51,31 +77,14 @@ export function ShippingPrintDialog({
     if (open && shippingNumber && !pdfUrl && !isLoading) {
       handlePrint()
     }
-  }, [open, shippingNumber])
+  }, [open, shippingNumber, pdfUrl, isLoading, handlePrint])
 
-  const handlePrint = async () => {
-    if (!shippingNumber) {
-      toast.error('缺少发货单号')
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      const response = await printAPI.printShipping(shippingNumber)
-
-      if (response.data.code !== 0) {
-        toast.error(response.data.msg || '打印失败')
-        return
-      }
-
-      const path = response.data.data.pdf_path
-      setPdfPath(path)
-      setPdfUrl(`/api/print/preview-pdf?path=${encodeURIComponent(path)}`)
-    } catch (error) {
-      console.error('打印失败', error)
-      toast.error('打印失败，请稍后重试')
-    } finally {
-      setIsLoading(false)
+  const onPrintClick = () => {
+    const iframe = document.getElementById(
+      'shipping-pdf-iframe'
+    ) as HTMLIFrameElement
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.print()
     }
   }
 
@@ -112,20 +121,15 @@ export function ShippingPrintDialog({
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          {pdfUrl ? (
+          {!pdfUrl && (
             <Button
-              onClick={() => {
-                const iframe = document.getElementById(
-                  'shipping-pdf-iframe'
-                ) as HTMLIFrameElement
-                if (iframe && iframe.contentWindow) {
-                  iframe.contentWindow.print()
-                }
-              }}
+              onClick={handlePrint}
+              disabled={!shippingNumber || isLoading}
             >
-              打印
+              {isLoading ? '生成中...' : '打印'}
             </Button>
           )}
+          {pdfUrl && <Button onClick={onPrintClick}>打印</Button>}
         </div>
       </DialogContent>
     </Dialog>
