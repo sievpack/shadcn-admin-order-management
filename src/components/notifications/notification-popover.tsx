@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { Package, ShoppingCart, Bell, CheckCheck, X } from 'lucide-react'
+import { Package, ShoppingCart, Bell, CheckCheck, X, Inbox } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import {
   useNotificationStore,
@@ -16,8 +16,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { OrderCreatedDetailDialog } from './order-created-detail-dialog'
-import { OrderShippedDetailDialog } from './order-shipped-detail-dialog'
+import { Separator } from '@/components/ui/separator'
+import { NotificationDetailDialog } from './notification-detail-dialog'
 
 const categoryConfig: Record<
   string,
@@ -25,27 +25,32 @@ const categoryConfig: Record<
     label: string
     icon: React.ComponentType<{ className?: string }>
     gradient: string
+    bgGradient: string
   }
 > = {
   order_shipped: {
     label: '发货',
     icon: Package,
     gradient: 'from-blue-500 to-blue-600',
+    bgGradient: 'bg-blue-500/10',
   },
   order_created: {
-    label: '新增订单',
+    label: '新订单',
     icon: ShoppingCart,
     gradient: 'from-emerald-500 to-emerald-600',
+    bgGradient: 'bg-emerald-500/10',
   },
   order: {
     label: '订单',
     icon: ShoppingCart,
     gradient: 'from-primary to-primary/80',
+    bgGradient: 'bg-primary/10',
   },
   production: {
     label: '生产',
     icon: Bell,
     gradient: 'from-amber-500 to-amber-600',
+    bgGradient: 'bg-amber-500/10',
   },
 }
 
@@ -106,17 +111,24 @@ export function NotificationPopover() {
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant='ghost' size='icon' className='relative'>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='relative transition-transform duration-200 hover:scale-105 active:scale-95'
+          >
             {useNotificationStore.getState().wsConnected ? (
-              <Bell data-icon='inline-start' />
+              <Bell
+                data-icon='inline-start'
+                className='transition-colors duration-200'
+              />
             ) : (
               <Bell
                 data-icon='inline-start'
-                className='text-muted-foreground'
+                className='text-muted-foreground transition-colors duration-200'
               />
             )}
             {unreadCount > 0 && (
-              <span className='absolute -top-1 -right-1 flex h-5 w-5 animate-in items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-xs font-medium text-white shadow-lg zoom-in-50'>
+              <span className='absolute -top-1 -right-1 flex size-5 animate-in items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-[10px] font-medium text-white shadow-lg ring-2 ring-background duration-200 zoom-in-75'>
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -127,47 +139,50 @@ export function NotificationPopover() {
             <div className='flex items-center gap-2'>
               <h3 className='font-semibold'>通知中心</h3>
               {unreadCount > 0 && (
-                <Badge variant='secondary' className='text-[10px] font-normal'>
+                <Badge
+                  variant='secondary'
+                  className='animate-in text-[10px] font-normal fade-in-50 zoom-in-95'
+                >
                   {unreadCount} 未读
                 </Badge>
               )}
             </div>
-            <div className='flex items-center gap-1'>
+            <div className='flex items-center gap-0.5'>
               {unreadCount > 0 && (
                 <Button
                   variant='ghost'
                   size='icon'
-                  className='h-8 w-8'
+                  className='h-8 w-8 transition-colors hover:bg-primary/10 hover:text-primary'
                   onClick={handleMarkAllRead}
                 >
-                  <CheckCheck className='h-4 w-4' />
+                  <CheckCheck className='size-4' />
                 </Button>
               )}
               <Button
                 variant='ghost'
                 size='icon'
-                className='h-8 w-8'
+                className='h-8 w-8 transition-colors hover:bg-muted'
                 onClick={() => setOpen(false)}
               >
-                <X className='h-4 w-4' />
+                <X className='size-4' />
               </Button>
             </div>
           </div>
 
-          <ScrollArea className='h-[415px]'>
+          <ScrollArea className='h-[380px]'>
             {notifications.length === 0 ? (
               <div className='flex flex-col items-center justify-center py-12 text-center'>
-                <div className='mb-3 flex size-12 items-center justify-center rounded-full bg-muted'>
-                  <Bell className='size-6 text-muted-foreground' />
+                <div className='mb-4 flex size-14 items-center justify-center rounded-full bg-muted'>
+                  <Inbox className='size-7 text-muted-foreground' />
                 </div>
-                <p className='text-sm font-medium'>暂无通知</p>
+                <p className='mb-1 text-sm font-medium'>暂无通知</p>
                 <p className='text-xs text-muted-foreground'>
                   收到新消息时会在此处显示
                 </p>
               </div>
             ) : (
-              <div className='divide-y'>
-                {notifications.map((notification) => {
+              <div className='py-1'>
+                {notifications.map((notification, index) => {
                   const config =
                     categoryConfig[notification.notification_type] ||
                     categoryConfig.order
@@ -175,49 +190,71 @@ export function NotificationPopover() {
                   const isMessageRead = isRead(notification.id)
 
                   return (
-                    <div
-                      key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      className={cn(
-                        'group relative cursor-pointer px-4 py-3',
-                        'transition-colors hover:bg-muted/50',
-                        isMessageRead && 'opacity-60'
-                      )}
-                    >
-                      <div className='flex gap-3'>
-                        <div
-                          className={cn(
-                            'flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-sm',
-                            config.gradient
-                          )}
-                        >
-                          <IconComponent className='size-5' />
-                        </div>
-                        <div className='flex-1 space-y-1.5'>
-                          <div className='flex items-center justify-between'>
-                            <div className='flex items-center gap-2'>
-                              <p className='text-sm font-medium'>
-                                {notification.title}
+                    <div key={notification.id}>
+                      <div
+                        onClick={() => handleNotificationClick(notification)}
+                        className={cn(
+                          'group relative cursor-pointer px-4 py-3 transition-all duration-200',
+                          'hover:bg-muted/50',
+                          isMessageRead && 'opacity-60',
+                          !isMessageRead && 'bg-primary/[0.02]'
+                        )}
+                        style={{
+                          animationDelay: `${index * 30}ms`,
+                        }}
+                      >
+                        <div className='flex gap-3'>
+                          <div
+                            className={cn(
+                              'relative flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-sm transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md',
+                              config.gradient
+                            )}
+                          >
+                            <IconComponent className='size-5' />
+                            {!isMessageRead && (
+                              <span className='absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-white'>
+                                <span className='absolute inset-0 animate-ping rounded-full bg-blue-500 opacity-75' />
+                                <span className='relative block size-2.5 rounded-full bg-blue-500' />
+                              </span>
+                            )}
+                          </div>
+                          <div className='min-w-0 flex-1 space-y-1.5'>
+                            <div className='flex items-center justify-between gap-2'>
+                              <div className='flex items-center gap-2'>
+                                <p className='truncate text-sm leading-none font-medium'>
+                                  {notification.title}
+                                </p>
+                                <Badge
+                                  variant='outline'
+                                  className='ml-1 shrink-0 text-[10px] font-normal'
+                                >
+                                  {config.label}
+                                </Badge>
+                              </div>
+                              <p className='shrink-0 text-[10px] text-muted-foreground'>
+                                {formatDistanceToNow(
+                                  notification.timestamp * 1000,
+                                  {
+                                    addSuffix: true,
+                                    locale: zhCN,
+                                  }
+                                )}
                               </p>
-                              {!isMessageRead && (
-                                <span className='size-2 rounded-full bg-blue-500' />
-                              )}
                             </div>
-                            <p className='text-[10px] text-muted-foreground'>
-                              {formatDistanceToNow(
-                                notification.timestamp * 1000,
-                                {
-                                  addSuffix: true,
-                                  locale: zhCN,
-                                }
-                              )}
+                            <p className='line-clamp-2 text-xs leading-relaxed text-muted-foreground'>
+                              {notification.content}
                             </p>
                           </div>
-                          <p className='line-clamp-2 text-xs text-muted-foreground'>
-                            {notification.content}
-                          </p>
                         </div>
+                        {!isMessageRead && (
+                          <div className='absolute top-1/2 left-0 -translate-y-1/2'>
+                            <div className='ml-1.5 size-1.5 rounded-full bg-primary' />
+                          </div>
+                        )}
                       </div>
+                      {index < notifications.length - 1 && (
+                        <Separator className='mx-4' />
+                      )}
                     </div>
                   )
                 })}
@@ -229,7 +266,7 @@ export function NotificationPopover() {
             <div className='border-t p-2'>
               <Button
                 variant='ghost'
-                className='w-full text-xs text-muted-foreground'
+                className='w-full text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
                 onClick={() => setDrawerOpen(true)}
               >
                 查看全部通知
@@ -239,23 +276,11 @@ export function NotificationPopover() {
         </PopoverContent>
       </Popover>
 
-      {selectedNotification &&
-        selectedNotification.notification_type === 'order_shipped' && (
-          <OrderShippedDetailDialog
-            open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-            notification={selectedNotification}
-          />
-        )}
-
-      {selectedNotification &&
-        selectedNotification.notification_type === 'order_created' && (
-          <OrderCreatedDetailDialog
-            open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-            notification={selectedNotification}
-          />
-        )}
+      <NotificationDetailDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        notification={selectedNotification}
+      />
     </>
   )
 }
