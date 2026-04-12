@@ -1,4 +1,5 @@
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useMemo } from 'react'
+import { useIndustryReport, useIndustryStats } from '@/queries/reports'
 import { pdf } from '@react-pdf/renderer'
 import {
   Download,
@@ -13,6 +14,7 @@ import {
   BarChart3,
   FileSpreadsheet,
   FileText,
+  Loader2,
 } from 'lucide-react'
 import {
   LineChart,
@@ -65,9 +67,13 @@ const industryTabs = [
   { value: 'all', label: '行业统计', icon: BarChart3 },
 ]
 
+const now = new Date()
+const defaultYear = now.getFullYear()
+const defaultMonth = now.getMonth() + 1
+
 export function IndustryReport() {
   const [activeTab, setActiveTab] = useState<string>('3C')
-  const [loading, setLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
   const [reportData, setReportData] = useState<any>({
     customers: [],
     totalAmount: 0,
@@ -83,7 +89,52 @@ export function IndustryReport() {
   const [expandedIndustryRows, setExpandedIndustryRows] = useState<Set<number>>(
     new Set()
   )
-  const [error, setError] = useState<string>('')
+
+  const {
+    isLoading: isIndustryStatsLoading,
+    error: industryStatsError,
+    data: industryStatsData,
+  } = useIndustryStats()
+
+  const {
+    isLoading: isIndustryDataLoading,
+    error: industryDataError,
+    data: industryDataResponse,
+  } = useIndustryReport({
+    industry: activeTab === 'all' ? '' : activeTab,
+    year: defaultYear,
+    month: defaultMonth,
+    page: currentPage,
+    limit: pageSize,
+    enabled: true,
+  })
+
+  useEffect(() => {
+    if (industryStatsData?.data?.code === 0) {
+      const sortedStats = (
+        industryStatsData.data.data.industryStats || []
+      ).sort((a: any, b: any) => b.amount - a.amount)
+      setIndustryStats(sortedStats)
+    }
+  }, [industryStatsData])
+
+  useEffect(() => {
+    if (industryDataResponse?.data?.code === 0) {
+      const sortedCustomers = (
+        industryDataResponse.data.data.customers || []
+      ).sort((a: any, b: any) => b.amount - a.amount)
+      setReportData({
+        customers: sortedCustomers,
+        totalAmount: industryDataResponse.data.data.totalAmount || 0,
+        months: industryDataResponse.data.data.months || [],
+      })
+      setTotalCustomers(industryDataResponse.data.count || 0)
+    }
+  }, [industryDataResponse])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeTab])
 
   const toggleCustomerRow = (index: number) => {
     const newExpanded = new Set(expandedCustomerRows)
@@ -113,86 +164,9 @@ export function IndustryReport() {
     return expandedIndustryRows.has(index)
   }
 
-  const fetchIndustryStats = async () => {
-    try {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = now.getMonth() + 1
-      const response = await reportAPI.getIndustryReport({
-        industry: '',
-        year,
-        month,
-        page: 1,
-        limit: 10,
-      })
-
-      if (response.data.code === 0) {
-        const sortedStats = (response.data.data.industryStats || []).sort(
-          (a: any, b: any) => b.amount - a.amount
-        )
-        setIndustryStats(sortedStats)
-      }
-    } catch (error: any) {
-      console.error('获取全行业统计数据失败:', error)
-      setIndustryStats([])
-    }
-  }
-
-  const fetchIndustrySpecificData = async (
-    page: number = 1,
-    size: number = 10
-  ) => {
-    setLoading(true)
-    setError('')
-    try {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = now.getMonth() + 1
-      const response = await reportAPI.getIndustryReport({
-        industry: activeTab === 'all' ? '' : activeTab,
-        year,
-        month,
-        page,
-        limit: size,
-      })
-
-      if (response.data.code === 0) {
-        const sortedCustomers = (response.data.data.customers || []).sort(
-          (a: any, b: any) => b.amount - a.amount
-        )
-        setReportData({
-          customers: sortedCustomers,
-          totalAmount: response.data.data.totalAmount || 0,
-          months: response.data.data.months || [],
-        })
-        setTotalCustomers(response.data.count || 0)
-      } else {
-        setError('API返回错误: ' + response.data.msg)
-      }
-    } catch (error: any) {
-      console.error('获取行业特定数据失败:', error)
-      setError('获取数据失败: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchIndustryStats()
-  }, [])
-
-  useEffect(() => {
-    setCurrentPage(1)
-    fetchIndustrySpecificData(1, pageSize)
-  }, [activeTab])
-
-  useEffect(() => {
-    fetchIndustrySpecificData(currentPage, pageSize)
-  }, [currentPage, pageSize])
-
   const handleExportPDF = async () => {
     try {
-      setLoading(true)
+      setExportLoading(true)
       const now = new Date()
       const year = now.getFullYear()
       const month = now.getMonth() + 1
@@ -251,13 +225,13 @@ export function IndustryReport() {
       console.error('导出失败:', error)
       toast.error(`导出失败: ${error.message || '未知错误'}`)
     } finally {
-      setLoading(false)
+      setExportLoading(false)
     }
   }
 
   const handleExportXLSX = async () => {
     try {
-      setLoading(true)
+      setExportLoading(true)
       const now = new Date()
       const year = now.getFullYear()
       const month = now.getMonth() + 1
@@ -321,16 +295,20 @@ export function IndustryReport() {
       console.error('导出失败:', error)
       toast.error(`导出失败: ${error.message || '未知错误'}`)
     } finally {
-      setLoading(false)
+      setExportLoading(false)
     }
   }
 
+  const loading =
+    isIndustryDataLoading || isIndustryStatsLoading || exportLoading
+  const error = industryDataError || industryStatsError
+
   const renderCustomerTable = () => (
     <div className='overflow-x-auto'>
-      {loading ? (
-        <div className='py-10 text-center'>
-          <div className='mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-primary'></div>
-          <p className='mt-4 text-muted-foreground'>加载中...</p>
+      {isIndustryDataLoading ? (
+        <div className='flex items-center justify-center gap-2 py-10'>
+          <Loader2 className='h-6 w-6 animate-spin text-primary' />
+          <span className='text-muted-foreground'>加载中...</span>
         </div>
       ) : (
         <table className='min-w-full divide-y divide-border'>
@@ -720,12 +698,17 @@ export function IndustryReport() {
                   {renderPagination()}
                   {error && (
                     <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                      <p className='text-destructive'>{error}</p>
+                      <p className='text-destructive'>
+                        {error.message || '获取数据失败'}
+                      </p>
                     </div>
                   )}
                   {loading && (
-                    <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
-                      <p className='text-primary'>正在加载数据...</p>
+                    <div className='flex items-center justify-center gap-2 py-4'>
+                      <Loader2 className='h-5 w-5 animate-spin text-primary' />
+                      <span className='text-muted-foreground'>
+                        正在加载数据...
+                      </span>
                     </div>
                   )}
                 </div>
@@ -742,12 +725,15 @@ export function IndustryReport() {
               {renderIndustryTable()}
               {error && (
                 <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                  <p className='text-destructive'>{error}</p>
+                  <p className='text-destructive'>
+                    {error.message || '获取数据失败'}
+                  </p>
                 </div>
               )}
               {loading && (
-                <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
-                  <p className='text-primary'>正在加载数据...</p>
+                <div className='flex items-center justify-center gap-2 py-4'>
+                  <Loader2 className='h-5 w-5 animate-spin text-primary' />
+                  <span className='text-muted-foreground'>正在加载数据...</span>
                 </div>
               )}
             </div>

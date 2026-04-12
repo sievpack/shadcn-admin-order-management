@@ -3,8 +3,11 @@ import { useNavigate } from '@tanstack/react-router'
 import { Shield, User, Lock, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { authAPI } from '@/lib/api'
+import { setCookie } from '@/lib/cookies'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+
+const ACCESS_TOKEN = 'thisisjustarandomstring'
 
 interface UserAuthFormProps {
   redirectTo?: string
@@ -24,7 +27,7 @@ export function UserAuthForm({ redirectTo }: UserAuthFormProps) {
     try {
       const response = await authAPI.login({ username, password })
       if (response.data.code === 0) {
-        localStorage.setItem('token', response.data.data.token)
+        setCookie(ACCESS_TOKEN, response.data.data.token)
         localStorage.setItem(
           'userInfo',
           JSON.stringify(response.data.data.user)

@@ -80,8 +80,11 @@ export function DataTableFacetedFilter<TData, TValue>({
         setLocalSelectedValues(newSet)
       }
     }
-    isInternalChangeRef.current = false
   }, [serverPaginationMode, selectedValues])
+
+  React.useEffect(() => {
+    isInternalChangeRef.current = false
+  })
 
   React.useEffect(() => {
     return () => {

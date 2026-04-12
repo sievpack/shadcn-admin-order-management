@@ -1,6 +1,18 @@
 import { Fragment, useState, useEffect } from 'react'
+import {
+  useProductReport,
+  useProductTypes,
+  useProductDetail,
+} from '@/queries/reports'
 import { pdf } from '@react-pdf/renderer'
-import { Download, Filter, Info, ChevronDown, ChevronRight } from 'lucide-react'
+import {
+  Download,
+  Filter,
+  Info,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+} from 'lucide-react'
 import {
   BarChart,
   Bar,
@@ -61,7 +73,7 @@ export function ProductReport() {
   const [selectedDate, setSelectedDate] = useState<string>(
     `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
   )
-  const [loading, setLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
   const [reportData, setReportData] = useState<any>({
     products: [],
     monthly_totals: {},
@@ -74,18 +86,95 @@ export function ProductReport() {
   })
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
-  const [productTypeOptions, setProductTypeOptions] = useState<
-    Array<{ value: string; label: string }>
-  >([])
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [detailData, setDetailData] = useState<any>(null)
-  const [detailLoading, setDetailLoading] = useState(false)
   const [selectedSpec, setSelectedSpec] = useState<{
     productType: string
     spec: string
   } | null>(null)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
-  const [error, setError] = useState<string>('')
+
+  const [year, month] = selectedDate.split('-').map(Number)
+
+  const { data: productTypesData, isLoading: isProductTypesLoading } =
+    useProductTypes()
+
+  const productTypeOptions =
+    productTypesData?.data?.data?.types?.map((type: string) => ({
+      value: type,
+      label: type,
+    })) || []
+
+  useEffect(() => {
+    if (productTypeOptions.length > 0 && !selectedProductType) {
+      const s5mOption = productTypeOptions.find(
+        (option: { value: string; label: string }) =>
+          option.value === 'S5M同步带'
+      )
+      if (s5mOption) {
+        setSelectedProductType(s5mOption.value)
+      } else {
+        setSelectedProductType(productTypeOptions[0].value)
+      }
+    }
+  }, [productTypeOptions, selectedProductType])
+
+  const {
+    isLoading: isReportLoading,
+    error: reportError,
+    data: reportDataResponse,
+  } = useProductReport({
+    product_type: selectedProductType,
+    year,
+    month,
+    page: currentPage,
+    limit: pageSize,
+    enabled: !!selectedProductType,
+  })
+
+  useEffect(() => {
+    if (reportDataResponse?.data?.code === 0) {
+      const sortedProducts = (reportDataResponse.data.data.products || []).map(
+        (product: any) => {
+          const sortedSpecs = [...(product.specs || [])].sort(
+            (a: any, b: any) => (b.amount || 0) - (a.amount || 0)
+          )
+          return { ...product, specs: sortedSpecs }
+        }
+      )
+      setReportData({
+        products: sortedProducts,
+        monthly_totals: reportDataResponse.data.data.monthly_totals || {},
+        yearly_total: reportDataResponse.data.data.yearly_total || 0,
+        total_products: reportDataResponse.data.data.total_products || 0,
+        current_page: reportDataResponse.data.data.current_page || 1,
+        total_pages: reportDataResponse.data.data.total_pages || 1,
+        limit: reportDataResponse.data.data.limit || 10,
+        months: reportDataResponse.data.data.months || [],
+      })
+    }
+  }, [reportDataResponse])
+
+  const {
+    isLoading: isDetailLoading,
+    error: detailError,
+    data: detailResponse,
+  } = useProductDetail({
+    product_type: selectedSpec?.productType || '',
+    spec: selectedSpec?.spec || '',
+    year,
+    month,
+    enabled: !!selectedSpec,
+  })
+
+  useEffect(() => {
+    if (detailResponse?.data?.code === 0) {
+      setDetailData(detailResponse.data.data)
+    }
+  }, [detailResponse])
+
+  const loading = isReportLoading || exportLoading || isProductTypesLoading
+  const error = reportError || detailError
 
   const toggleRow = (key: string) => {
     const newExpanded = new Set(expandedRows)
@@ -100,37 +189,6 @@ export function ProductReport() {
   const isRowExpanded = (key: string) => {
     return expandedRows.has(key)
   }
-
-  const fetchProductTypes = async () => {
-    try {
-      const response = await reportAPI.getProductTypes()
-      if (response.data.code === 0) {
-        const types = response.data.data.types || []
-        const options = types.map((type: string) => ({
-          value: type,
-          label: type,
-        }))
-        setProductTypeOptions(options)
-
-        const s5mOption = options.find(
-          (option: { value: string; label: string }) =>
-            option.value === 'S5M同步带'
-        )
-        if (s5mOption) {
-          setSelectedProductType(s5mOption.value)
-        } else if (options.length > 0) {
-          setSelectedProductType(options[0].value)
-        }
-      }
-    } catch (error) {
-      console.error('获取产品类型列表失败:', error)
-      setProductTypeOptions([])
-    }
-  }
-
-  useEffect(() => {
-    fetchProductTypes()
-  }, [])
 
   const generateDateOptions = () => {
     const options = []
@@ -151,58 +209,10 @@ export function ProductReport() {
 
   const dateOptions = generateDateOptions()
 
-  const fetchProductReport = async (page: number = 1, size: number = 10) => {
-    setLoading(true)
-    setError('')
-    try {
-      const [year, month] = selectedDate.split('-')
-      const response = await reportAPI.getProductReport({
-        product_type: selectedProductType,
-        year: parseInt(year),
-        month: parseInt(month),
-        page,
-        limit: size,
-      })
-
-      if (response.data.code === 0) {
-        const sortedProducts = (response.data.data.products || []).map(
-          (product: any) => {
-            const sortedSpecs = [...(product.specs || [])].sort(
-              (a: any, b: any) => (b.amount || 0) - (a.amount || 0)
-            )
-            return { ...product, specs: sortedSpecs }
-          }
-        )
-
-        setReportData({
-          products: sortedProducts,
-          monthly_totals: response.data.data.monthly_totals || {},
-          yearly_total: response.data.data.yearly_total || 0,
-          total_products: response.data.data.total_products || 0,
-          current_page: response.data.data.current_page || 1,
-          total_pages: response.data.data.total_pages || 1,
-          limit: response.data.data.limit || 10,
-          months: response.data.data.months || [],
-        })
-      } else {
-        setError('API返回错误: ' + response.data.msg)
-      }
-    } catch (error: any) {
-      console.error('获取产品统计数据失败:', error)
-      setError('获取数据失败: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchProductReport(currentPage, pageSize)
-  }, [selectedProductType, selectedDate, currentPage, pageSize])
-
   const handleExport = async () => {
     try {
-      setLoading(true)
-      const [year, month] = selectedDate.split('-')
+      setExportLoading(true)
+      const [exportYear, exportMonth] = selectedDate.split('-').map(Number)
 
       let userName = 'Admin'
       try {
@@ -259,38 +269,21 @@ export function ProductReport() {
       console.error('错误详情:', error.message, error.response)
       toast.error(`导出失败: ${error.message || '未知错误'}`)
     } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchProductDetail = async (productType: string, spec: string) => {
-    setDetailLoading(true)
-    try {
-      const [year, month] = selectedDate.split('-')
-      const response = await reportAPI.getProductDetail({
-        product_type: productType,
-        spec: spec,
-        year: parseInt(year),
-        month: parseInt(month),
-      })
-
-      if (response.data.code === 0) {
-        setDetailData(response.data.data)
-      }
-    } catch (error) {
-      console.error('获取产品详情数据失败:', error)
-      toast.error('获取详情数据失败')
-      setDetailData(null)
-    } finally {
-      setDetailLoading(false)
+      setExportLoading(false)
     }
   }
 
   const handleDetailClick = (productType: string, spec: string) => {
     setSelectedSpec({ productType, spec })
-    fetchProductDetail(productType, spec)
     setIsDetailModalOpen(true)
   }
+
+  useEffect(() => {
+    if (!isDetailModalOpen) {
+      setSelectedSpec(null)
+      setDetailData(null)
+    }
+  }, [isDetailModalOpen])
 
   const getPageNumbers = () => {
     const totalPages = reportData.total_pages
@@ -687,12 +680,15 @@ export function ProductReport() {
             )}
             {error && (
               <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                <p className='text-destructive'>{error}</p>
+                <p className='text-destructive'>
+                  {error.message || '获取数据失败'}
+                </p>
               </div>
             )}
             {loading && !reportData.products.length && (
-              <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
-                <p className='text-primary'>正在加载数据...</p>
+              <div className='flex items-center justify-center gap-2 py-8'>
+                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                <span className='text-muted-foreground'>正在加载数据...</span>
               </div>
             )}
           </div>
@@ -714,10 +710,10 @@ export function ProductReport() {
           </SheetHeader>
 
           <div className='flex flex-col gap-6 px-2'>
-            {detailLoading ? (
-              <div className='py-10 text-center'>
-                <div className='mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-primary'></div>
-                <p className='mt-4 text-muted-foreground'>加载中...</p>
+            {isDetailLoading ? (
+              <div className='flex items-center justify-center gap-2 py-10'>
+                <Loader2 className='h-6 w-6 animate-spin text-primary' />
+                <span className='text-muted-foreground'>加载中...</span>
               </div>
             ) : detailData ? (
               <div className='flex flex-col gap-6'>

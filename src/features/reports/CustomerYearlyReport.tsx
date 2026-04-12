@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Calendar as CalendarIcon } from 'lucide-react'
-import { reportAPI } from '@/lib/api'
+import {
+  useCustomerYearlyReport,
+  useCustomerYearlyShipmentReport,
+} from '@/queries/reports'
+import { Calendar as CalendarIcon, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -27,7 +30,6 @@ export function CustomerYearlyReport() {
     new Date().getFullYear()
   )
   const [activeTab, setActiveTab] = useState<string>('order')
-  const [loading, setLoading] = useState<boolean>(false)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [orderReportData, setOrderReportData] = useState<any>({
     year: new Date().getFullYear(),
@@ -47,68 +49,43 @@ export function CustomerYearlyReport() {
     current_page: 1,
     total_pages: 0,
   })
-  const [error, setError] = useState<string>('')
 
-  const yearOptions = Array.from(
-    { length: 21 },
-    (_, i) => new Date().getFullYear() - 10 + i
-  )
+  const {
+    isLoading: isOrderLoading,
+    error: orderError,
+    data: orderData,
+  } = useCustomerYearlyReport({
+    year: selectedYear,
+    page: currentPage,
+    limit: PAGE_SIZE,
+    enabled: activeTab === 'order',
+  })
 
-  const fetchOrderReport = async (page: number = 1) => {
-    setLoading(true)
-    setError('')
-    try {
-      const response = await reportAPI.getCustomerYearlyReport({
-        year: selectedYear,
-        page,
-        limit: PAGE_SIZE,
-      })
-      if (response.data.code === 0) {
-        setOrderReportData(response.data.data)
-      } else {
-        setError('API返回错误: ' + response.data.msg)
-      }
-    } catch (error: any) {
-      console.error('获取客户年度订单统计数据失败:', error)
-      setError('获取数据失败: ' + error.message)
-    } finally {
-      setLoading(false)
+  const {
+    isLoading: isShipmentLoading,
+    error: shipmentError,
+    data: shipmentData,
+  } = useCustomerYearlyShipmentReport({
+    year: selectedYear,
+    page: currentPage,
+    limit: PAGE_SIZE,
+    enabled: activeTab === 'shipment',
+  })
+
+  useEffect(() => {
+    if (orderData?.data?.code === 0) {
+      setOrderReportData(orderData.data.data)
     }
-  }
+  }, [orderData])
 
-  const fetchShipmentReport = async (page: number = 1) => {
-    setLoading(true)
-    setError('')
-    try {
-      const response = await reportAPI.getCustomerYearlyShipmentReport({
-        year: selectedYear,
-        page,
-        limit: PAGE_SIZE,
-      })
-      if (response.data.code === 0) {
-        setShipmentReportData(response.data.data)
-      } else {
-        setError('API返回错误: ' + response.data.msg)
-      }
-    } catch (error: any) {
-      console.error('获取客户年度发货统计数据失败:', error)
-      setError('获取数据失败: ' + error.message)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (shipmentData?.data?.code === 0) {
+      setShipmentReportData(shipmentData.data.data)
     }
-  }
-
-  const fetchData = (page: number = 1) => {
-    if (activeTab === 'order') {
-      fetchOrderReport(page)
-    } else {
-      fetchShipmentReport(page)
-    }
-  }
+  }, [shipmentData])
 
   useEffect(() => {
     setCurrentPage(1)
-    fetchData(1)
   }, [selectedYear, activeTab])
 
   const handleYearChange = (year: string) => {
@@ -122,9 +99,16 @@ export function CustomerYearlyReport() {
         : shipmentReportData.total_pages
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
-      fetchData(page)
     }
   }
+
+  const loading = isOrderLoading || isShipmentLoading
+  const error = activeTab === 'order' ? orderError : shipmentError
+
+  const yearOptions = Array.from(
+    { length: 21 },
+    (_, i) => new Date().getFullYear() - 10 + i
+  )
 
   return (
     <>
@@ -159,7 +143,7 @@ export function CustomerYearlyReport() {
                 </Select>
               </div>
 
-              <Button onClick={() => fetchData(1)} disabled={loading}>
+              <Button onClick={() => setCurrentPage(1)} disabled={loading}>
                 <CalendarIcon className='mr-2 h-4 w-4' />
                 {loading ? '加载中...' : '查询'}
               </Button>
@@ -298,12 +282,17 @@ export function CustomerYearlyReport() {
                 )}
                 {error && (
                   <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                    <p className='text-destructive'>{error}</p>
+                    <p className='text-destructive'>
+                      {error.message || '获取数据失败'}
+                    </p>
                   </div>
                 )}
                 {loading && (
-                  <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
-                    <p className='text-primary'>正在加载数据...</p>
+                  <div className='flex items-center justify-center gap-2 py-4'>
+                    <Loader2 className='h-5 w-5 animate-spin text-primary' />
+                    <span className='text-muted-foreground'>
+                      正在加载数据...
+                    </span>
                   </div>
                 )}
               </div>
@@ -436,12 +425,17 @@ export function CustomerYearlyReport() {
                 )}
                 {error && (
                   <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-                    <p className='text-destructive'>{error}</p>
+                    <p className='text-destructive'>
+                      {error.message || '获取数据失败'}
+                    </p>
                   </div>
                 )}
                 {loading && (
-                  <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
-                    <p className='text-primary'>正在加载数据...</p>
+                  <div className='flex items-center justify-center gap-2 py-4'>
+                    <Loader2 className='h-5 w-5 animate-spin text-primary' />
+                    <span className='text-muted-foreground'>
+                      正在加载数据...
+                    </span>
                   </div>
                 )}
               </div>

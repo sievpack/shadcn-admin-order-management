@@ -13,9 +13,9 @@ import {
   addMonths,
   subMonths,
 } from 'date-fns'
+import { useMonthlyReport } from '@/queries/reports'
 import { zhCN } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { reportAPI } from '@/lib/api'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
@@ -40,50 +40,46 @@ interface MonthlyData {
   }
 }
 
+const defaultMonthlyData: MonthlyData = {
+  daily_stats: [],
+  summary: {
+    total_order_count: 0,
+    total_order_amount: 0,
+    total_ship_amount: 0,
+    jiebodai_percentage: 0,
+    kaikoudai_percentage: 0,
+  },
+}
+
 export function MonthlyReport() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [monthlyData, setMonthlyData] = useState<MonthlyData>({
-    daily_stats: [],
-    summary: {
-      total_order_count: 0,
-      total_order_amount: 0,
-      total_ship_amount: 0,
-      jiebodai_percentage: 0,
-      kaikoudai_percentage: 0,
-    },
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string>('')
+  const [monthlyData, setMonthlyData] =
+    useState<MonthlyData>(defaultMonthlyData)
+  const [today] = useState(new Date())
 
-  const today = new Date()
+  const year = getYear(currentMonth)
+  const month = getMonth(currentMonth) + 1
+
+  const {
+    isLoading,
+    error,
+    data: responseData,
+  } = useMonthlyReport({
+    year,
+    month,
+    customer: 'all',
+  })
+
+  useEffect(() => {
+    if (responseData?.data?.code === 0) {
+      setMonthlyData(responseData.data.data)
+    }
+  }, [responseData])
 
   const getDayData = (date: Date): DailyStat | null => {
     const dateStr = format(date, 'yyyy-MM-dd')
     return monthlyData.daily_stats.find((stat) => stat.date === dateStr) || null
   }
-
-  useEffect(() => {
-    const fetchMonthlyReport = async () => {
-      setLoading(true)
-      setError('')
-      try {
-        const year = getYear(currentMonth)
-        const month = getMonth(currentMonth) + 1
-        const params = { year, month, customer: 'all' }
-        const response = await reportAPI.getMonthlyReport(params)
-        if (response.data.code === 0) {
-          setMonthlyData(response.data.data)
-        } else {
-          setError('API返回错误: ' + response.data.msg)
-        }
-      } catch (err: any) {
-        setError('获取数据失败: ' + err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchMonthlyReport()
-  }, [currentMonth])
 
   const calendarDays = () => {
     const monthStart = startOfMonth(currentMonth)
@@ -226,12 +222,15 @@ export function MonthlyReport() {
 
         {error && (
           <div className='border-l-4 border-destructive bg-destructive/10 px-4 py-3'>
-            <p className='text-destructive'>{error}</p>
+            <p className='text-destructive'>
+              {error.message || '获取数据失败'}
+            </p>
           </div>
         )}
-        {loading && (
-          <div className='border-l-4 border-primary bg-primary/10 px-4 py-3'>
-            <p className='text-primary'>正在加载数据...</p>
+        {isLoading && (
+          <div className='flex items-center justify-center gap-2 py-8'>
+            <Loader2 className='h-6 w-6 animate-spin text-primary' />
+            <span className='text-muted-foreground'>正在加载数据...</span>
           </div>
         )}
       </Main>
