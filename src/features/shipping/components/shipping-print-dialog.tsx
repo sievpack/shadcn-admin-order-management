@@ -88,9 +88,9 @@ export function ShippingPrintDialog({
               <span className='ml-2'>正在生成送货单...</span>
             </div>
           ) : pdfUrl ? (
-            <iframe
-              id='shipping-pdf-iframe'
+            <embed
               src={pdfUrl}
+              type='application/pdf'
               className='h-[397px] w-full rounded bg-white'
             />
           ) : (
@@ -106,21 +106,21 @@ export function ShippingPrintDialog({
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          <Button
-            variant='outline'
-            onClick={handlePrint}
-            disabled={!shippingNumber || isLoading || !!pdfUrl}
-          >
-            {isLoading ? '生成中...' : '生成预览'}
-          </Button>
-          {pdfUrl && (
+          {!pdfUrl ? (
+            <Button
+              onClick={handlePrint}
+              disabled={!shippingNumber || isLoading}
+            >
+              {isLoading ? '生成中...' : '生成预览'}
+            </Button>
+          ) : (
             <Button
               onClick={() => {
-                const iframe = document.getElementById(
-                  'shipping-pdf-iframe'
-                ) as HTMLIFrameElement
-                if (iframe && iframe.contentWindow) {
-                  iframe.contentWindow.print()
+                const embedEl = document.querySelector(
+                  'embed[type="application/pdf"]'
+                ) as HTMLEmbedElement
+                if (embedEl && embedEl.contentWindow) {
+                  embedEl.contentWindow.print()
                 }
               }}
             >
