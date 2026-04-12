@@ -685,12 +685,6 @@ export function ProductReport() {
                 </p>
               </div>
             )}
-            {loading && !reportData.products.length && (
-              <div className='flex items-center justify-center gap-2 py-8'>
-                <Loader2 className='h-6 w-6 animate-spin text-primary' />
-                <span className='text-muted-foreground'>正在加载数据...</span>
-              </div>
-            )}
           </div>
         </div>
       </Main>

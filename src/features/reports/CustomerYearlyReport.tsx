@@ -167,8 +167,15 @@ export function CustomerYearlyReport() {
                   </span>
                 </div>
                 <div className='overflow-x-auto'>
-                  {orderReportData.customers &&
-                  orderReportData.customers.length > 0 ? (
+                  {loading ? (
+                    <div className='flex items-center justify-center gap-2 py-8'>
+                      <Loader2 className='h-5 w-5 animate-spin text-primary' />
+                      <span className='text-muted-foreground'>
+                        正在加载数据...
+                      </span>
+                    </div>
+                  ) : orderReportData.customers &&
+                    orderReportData.customers.length > 0 ? (
                     <table className='min-w-full divide-y divide-border'>
                       <thead className='bg-accent'>
                         <tr>
@@ -287,14 +294,6 @@ export function CustomerYearlyReport() {
                     </p>
                   </div>
                 )}
-                {loading && (
-                  <div className='flex items-center justify-center gap-2 py-4'>
-                    <Loader2 className='h-5 w-5 animate-spin text-primary' />
-                    <span className='text-muted-foreground'>
-                      正在加载数据...
-                    </span>
-                  </div>
-                )}
               </div>
             </TabsContent>
 
@@ -309,8 +308,15 @@ export function CustomerYearlyReport() {
                   </span>
                 </div>
                 <div className='overflow-x-auto'>
-                  {shipmentReportData.customers &&
-                  shipmentReportData.customers.length > 0 ? (
+                  {isShipmentLoading ? (
+                    <div className='flex items-center justify-center gap-2 py-8'>
+                      <Loader2 className='h-5 w-5 animate-spin text-primary' />
+                      <span className='text-muted-foreground'>
+                        正在加载数据...
+                      </span>
+                    </div>
+                  ) : shipmentReportData.customers &&
+                    shipmentReportData.customers.length > 0 ? (
                     <table className='min-w-full divide-y divide-border'>
                       <thead className='bg-accent'>
                         <tr>
@@ -428,14 +434,6 @@ export function CustomerYearlyReport() {
                     <p className='text-destructive'>
                       {error.message || '获取数据失败'}
                     </p>
-                  </div>
-                )}
-                {loading && (
-                  <div className='flex items-center justify-center gap-2 py-4'>
-                    <Loader2 className='h-5 w-5 animate-spin text-primary' />
-                    <span className='text-muted-foreground'>
-                      正在加载数据...
-                    </span>
                   </div>
                 )}
               </div>

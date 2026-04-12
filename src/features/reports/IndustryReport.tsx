@@ -703,14 +703,6 @@ export function IndustryReport() {
                       </p>
                     </div>
                   )}
-                  {loading && (
-                    <div className='flex items-center justify-center gap-2 py-4'>
-                      <Loader2 className='h-5 w-5 animate-spin text-primary' />
-                      <span className='text-muted-foreground'>
-                        正在加载数据...
-                      </span>
-                    </div>
-                  )}
                 </div>
               </TabsContent>
             ))}
