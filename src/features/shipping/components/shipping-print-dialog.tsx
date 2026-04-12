@@ -55,7 +55,11 @@ export function ShippingPrintDialog({
   useEffect(() => {
     return () => {
       if (pdfPath) {
-        printAPI.cleanupPdf([pdfPath]).catch(console.warn)
+        fetch('/api/print/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [pdfPath] }),
+        }).catch(console.warn)
       }
     }
   }, [pdfPath])
@@ -63,10 +67,11 @@ export function ShippingPrintDialog({
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (pdfPath) {
-        navigator.sendBeacon(
-          '/api/print/cleanup',
-          JSON.stringify({ paths: [pdfPath] })
-        )
+        fetch('/api/print/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [pdfPath] }),
+        })
       }
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
