@@ -1,5 +1,6 @@
 import { useSalesTrend } from '@/queries/dashboard'
 import { Bar, BarChart, CartesianGrid, Cell, XAxis } from 'recharts'
+import { useIsDark } from '@/hooks/use-is-dark'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   ChartContainer,
@@ -17,9 +18,16 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function RecentShipments() {
+  const isDark = useIsDark()
   const { data: rawData, isLoading } = useSalesTrend({ period: 'week' })
 
   const last7Days = rawData ? rawData.slice(-7) : []
+
+  const mutedForeground = isDark ? 'oklch(0.708 0 0)' : 'oklch(0.556 0 0)'
+  const mutedBg = isDark ? 'oklch(0.269 0 0)' : 'oklch(0.97 0 0)'
+  const chartColor = isDark
+    ? 'oklch(0.488 0.243 264.376)'
+    : 'oklch(0.646 0.222 41.116)'
 
   return (
     <Card className='overflow-hidden transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5'>
@@ -31,26 +39,22 @@ export function RecentShipments() {
       </CardHeader>
       <CardContent className='px-2 pt-4 sm:px-6 sm:pt-6'>
         {isLoading ? (
-          <div className='flex h-[250px] items-center justify-center'>
+          <div className='flex h-[200px] items-center justify-center sm:h-[250px]'>
             <Skeleton className='h-10 w-10 rounded-full' />
           </div>
         ) : last7Days.length > 0 ? (
           <ChartContainer
             config={chartConfig}
-            className='aspect-auto h-[250px] w-full'
+            className='aspect-auto h-[200px] w-full sm:h-[250px]'
           >
             <BarChart data={last7Days} barCategoryGap='30%'>
               <defs>
                 <linearGradient id='barGradient' x1='0' y1='0' x2='0' y2='1'>
-                  <stop
-                    offset='0%'
-                    stopColor='var(--color-ship_value)'
-                    stopOpacity={1}
-                  />
+                  <stop offset='0%' stopColor={chartColor} stopOpacity={1} />
                   <stop
                     offset='100%'
-                    stopColor='var(--color-ship_value)'
-                    stopOpacity={0.6}
+                    stopColor={chartColor}
+                    stopOpacity={0.5}
                   />
                 </linearGradient>
               </defs>
@@ -64,10 +68,10 @@ export function RecentShipments() {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                tick={{ fill: mutedForeground, fontSize: 12 }}
               />
               <ChartTooltip
-                cursor={{ fill: 'hsl(var(--muted) / 0.5)' }}
+                cursor={{ fill: `${mutedBg}80` }}
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => `${value}`}
@@ -83,19 +87,11 @@ export function RecentShipments() {
                 dataKey='ship_value'
                 fill='url(#barGradient)'
                 radius={[6, 6, 0, 0]}
-                className='transition-all duration-300 hover:opacity-90'
-              >
-                {last7Days.map((entry: any, index: number) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    className='transition-all duration-200 hover:scale-y-110'
-                  />
-                ))}
-              </Bar>
+              />
             </BarChart>
           </ChartContainer>
         ) : (
-          <div className='flex h-[250px] items-center justify-center'>
+          <div className='flex h-[200px] items-center justify-center sm:h-[250px]'>
             <p className='text-muted-foreground'>暂无发货数据</p>
           </div>
         )}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSalesTrend } from '@/queries/dashboard'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import { useIsDark } from '@/hooks/use-is-dark'
 import { useIsMobile } from '@/hooks/use-mobile'
 import {
   Card,
@@ -43,6 +44,7 @@ const chartConfig = {
 
 export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
   const isMobile = useIsMobile()
+  const isDark = useIsDark()
   const [timeRange, setTimeRange] = useState<string>(initialTimeRange)
 
   const period =
@@ -51,6 +53,18 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
   const { data: salesTrendData, isLoading: trendLoading } = useSalesTrend({
     period,
   })
+
+  const getCssVar = (name: string) => {
+    if (typeof window === 'undefined') return 'oklch(0.556 0 0)'
+    return (
+      getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim() || 'oklch(0.556 0 0)'
+    )
+  }
+
+  const mutedForeground = isDark ? 'oklch(0.708 0 0)' : 'oklch(0.556 0 0)'
+  const primaryColor = isDark ? 'oklch(0.922 0 0)' : 'oklch(0.205 0 0)'
 
   return (
     <Card className='@container/card overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5'>
@@ -103,13 +117,13 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
       </CardHeader>
       <CardContent className='px-2 pt-4 sm:px-6 sm:pt-6'>
         {trendLoading ? (
-          <div className='flex h-[300px] items-center justify-center'>
+          <div className='flex h-[180px] items-center justify-center sm:h-[250px] lg:h-[300px]'>
             <Skeleton className='h-10 w-10 rounded-full' />
           </div>
         ) : salesTrendData && salesTrendData.length > 0 ? (
           <ChartContainer
             config={chartConfig}
-            className='aspect-auto h-[300px] w-full'
+            className='aspect-auto h-[180px] w-full sm:h-[250px] lg:h-[300px]'
           >
             <AreaChart data={salesTrendData}>
               <defs>
@@ -149,13 +163,25 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
                 axisLine={false}
                 tickMargin={8}
                 interval={timeRange === '年' ? 0 : timeRange === '月' ? 0 : 2}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                tick={{ fill: mutedForeground, fontSize: 12 }}
                 tickFormatter={(value) => {
                   return `${value}`
                 }}
               />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fill: mutedForeground, fontSize: 12 }}
+                tickFormatter={(value) => {
+                  if (value >= 10000) {
+                    return `${(value / 10000).toFixed(1)}万`
+                  }
+                  return `${value}`
+                }}
+              />
               <ChartTooltip
-                cursor={{ stroke: 'hsl(var(--primary) / 0.3)', strokeWidth: 2 }}
+                cursor={{ stroke: `${primaryColor}4D`, strokeWidth: 2 }}
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => `${value}`}
@@ -187,7 +213,7 @@ export function SalesTrend({ initialTimeRange = '月' }: SalesTrendProps) {
             </AreaChart>
           </ChartContainer>
         ) : (
-          <div className='flex h-[300px] items-center justify-center'>
+          <div className='flex h-[180px] items-center justify-center sm:h-[250px] lg:h-[300px]'>
             <p className='text-muted-foreground'>暂无销售趋势数据</p>
           </div>
         )}

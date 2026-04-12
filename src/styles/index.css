@@ -85,3 +85,17 @@
     height: 0;
   }
 }
+
+/* Bar chart hover effect - scale from bottom */
+.recharts-bar-rectangle {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  transition:
+    transform 0.2s ease-out,
+    filter 0.2s ease-out;
+}
+
+.recharts-bar-rectangle:hover {
+  transform: scaleY(1.08);
+  filter: brightness(1.1);
+}

@@ -149,11 +149,11 @@ export function Dashboard() {
           />
         </div>
 
-        <div className='mb-6'>
+        <div className='mb-4 sm:mb-6'>
           <SalesTrend initialTimeRange='月' />
         </div>
 
-        <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+        <div className='grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2'>
           <RecentShipments />
           <RecentOrders />
         </div>
