@@ -34,3 +34,8 @@ e2e
 playwright-report
 specs
 test-results
+
+# IDE / AI
+.troe
+.github
+.tanstack/tmp
