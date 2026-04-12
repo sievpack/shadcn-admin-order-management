@@ -158,6 +158,14 @@ export function NotificationPopover() {
                   <CheckCheck className='size-4' />
                 </Button>
               )}
+              <Button
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8 transition-colors hover:bg-muted'
+                onClick={() => setOpen(false)}
+              >
+                <X className='size-4' />
+              </Button>
             </div>
           </div>
 
@@ -254,15 +262,17 @@ export function NotificationPopover() {
             )}
           </ScrollArea>
 
-          <div className='border-t p-2'>
-            <Button
-              variant='default'
-              className='w-full'
-              onClick={() => setOpen(false)}
-            >
-              关闭
-            </Button>
-          </div>
+          {notifications.length > 0 && (
+            <div className='border-t p-2'>
+              <Button
+                variant='ghost'
+                className='w-full text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
+                onClick={() => setDrawerOpen(true)}
+              >
+                查看全部通知
+              </Button>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
 
