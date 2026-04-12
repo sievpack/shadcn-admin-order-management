@@ -9,7 +9,7 @@ export function RecentOrders() {
 
   return (
     <Card className='overflow-hidden transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5'>
-      <CardHeader className='bg-muted/30'>
+      <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <span className='inline-block h-2 w-2 animate-pulse rounded-full bg-primary' />
           最近订单
