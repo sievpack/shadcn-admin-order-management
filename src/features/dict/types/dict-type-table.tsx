@@ -93,12 +93,8 @@ export function DictTypeTable({
     },
   })
 
-  const tableData =
-    queryData?.data?.code === 0 ? queryData.data.data.list || [] : []
-  const total =
-    queryData?.data?.data?.count ||
-    queryData?.data?.data?.total ||
-    tableData.length
+  const tableData = queryData?.data?.code === 0 ? queryData.data.data || [] : []
+  const total = queryData?.data?.count || tableData.length
 
   const fetchChildData = useCallback(
     async (dictTypeId: number, dictType: string) => {

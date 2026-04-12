@@ -33,6 +33,8 @@ export function DataTableRowActions({
     if (exporting) return
     setExporting(true)
 
+    let pdfPath: string | null = null
+
     try {
       const shipId = row.original.发货单号
       const response = await printAPI.printShipping(shipId)
@@ -43,11 +45,10 @@ export function DataTableRowActions({
           title: '导出失败',
           data: response.data,
         })
-        setExporting(false)
         return
       }
 
-      const pdfPath = response.data.data.pdf_path
+      pdfPath = response.data.data.pdf_path
       const pdfUrl = `/api/print/preview-pdf?path=${encodeURIComponent(pdfPath)}&download=true`
 
       const pdfResponse = await fetch(pdfUrl)
@@ -66,17 +67,18 @@ export function DataTableRowActions({
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 
-      await fetch('/api/print/cleanup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: [pdfPath] }),
-      })
-
       showToastWithData({ type: 'success', title: '导出成功，PDF文件已下载' })
     } catch (error) {
       console.error('导出PDF失败:', error)
       showToastWithData({ type: 'error', title: '导出PDF失败' })
     } finally {
+      if (pdfPath) {
+        fetch('/api/print/cleanup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([pdfPath]),
+        }).catch(() => {})
+      }
       setExporting(false)
     }
   }

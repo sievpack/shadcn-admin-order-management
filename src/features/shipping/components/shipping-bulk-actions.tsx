@@ -76,7 +76,7 @@ export function ShippingBulkActions<TData>({
           fetch('/api/print/cleanup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paths: pdfPaths }),
+            body: JSON.stringify(pdfPaths),
           }).catch(console.warn)
         }, 5000)
       }
@@ -139,16 +139,6 @@ export function ShippingBulkActions<TData>({
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
 
-      if (pdfPaths.length > 0) {
-        setTimeout(() => {
-          fetch('/api/print/cleanup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paths: pdfPaths }),
-          }).catch(console.warn)
-        }, 5000)
-      }
-
       table.resetRowSelection()
       showToastWithData({
         type: 'success',
@@ -159,6 +149,15 @@ export function ShippingBulkActions<TData>({
       showToastWithData({ type: 'error', title: '导出失败，请稍后重试' })
       table.resetRowSelection()
     } finally {
+      if (pdfPaths.length > 0) {
+        setTimeout(() => {
+          fetch('/api/print/cleanup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pdfPaths),
+          }).catch(() => {})
+        }, 5000)
+      }
       setPrinting(false)
     }
   }

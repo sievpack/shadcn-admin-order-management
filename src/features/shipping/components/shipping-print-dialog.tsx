@@ -58,7 +58,7 @@ export function ShippingPrintDialog({
         fetch('/api/print/cleanup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paths: [pdfPath] }),
+          body: JSON.stringify([pdfPath]),
         }).catch(console.warn)
       }
     }
@@ -70,7 +70,7 @@ export function ShippingPrintDialog({
         fetch('/api/print/cleanup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paths: [pdfPath] }),
+          body: JSON.stringify([pdfPath]),
         })
       }
     }
