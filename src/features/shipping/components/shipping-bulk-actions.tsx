@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
-import { pdf } from '@react-pdf/renderer'
 import { Trash2, Printer, Download } from 'lucide-react'
-import { shippingAPI, authAPI } from '@/lib/api'
+import { printAPI } from '@/lib/api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,33 +10,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
-import { ShippingPdfDocument } from './pdf/ShippingPdfDocument'
 import { ShippingMultiDeleteDialog } from './shipping-multi-delete-dialog'
 import { type ShippingItem } from './shipping-provider'
 
 type ShippingBulkActionsProps<TData> = {
   table: Table<TData>
   onDeleted?: () => void
-}
-
-interface ShippingOrderItem {
-  订单编号: string
-  合同编号?: string
-  客户物料编号?: string
-  规格: string
-  型号: string
-  单位: string
-  数量: number
-  备注?: string
-}
-
-interface ShippingPrintData {
-  发货单号: string
-  发货日期: string
-  客户名称: string
-  送货地址?: string
-  订单项目: ShippingOrderItem[]
-  制单人?: string
 }
 
 export function ShippingBulkActions<TData>({
@@ -66,73 +44,41 @@ export function ShippingBulkActions<TData>({
     setPrinting(true)
 
     try {
-      let userName = 'Admin'
-      try {
-        const userResponse = await authAPI.getUserInfo()
-        if (userResponse.data.code === 0 && userResponse.data.data) {
-          const user = userResponse.data.data
-          userName =
-            `${user.last_name}${user.first_name}` || user.username || 'Admin'
-        }
-      } catch (e) {
-        console.warn('获取用户信息失败，使用默认名称')
-      }
+      const pdfPaths: string[] = []
 
-      for (let i = 0; i < selectedItems.length; i++) {
-        const item = selectedItems[i]
+      for (const item of selectedItems) {
+        const response = await printAPI.printShipping(item.发货单号)
 
-        const detailResponse = await shippingAPI.getShippingDetail(
-          item.发货单号
-        )
-        if (detailResponse.data.code !== 0) {
+        if (response.data.code !== 0) {
           showToastWithData({
             type: 'error',
-            title: `获取发货单 ${item.发货单号} 详情失败`,
-            data: detailResponse.data,
+            title: `打印发货单 ${item.发货单号} 失败`,
+            data: response.data,
           })
           continue
         }
 
-        const detail = detailResponse.data.data
-        const printData: ShippingPrintData = {
-          发货单号: detail.发货单号 || item.发货单号,
-          发货日期: detail.发货日期 || item.发货日期 || '',
-          客户名称: detail.客户名称 || item.客户名称,
-          送货地址: detail.送货地址 || '',
-          订单项目: (detail.订单项目 || []).map((p: any) => ({
-            订单编号: p.订单编号,
-            合同编号: p.合同编号,
-            客户物料编号: p.客户物料编号,
-            规格: p.规格,
-            型号: p.型号,
-            单位: p.单位,
-            数量: p.数量,
-            备注: p.备注,
-          })),
-          制单人: userName,
-        }
+        const pdfPath = response.data.data.pdf_path
+        pdfPaths.push(pdfPath)
 
-        const doc = <ShippingPdfDocument data={printData} />
-        const blob = await pdf(doc).toBlob()
-        const url = URL.createObjectURL(blob)
+        const pdfUrl = `/api/print/preview-pdf?path=${encodeURIComponent(pdfPath)}`
+        const printWindow = window.open(pdfUrl, '_blank')
 
-        const printWindow = window.open(url, '_blank')
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.print()
-            setTimeout(() => {
-              printWindow.close()
-            }, 1000)
-          }
-        } else {
+        if (!printWindow) {
           showToastWithData({ type: 'error', title: '请允许弹出窗口' })
         }
 
-        URL.revokeObjectURL(url)
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+      }
 
-        if (i < selectedItems.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1500))
-        }
+      if (pdfPaths.length > 0) {
+        setTimeout(() => {
+          fetch('/api/print/cleanup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: pdfPaths }),
+          }).catch(console.warn)
+        }, 5000)
       }
 
       table.resetRowSelection()
@@ -149,15 +95,72 @@ export function ShippingBulkActions<TData>({
     }
   }
 
-  const handleBulkExport = () => {
+  const handleBulkExport = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows
     const selectedItems = selectedRows.map(
       (row) => row.original as ShippingItem
     )
-    showToastWithData({
-      type: 'success',
-      title: `已选择 ${selectedItems.length} 条发货单进行导出`,
-    })
-    table.resetRowSelection()
+
+    if (selectedItems.length === 0) {
+      showToastWithData({ type: 'error', title: '请先选择要导出的发货单' })
+      return
+    }
+
+    setPrinting(true)
+
+    try {
+      const pdfPaths: string[] = []
+
+      for (const item of selectedItems) {
+        const response = await printAPI.printShipping(item.发货单号)
+
+        if (response.data.code !== 0) {
+          showToastWithData({
+            type: 'error',
+            title: `导出发货单 ${item.发货单号} 失败`,
+            data: response.data,
+          })
+          continue
+        }
+
+        const pdfPath = response.data.data.pdf_path
+        pdfPaths.push(pdfPath)
+
+        const pdfUrl = `/api/print/preview-pdf?path=${encodeURIComponent(pdfPath)}&download=true`
+
+        const link = document.createElement('a')
+        link.href = pdfUrl
+        link.download = `${item.发货单号}.pdf`
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+
+      if (pdfPaths.length > 0) {
+        setTimeout(() => {
+          fetch('/api/print/cleanup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: pdfPaths }),
+          }).catch(console.warn)
+        }, 5000)
+      }
+
+      table.resetRowSelection()
+      showToastWithData({
+        type: 'success',
+        title: `已导出 ${pdfPaths.length} 个PDF文件`,
+      })
+    } catch (error) {
+      console.error('导出失败:', error)
+      showToastWithData({ type: 'error', title: '导出失败，请稍后重试' })
+      table.resetRowSelection()
+    } finally {
+      setPrinting(false)
+    }
   }
 
   return (

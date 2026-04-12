@@ -186,7 +186,7 @@ async def print_shipping(
 
 
 @router.get("/preview-pdf")
-async def preview_pdf(path: str = Query(...)):
+async def preview_pdf(path: str = Query(...), download: bool = False):
     """预览PDF文件"""
     filename = os.path.basename(path)
     pdf_path = os.path.join(TEMP_DIR, filename)
@@ -194,7 +194,16 @@ async def preview_pdf(path: str = Query(...)):
     if not os.path.exists(pdf_path):
         raise HTTPException(status_code=404, detail="文件不存在")
     
+    parts = filename.replace('.pdf', '').split('_')
+    if len(parts) >= 3 and parts[0] == 'shipping':
+        download_name = f"{parts[1]}.pdf"
+    else:
+        download_name = filename
+    
     from fastapi.responses import FileResponse
+    if download:
+        headers = {'Content-Disposition': f'attachment; filename*=UTF-8\'\'{download_name}'}
+        return FileResponse(pdf_path, media_type='application/pdf', headers=headers)
     return FileResponse(pdf_path, media_type='application/pdf')
 
 
