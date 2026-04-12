@@ -18,6 +18,7 @@ type ShippingDialogType =
   | 'new'
   | 'edit'
   | 'addItem'
+  | 'print'
 
 type ShippingContextType = {
   open: ShippingDialogType | null

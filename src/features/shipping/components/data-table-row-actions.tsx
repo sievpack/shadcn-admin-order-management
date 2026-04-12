@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { pdf } from '@react-pdf/renderer'
-import { Eye, Edit, Trash2, Plus, Download } from 'lucide-react'
+import { Eye, Edit, Trash2, Plus, Download, Printer } from 'lucide-react'
 import { shippingAPI, authAPI } from '@/lib/api'
 import { showToastWithData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
@@ -162,6 +162,18 @@ export function DataTableRowActions({
             {exporting ? '导出中...' : '导出PDF'}
             <DropdownMenuShortcut>
               <Download size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => {
+              setCurrentRow(row.original)
+              setOpen('print')
+            }}
+          >
+            打印
+            <DropdownMenuShortcut>
+              <Printer size={16} />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

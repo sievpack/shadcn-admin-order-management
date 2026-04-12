@@ -2,6 +2,7 @@ import { NewShip } from './new-ship'
 import { ShippingAddItemsDialog } from './shipping-add-items-dialog'
 import { ShippingDeleteDialog } from './shipping-delete-dialog'
 import { ShippingEditDialog } from './shipping-edit-dialog'
+import { ShippingPrintDialog } from './shipping-print-dialog'
 import { useShipping } from './shipping-provider'
 import { ShippingViewDialog } from './shipping-view-dialog'
 
@@ -95,6 +96,16 @@ export function ShippingDialogs({ onRefresh, onEdit }: ShippingDialogsProps) {
             }}
             currentRow={currentRow}
             onDeleted={onRefresh}
+          />
+
+          <ShippingPrintDialog
+            open={open === 'print'}
+            onOpenChange={() => {
+              if (open === 'print') {
+                setOpen(null)
+              }
+            }}
+            shippingNumber={currentRow?.发货单号 ?? null}
           />
         </>
       )}

@@ -1,392 +1,215 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+import logging
+from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from sqlalchemy.orm import Session
-from typing import Optional
-from datetime import datetime
+from typing import List
 import os
-import copy
-from jinja2 import Template
+import shutil
+import uuid
 
 from app.db.database import get_db_jns
 from app.models.user import User
 from app.api.auth import get_current_active_user
 from app.core.response import success_response, error_response
+from app.services.ship_service import ship_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# 模板目录
-TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), 'templates')
+# 模板目录和临时目录
+TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'public', 'templates')
+TEMP_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'temp')
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 
-def render_template(template_name: str, context: dict) -> str:
-    """渲染模板文件"""
-    template_path = os.path.join(TEMPLATE_DIR, template_name)
-    if not os.path.exists(template_path):
-        raise FileNotFoundError(f"模板文件不存在: {template_path}")
-    
-    with open(template_path, 'r', encoding='utf-8') as f:
-        template_content = f.read()
-    
-    template = Template(template_content)
-    
-    # 预处理 context，将所有值转换为字符串（保留列表和字典结构）
-    def process_value(value):
-        if value is None:
-            return ''
-        elif isinstance(value, list):
-            return [process_value(item) for item in value]
-        elif isinstance(value, dict):
-            return {k: process_value(v) for k, v in value.items()}
-        elif isinstance(value, (int, float)):
-            return value
-        else:
-            return str(value)
-    
-    processed_context = {key: process_value(value) for key, value in context.items()}
-    
-    return template.render(**processed_context)
 
 
-def prepare_delivery_data(data: dict) -> dict:
-    """准备送货单数据"""
-    items = data.get('items', [])
+
+def resize_pdf_page(input_path: str, output_path: str, width_mm: float, height_mm: float):
+    """
+    使用 PyPDF2 调整 PDF 页面尺寸并缩放内容
+    """
+    from PyPDF2 import PdfReader, PdfWriter, Transformation
     
-    if not items:
-        items = []
-    elif not isinstance(items, list):
-        items = [items]
+    target_width_pt = width_mm * 72 / 25.4
+    target_height_pt = height_mm * 72 / 25.4
     
-    total_amount = sum(float(item.get('金额', 0) or 0) for item in items)
+    reader = PdfReader(input_path)
+    writer = PdfWriter()
     
-    items_per_page = 8
-    total_pages = (len(items) + items_per_page - 1) // items_per_page if items else 1
-    
-    pages = []
-    for page_num in range(total_pages):
-        start_idx = page_num * items_per_page
-        end_idx = min(start_idx + items_per_page, len(items))
-        page_items = items[start_idx:end_idx]
+    for page in reader.pages:
+        orig_width = float(page.mediabox.width)
+        orig_height = float(page.mediabox.height)
         
-        # 深拷贝避免修改原始数据
-        page_items = [copy.deepcopy(item) for item in page_items]
+        # 计算缩放比例
+        scale_x = target_width_pt / orig_width
+        scale_y = target_height_pt / orig_height
         
-        # 添加序号
-        for i, item in enumerate(page_items):
-            item['index'] = start_idx + i + 1
+        # 创建新页面
+        new_page = writer.add_blank_page(width=target_width_pt, height=target_height_pt)
         
-        is_first = page_num == 0
-        is_last = page_num == total_pages - 1
+        # 应用缩放变换并合并
+        transform = Transformation().scale(scale_x, scale_y)
+        new_page.add_transformation(transform)
+        new_page.merge_page(page)
+    
+    with open(output_path, 'wb') as f:
+        writer.write(f)
+    
+    logger.info(f"PDF resized and scaled to {width_mm}mm x {height_mm}mm")
+
+
+def fill_and_convert_shipping(shipping_info: dict) -> str:
+    """
+    填充送货单模板并转换为PDF
+    返回 PDF 文件路径
+    """
+    import win32com.client as win32
+    
+    # 复制模板
+    template_path = os.path.join(TEMPLATE_DIR, '送货单模板.xlsx')
+    unique_id = uuid.uuid4().hex[:8]
+    ship_id = shipping_info.get('发货单号', 'unknown')
+    excel_filename = f"shipping_{ship_id}_{unique_id}.xlsx"
+    excel_path = os.path.join(TEMP_DIR, excel_filename)
+    shutil.copy(template_path, excel_path)
+    
+    # 用 win32com 直接操作 Excel
+    excel = win32.Dispatch('Excel.Application')
+    excel.Visible = False
+    excel.DisplayAlerts = False
+    
+    try:
+        workbook = excel.Workbooks.Open(os.path.abspath(excel_path))
+        ws = workbook.Worksheets(1)
         
-        pages.append({
-            'page_num': page_num + 1,
-            'items': page_items,
-            'is_first': is_first,
-            'is_last': is_last,
-            'show_total': is_first or is_last
-        })
+        # 填充基本信息
+        # B5: 客户名称, I5: 送货单号
+        # B6: 送货地址, I6: 送货日期
+        ws.Cells(5, 2).Value = f"客户名称：{shipping_info.get('客户名称', '')}"
+        ws.Cells(5, 9).Value = f"送货单号：{shipping_info.get('发货单号', '')}"
+        ws.Cells(6, 2).Value = f"送货地址：{shipping_info.get('送货地址', '')}"
+        ws.Cells(6, 9).Value = f"送货日期：{shipping_info.get('发货日期', '')}"
+        
+        # 填充数据行 (第8-15行)
+        # B: 序号, C: 合同编号, D: 产品类型, E: 规格, F: 型号, G: 单位, H: 数量, I: 备注
+        items = shipping_info.get('订单项目', [])
+        for i, item in enumerate(items[:8]):  # 最多8行
+            row = 8 + i
+            ws.Cells(row, 2).Value = i + 1  # 序号
+            ws.Cells(row, 3).Value = item.get('合同编号', '')
+            ws.Cells(row, 4).Value = item.get('产品类型', '')
+            ws.Cells(row, 5).Value = item.get('规格', '')
+            ws.Cells(row, 6).Value = item.get('型号', '')
+            ws.Cells(row, 7).Value = item.get('单位', '')
+            ws.Cells(row, 8).Value = item.get('数量', 0)
+            ws.Cells(row, 9).Value = item.get('备注', '')
+        
+        # 计算并填充总数量 (G16)
+        if items:
+            total_qty = sum(item.get('数量', 0) for item in items)
+            ws.Cells(16, 7).Value = total_qty
+        
+        # 填充页脚 (第18行)
+        # B18: 制单人, E18: 页码
+        ws.Cells(18, 2).Value = f"制单：{shipping_info.get('制单人', 'Admin')}"
+        ws.Cells(18, 5).Value = "第1页/共1页"
+        
+        # 设置页面尺寸为二等分连续纸 (161)
+        page_setup = ws.PageSetup
+        page_setup.PaperSize = 161  # 二等分连续纸
+        page_setup.Orientation = 1  # 纵向
+        page_setup.Zoom = False
+        page_setup.FitToPagesWide = 1
+        page_setup.FitToPagesTall = False
+        page_setup.LeftMargin = 20
+        page_setup.RightMargin = 20
+        page_setup.TopMargin = 20
+        page_setup.BottomMargin = 20
+        
+        # 保存 Excel
+        workbook.Save()
+        
+        # 转换为 PDF
+        pdf_filename = f"shipping_{ship_id}_{unique_id}.pdf"
+        pdf_path = os.path.join(TEMP_DIR, pdf_filename)
+        workbook.Worksheets(1).ExportAsFixedFormat(0, os.path.abspath(pdf_path))
+        
+        workbook.Close(False)
+        
+    finally:
+        excel.Quit()
     
-    return {
-        '发货单号': data.get('发货单号', ''),
-        '客户名称': data.get('客户名称', ''),
-        '发货日期': data.get('发货日期', ''),
-        '快递公司': data.get('快递公司', ''),
-        '快递单号': data.get('快递单号', ''),
-        'pages': pages,
-        'total_pages': total_pages,
-        'total_amount': f'{total_amount:.2f}',
-        'print_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
-
-
-def prepare_workorder_data(data: dict) -> dict:
-    """准备生产工单数据"""
-    return {
-        '工单编号': data.get('工单编号', ''),
-        '计划编号': data.get('计划编号', ''),
-        '产线': data.get('产线', ''),
-        '工单状态': data.get('工单状态', ''),
-        'create_at': data.get('create_at', ''),
-        '计划开始': data.get('计划开始', ''),
-        '计划结束': data.get('计划结束', ''),
-        '实际开始': data.get('实际开始', ''),
-        '实际结束': data.get('实际结束', ''),
-        '产品类型': data.get('产品类型', ''),
-        '产品型号': data.get('产品型号', ''),
-        '规格': data.get('规格', ''),
-        '单位': data.get('单位', ''),
-        '工单数量': data.get('工单数量', 0),
-        '已完成数量': data.get('已完成数量', 0),
-        '工序': data.get('工序', ''),
-        '总工序': data.get('总工序', ''),
-        'print_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
-
-
-def prepare_order_data(data: dict) -> dict:
-    """准备订单合同数据"""
-    items = data.get('items', [])
+    # 删除临时 Excel 文件
+    if os.path.exists(excel_path):
+        os.remove(excel_path)
     
-    # 深拷贝避免修改原始数据
-    items = [copy.deepcopy(item) for item in items]
-    
-    # 添加序号
-    for i, item in enumerate(items):
-        item['index'] = i + 1
-    
-    return {
-        '订单编号': data.get('订单编号', ''),
-        '客户名称': data.get('客户名称', ''),
-        '订单日期': data.get('订单日期', ''),
-        '交货日期': data.get('交货日期', ''),
-        '合同编号': data.get('合同编号', ''),
-        'items': items,
-        'print_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
+    logger.info(f"PDF created: {pdf_path}")
+    return f"/temp/{pdf_filename}"
 
 
-def prepare_report_data(data: dict) -> dict:
-    """准备报工记录数据"""
-    return {
-        '报工编号': data.get('报工编号', ''),
-        '工单编号': data.get('工单编号', ''),
-        '报工日期': data.get('报工日期', ''),
-        '报工人': data.get('报工人', ''),
-        '检验员': data.get('检验员', ''),
-        '报工数量': data.get('报工数量', 0),
-        '合格数量': data.get('合格数量', 0),
-        '不良数量': data.get('不良数量', 0),
-        '工序': data.get('工序', ''),
-        'print_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
-
-
-@router.get("/workorder/{order_id}", response_model=dict)
-async def print_workorder(
-    order_id: int,
+@router.get("/shipping/{ship_id}")
+async def print_shipping(
+    ship_id: str,
     db: Session = Depends(get_db_jns),
     current_user: User = Depends(get_current_active_user)
 ):
-    """打印生产工单"""
+    """
+    打印送货单：查询数据 → 填充模板 → 转PDF → 返回预览URL
+    
+    流程：
+    1. 根据发货单号查询数据库获取发货单详情
+    2. 复制Excel模板，用win32com填写数据
+    3. 转换为PDF
+    4. 返回PDF预览路径
+    """
     try:
-        from app.models.production import ProductionOrder
-        order = db.query(ProductionOrder).filter(ProductionOrder.id == order_id).first()
+        # 1. 查询发货单数据
+        shipping_info, error = ship_service.get_shipping_detail(db, ship_id)
+        if error:
+            return error_response(msg=error)
         
-        if not order:
-            return error_response(msg="工单不存在")
+        # 添加制单人
+        shipping_info['制单人'] = f"{current_user.last_name or ''}{current_user.first_name or ''}" or current_user.username
         
-        data = {
-            "工单编号": order.工单编号,
-            "计划编号": order.计划编号,
-            "产线": order.产线,
-            "工单状态": order.工单状态,
-            "产品类型": order.产品类型,
-            "产品型号": order.产品型号,
-            "规格": order.规格,
-            "单位": order.单位,
-            "工单数量": order.工单数量,
-            "已完成数量": order.已完成数量,
-            "工序": order.工序,
-            "总工序": order.总工序,
-            "计划开始": order.计划开始.strftime('%Y-%m-%d') if order.计划开始 else '',
-            "计划结束": order.计划结束.strftime('%Y-%m-%d') if order.计划结束 else '',
-            "实际开始": order.实际开始.strftime('%Y-%m-%d %H:%M') if order.实际开始 else '',
-            "实际结束": order.实际结束.strftime('%Y-%m-%d %H:%M') if order.实际结束 else '',
-            "create_at": order.create_at.strftime('%Y-%m-%d %H:%M:%S') if order.create_at else '',
-        }
+        logger.info(f"打印发货单: {ship_id}, 项目数: {len(shipping_info.get('订单项目', []))}")
         
-        context = prepare_workorder_data(data)
-        html = render_template('workorder.html', context)
+        # 2. 填充模板并转换为 PDF
+        pdf_path = fill_and_convert_shipping(shipping_info)
         
-        return success_response(data={
-            "type": "workorder",
-            "html": html,
-            "title": f"生产工单 - {order.工单编号}"
-        })
-    except Exception as e:
-        return error_response(msg=f"获取打印数据失败: {str(e)}")
-
-
-@router.get("/delivery/{ship_id}", response_model=dict)
-async def print_delivery(
-    ship_id: int,
-    db: Session = Depends(get_db_jns),
-    current_user: User = Depends(get_current_active_user)
-):
-    """打印送货单"""
-    try:
-        from app.models.ship import Ship
-        from app.models.order import Order
+        return success_response(data={"pdf_path": pdf_path})
         
-        ship = db.query(Ship).filter(Ship.id == ship_id).first()
-        if not ship:
-            return error_response(msg="发货记录不存在")
-        
-        # 安全获取字段值
-        def safe_str(value):
-            if value is None:
-                return ''
-            return str(value)
-        
-        def safe_date_str(value):
-            if value is None:
-                return ''
-            return value.strftime('%Y-%m-%d')
-        
-        orders = db.query(Order).filter(Order.ship_id == ship_id).all()
-        
-        items = []
-        for order in orders:
-            # 安全获取字段值
-            销售单价_val = float(order.销售单价) if order.销售单价 else 0.0
-            金额_val = float(order.金额) if order.金额 else 0.0
-            
-            order_dict = {
-                "产品型号": safe_str(order.型号),
-                "规格": safe_str(order.规格),
-                "产品类型": safe_str(order.产品类型),
-                "数量": int(order.数量) if order.数量 else 0,
-                "单位": safe_str(order.单位),
-                "销售单价": 销售单价_val,
-                "金额": 金额_val,
-            }
-            items.append(order_dict)
-        
-        data = {
-            "发货单号": safe_str(ship.发货单号),
-            "快递单号": safe_str(ship.快递单号),
-            "快递公司": safe_str(ship.快递公司),
-            "客户名称": safe_str(ship.客户名称),
-            "发货日期": safe_date_str(ship.发货日期),
-            "items": items,
-        }
-        
-        # 准备数据
-        context = prepare_delivery_data(data)
-        html = render_template('delivery.html', context)
-        
-        return success_response(data={
-            "type": "delivery",
-            "html": html,
-            "title": f"送货单 - {ship.发货单号}"
-        })
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return error_response(msg=f"获取打印数据失败: {str(e)}")
+        return error_response(msg=f"打印失败: {str(e)}")
 
 
-@router.get("/order/{order_id}", response_model=dict)
-async def print_order(
-    order_id: int,
-    db: Session = Depends(get_db_jns),
-    current_user: User = Depends(get_current_active_user)
-):
-    """打印订单合同"""
-    try:
-        from app.models.order import Order, OrderList
-        
-        order_list = db.query(OrderList).filter(OrderList.id == order_id).first()
-        if not order_list:
-            return error_response(msg="订单不存在")
-        
-        orders = db.query(Order).filter(Order.oid == order_id).all()
-        
-        items = []
-        for order in orders:
-            items.append({
-                "产品型号": order.型号,
-                "规格": order.规格,
-                "产品类型": order.产品类型,
-                "数量": order.数量,
-                "单位": order.单位,
-                "销售单价": f"{float(order.销售单价 or 0):.2f}",
-                "金额": f"{float(order.金额 or 0):.2f}",
-            })
-        
-        data = {
-            "订单编号": order_list.订单编号,
-            "客户名称": order_list.客户名称,
-            "订单日期": order_list.订单日期.strftime('%Y-%m-%d') if order_list.订单日期 else '',
-            "交货日期": order_list.交货日期.strftime('%Y-%m-%d') if order_list.交货日期 else '',
-            "合同编号": orders[0].合同编号 if orders else '',
-            "items": items,
-        }
-        
-        context = prepare_order_data(data)
-        html = render_template('order.html', context)
-        
-        return success_response(data={
-            "type": "order",
-            "html": html,
-            "title": f"订单合同 - {order_list.订单编号}"
-        })
-    except Exception as e:
-        return error_response(msg=f"获取打印数据失败: {str(e)}")
-
-
-@router.get("/report/{report_id}", response_model=dict)
-async def print_report(
-    report_id: int,
-    db: Session = Depends(get_db_jns),
-    current_user: User = Depends(get_current_active_user)
-):
-    """打印报工记录"""
-    try:
-        from app.models.production import ProductionReport
-        report = db.query(ProductionReport).filter(ProductionReport.id == report_id).first()
-        
-        if not report:
-            return error_response(msg="报工记录不存在")
-        
-        data = {
-            "报工编号": report.报工编号,
-            "工单编号": report.工单编号,
-            "报工日期": report.报工日期.strftime('%Y-%m-%d') if report.报工日期 else '',
-            "报工人": report.报工人,
-            "检验员": report.检验员 or '',
-            "报工数量": report.报工数量,
-            "合格数量": report.合格数量,
-            "不良数量": report.不良数量,
-            "工序": report.工序 or '',
-        }
-        
-        context = prepare_report_data(data)
-        html = render_template('report.html', context)
-        
-        return success_response(data={
-            "type": "report",
-            "html": html,
-            "title": f"报工记录 - {report.报工编号}"
-        })
-    except Exception as e:
-        return error_response(msg=f"获取打印数据失败: {str(e)}")
-
-
-@router.post("/preview", response_model=dict)
-async def print_preview(
-    data: dict,
-    type: str = Query(..., description="打印类型: workorder, delivery, order, report"),
-    current_user: User = Depends(get_current_active_user)
-):
-    """自定义打印预览"""
-    type_map = {
-        "workorder": ("生产工单", prepare_workorder_data, "workorder.html"),
-        "delivery": ("送货单", prepare_delivery_data, "delivery.html"),
-        "order": ("订单合同", prepare_order_data, "order.html"),
-        "report": ("报工记录", prepare_report_data, "report.html"),
-    }
+@router.get("/preview-pdf")
+async def preview_pdf(path: str = Query(...)):
+    """预览PDF文件"""
+    filename = os.path.basename(path)
+    pdf_path = os.path.join(TEMP_DIR, filename)
     
-    if type not in type_map:
-        return error_response(msg="无效的打印类型")
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="文件不存在")
     
-    title, prepare_func, template_name = type_map[type]
+    from fastapi.responses import FileResponse
+    return FileResponse(pdf_path, media_type='application/pdf')
+
+
+@router.post("/cleanup")
+async def cleanup_pdf(paths: List[str] = Body(...)):
+    """清理临时PDF文件"""
+    cleaned = []
+    for path in paths:
+        try:
+            filename = os.path.basename(path)
+            full_path = os.path.join(TEMP_DIR, filename)
+            if os.path.exists(full_path):
+                os.remove(full_path)
+                cleaned.append(filename)
+        except Exception as e:
+            logger.error(f"清理失败 {path}: {e}")
     
-    try:
-        context = prepare_func(data)
-        html = render_template(template_name, context)
-        return success_response(data={
-            "type": type,
-            "html": html,
-            "title": title
-        })
-    except Exception as e:
-        return error_response(msg=f"生成打印模板失败: {str(e)}")
+    return success_response(data={"cleaned": cleaned})

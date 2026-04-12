@@ -429,10 +429,13 @@ export const printAPI = {
   printDelivery: (shipId: number) => api.get(`/print/delivery/${shipId}`),
   printOrder: (orderId: number) => api.get(`/print/order/${orderId}`),
   printReport: (reportId: number) => api.get(`/print/report/${reportId}`),
+  printShipping: (shipId: string) =>
+    api.get(`/print/shipping/${encodeURIComponent(shipId)}`),
   preview: (data: z.infer<typeof printPreviewSchema>, type: string) =>
     api.post(`/print/preview?type=${type}`, data),
   getProcessingPrint: (orderId: number) =>
     api.get(`/order/processing/processing-print/${orderId}`),
+  cleanupPdf: (paths: string[]) => api.post('/print/cleanup', { paths }),
 }
 
 // 字典管理 API
