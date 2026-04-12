@@ -1,6 +1,7 @@
 export * from './keys'
 export * from './useUsers'
 export * from './useUserDetail'
+export * from './useCurrentUser'
 export * from './useCreateUser'
 export * from './useUpdateUser'
 export * from './useDeleteUser'

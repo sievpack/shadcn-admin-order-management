@@ -5,4 +5,5 @@ export const userKeys = {
     [...userKeys.lists(), filters] as const,
   details: () => [...userKeys.all, 'detail'] as const,
   detail: (id: number) => [...userKeys.details(), id] as const,
+  current: () => [...userKeys.all, 'current'] as const,
 }
