@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
   getYear,
   getMonth,
@@ -18,27 +18,15 @@ import { zhCN } from 'date-fns/locale'
 import {
   ChevronLeft,
   ChevronRight,
-  Loader2,
   TrendingUp,
   TrendingDown,
   Package,
   ShoppingCart,
-  Calendar,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from 'recharts'
+import { XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -48,6 +36,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AppHeader } from '@/components/layout/app-header'
 import { Main } from '@/components/layout/main'
 
@@ -118,7 +107,6 @@ function StatCard({
   trend,
   trendValue,
   icon: Icon,
-  gradient,
   index,
 }: {
   title: string
@@ -127,66 +115,70 @@ function StatCard({
   trend?: 'up' | 'down'
   trendValue?: number
   icon: React.ComponentType<{ className?: string }>
-  gradient: string
   index: number
 }) {
   return (
     <Card
       className={cn(
-        'relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
-        'border-border/50 hover:border-primary/20'
+        'group relative overflow-hidden bg-gradient-to-br from-card to-card/80',
+        'transition-all duration-300 ease-out',
+        'hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5',
+        'border border-border/40 hover:border-primary/30'
       )}
       style={{
-        animationDelay: `${index * 100}ms`,
+        animationDelay: `${index * 80}ms`,
       }}
     >
-      <div
-        className={cn(
-          'absolute inset-0 opacity-5 transition-opacity duration-300 hover:opacity-10',
-          gradient
-        )}
-      />
-      <CardContent className='relative p-6'>
+      <CardContent className='relative p-4'>
         <div className='flex items-start justify-between'>
-          <div className='space-y-3'>
-            <p className='text-sm font-medium text-muted-foreground'>{title}</p>
-            <p className='text-3xl font-bold tracking-tight'>
+          <div className='space-y-1'>
+            <p className='text-xs font-medium text-muted-foreground'>{title}</p>
+            <p className='text-2xl font-bold tracking-tight'>
               <AnimatedNumber value={value} />
             </p>
             {subtitle && (
-              <p className='text-xs text-muted-foreground'>{subtitle}</p>
+              <p className='text-[10px] text-muted-foreground'>{subtitle}</p>
             )}
           </div>
           <div
             className={cn(
-              'flex size-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg',
-              gradient
+              'flex size-9 items-center justify-center rounded-lg',
+              'bg-gradient-to-br from-primary/10 to-primary/5',
+              'text-primary transition-all duration-300',
+              'group-hover:scale-110 group-hover:shadow-sm group-hover:shadow-primary/20'
             )}
           >
-            <Icon className='size-6' />
+            <Icon className='size-4' />
           </div>
         </div>
         {trend && trendValue !== undefined && (
-          <div className='mt-4 flex items-center gap-1'>
+          <div className='mt-2 flex items-center gap-1'>
             {trend === 'up' ? (
-              <ArrowUpRight className='size-4 text-emerald-500' />
+              <ArrowUpRight className='size-3 text-emerald-500' />
             ) : (
-              <ArrowDownRight className='size-4 text-red-500' />
+              <ArrowDownRight className='size-3 text-red-500' />
             )}
             <span
               className={cn(
-                'text-sm font-medium',
+                'text-xs font-medium',
                 trend === 'up' ? 'text-emerald-500' : 'text-red-500'
               )}
             >
               {trendValue}%
             </span>
-            <span className='text-xs text-muted-foreground'>较上月</span>
+            <span className='text-[10px] text-muted-foreground'>较上月</span>
           </div>
         )}
       </CardContent>
     </Card>
   )
+}
+
+function formatCurrency(value: number): string {
+  if (value >= 10000) {
+    return `¥${(value / 10000).toFixed(1)}万`
+  }
+  return `¥${value.toLocaleString('zh-CN')}`
 }
 
 function HeatmapCalendar({
@@ -205,108 +197,117 @@ function HeatmapCalendar({
     return Math.max(...amounts, 1)
   }, [days, getDayData])
 
-  const getHeatColor = (amount: number) => {
-    if (amount === 0) return 'bg-muted/30'
+  const getHeatColor = (amount: number): { bg: string; text: string } => {
+    if (amount === 0) {
+      return { bg: 'bg-muted/30', text: 'text-muted-foreground' }
+    }
     const intensity = Math.min(amount / maxAmount, 1)
-    if (intensity < 0.25) return 'bg-primary/10'
-    if (intensity < 0.5) return 'bg-primary/25'
-    if (intensity < 0.75) return 'bg-primary/40'
-    return 'bg-primary/60'
+    if (intensity < 0.15) return { bg: 'bg-primary/5', text: 'text-foreground' }
+    if (intensity < 0.3) return { bg: 'bg-primary/15', text: 'text-foreground' }
+    if (intensity < 0.5) return { bg: 'bg-primary/30', text: 'text-foreground' }
+    if (intensity < 0.7)
+      return { bg: 'bg-primary/50', text: 'text-primary-foreground' }
+    if (intensity < 0.85)
+      return { bg: 'bg-primary/70', text: 'text-primary-foreground' }
+    return { bg: 'bg-primary', text: 'text-primary-foreground' }
   }
 
   return (
-    <div className='grid grid-cols-7 gap-1'>
-      {WEEKDAYS.map((weekday) => (
-        <div
-          key={weekday}
-          className='flex items-center justify-center p-2 text-xs font-medium text-muted-foreground'
-        >
-          {weekday}
-        </div>
-      ))}
-      {days.map((day, index) => {
-        const dayData = getDayData(day)
-        const isCurrentMonth = isSameMonth(day, currentMonth)
-        const isToday = isSameDay(day, today)
-        const isFuture = day > today
-        const amount = dayData?.order_amount || 0
-
-        return (
+    <div className='space-y-3'>
+      <div className='grid grid-cols-7 gap-1'>
+        {WEEKDAYS.map((weekday) => (
           <div
-            key={index}
-            className={cn(
-              'group relative aspect-square cursor-pointer rounded-lg p-1 transition-all duration-200',
-              !isCurrentMonth && 'opacity-30',
-              isFuture && isCurrentMonth && 'cursor-not-allowed opacity-50',
-              isToday && 'ring-2 ring-primary ring-offset-2',
-              !isFuture && isCurrentMonth && getHeatColor(amount)
-            )}
+            key={weekday}
+            className='flex items-center justify-center p-2 text-xs font-medium text-muted-foreground'
           >
-            <div className='flex h-full flex-col items-center justify-center rounded-md bg-card transition-transform duration-200 hover:scale-105 hover:shadow-md'>
+            {weekday}
+          </div>
+        ))}
+      </div>
+      <div className='grid grid-cols-7 gap-1'>
+        {days.map((day, index) => {
+          const dayData = getDayData(day)
+          const isCurrentMonth = isSameMonth(day, currentMonth)
+          const isToday = isSameDay(day, today)
+          const isFuture = day > today
+          const amount = dayData?.order_amount || 0
+          const colors = getHeatColor(amount)
+
+          return (
+            <div
+              key={index}
+              className={cn(
+                'group relative flex flex-col items-center justify-center rounded-lg border p-2 transition-all duration-200',
+                !isCurrentMonth && 'opacity-25',
+                isFuture && 'cursor-not-allowed opacity-40',
+                isToday &&
+                  'ring-2 ring-primary ring-offset-2 ring-offset-background',
+                isFuture || !isCurrentMonth
+                  ? 'border-transparent bg-muted/20'
+                  : `border-transparent ${colors.bg}`
+              )}
+            >
               <span
                 className={cn(
                   'text-sm font-medium',
                   !isCurrentMonth && 'text-muted-foreground/50',
-                  isToday && 'text-primary'
+                  isToday && 'font-bold text-primary',
+                  colors.text,
+                  !isToday &&
+                    !isFuture &&
+                    isCurrentMonth &&
+                    amount > 0 &&
+                    'font-semibold'
                 )}
               >
                 {format(day, 'd')}
               </span>
               {!isFuture && isCurrentMonth && amount > 0 && (
-                <span className='mt-0.5 text-[10px] font-medium text-primary'>
-                  ¥{(amount / 1000).toFixed(0)}k
+                <span
+                  className={cn('mt-0.5 text-[10px] font-medium', colors.text)}
+                >
+                  {formatCurrency(amount)}
                 </span>
               )}
             </div>
-            {dayData && !isFuture && isCurrentMonth && (
-              <div className='absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg bg-popover px-3 py-2 text-xs whitespace-nowrap shadow-lg group-hover:block'>
-                <div className='font-medium'>{format(day, 'MM月dd日')}</div>
-                <div className='text-muted-foreground'>
-                  订单: ¥{amount.toLocaleString()}
-                </div>
-                <div className='text-muted-foreground'>
-                  发货: ¥{(dayData.ship_amount || 0).toLocaleString()}
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
+      <div className='flex items-center justify-end gap-2 pt-2 text-xs text-muted-foreground'>
+        <span>低</span>
+        <div className='flex gap-0.5'>
+          <div className='size-3 rounded-sm bg-primary/5' />
+          <div className='size-3 rounded-sm bg-primary/15' />
+          <div className='size-3 rounded-sm bg-primary/30' />
+          <div className='size-3 rounded-sm bg-primary/50' />
+          <div className='size-3 rounded-sm bg-primary/70' />
+          <div className='size-3 rounded-sm bg-primary' />
+        </div>
+        <span>高</span>
+      </div>
     </div>
   )
 }
 
 export function MonthlyReport() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [monthlyData, setMonthlyData] =
-    useState<MonthlyData>(defaultMonthlyData)
   const [today] = useState(new Date())
 
   const year = getYear(currentMonth)
   const month = getMonth(currentMonth) + 1
 
-  const { isLoading, error } = useMonthlyReport({
+  const {
+    isLoading,
+    error,
+    data: responseData,
+  } = useMonthlyReport({
     year,
     month,
     customer: 'all',
   })
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `/api/report/monthly?year=${year}&month=${month}&customer=all`
-        )
-        const result = await response.json()
-        if (result.code === 0) {
-          setMonthlyData(result.data)
-        }
-      } catch (err) {
-        console.error('Failed to fetch monthly report:', err)
-      }
-    }
-    fetchData()
-  }, [year, month])
+  const monthlyData =
+    responseData?.data?.code === 0 ? responseData.data.data : defaultMonthlyData
 
   const getDayData = (date: Date): DailyStat | null => {
     const dateStr = format(date, 'yyyy-MM-dd')
@@ -315,7 +316,7 @@ export function MonthlyReport() {
 
   const calendarDays = () => {
     const monthStart = startOfMonth(currentMonth)
-    const monthEnd = endOfMonth(monthStart)
+    const monthEnd = endOfMonth(currentMonth)
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
     const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
     const days: Date[] = []
@@ -364,8 +365,8 @@ export function MonthlyReport() {
             >
               <ChevronLeft className='size-4' />
             </Button>
-            <div className='min-w-[140px] text-center'>
-              <span className='text-lg font-semibold'>
+            <div className='min-w-[120px] text-center'>
+              <span className='text-sm font-medium'>
                 {format(currentMonth, 'yyyy年MM月', { locale: zhCN })}
               </span>
             </div>
@@ -385,7 +386,6 @@ export function MonthlyReport() {
             value={summary.total_ship_amount}
             subtitle='已完成订单'
             icon={Package}
-            gradient='from-blue-500 to-blue-600'
             trend='up'
             trendValue={12}
             index={0}
@@ -395,7 +395,6 @@ export function MonthlyReport() {
             value={summary.total_order_amount}
             subtitle='订单总额'
             icon={ShoppingCart}
-            gradient='from-emerald-500 to-emerald-600'
             trend='up'
             trendValue={8}
             index={1}
@@ -405,7 +404,6 @@ export function MonthlyReport() {
             value={summary.jiebodai_percentage}
             subtitle='产品类型'
             icon={TrendingUp}
-            gradient='from-violet-500 to-violet-600'
             index={2}
           />
           <StatCard
@@ -413,25 +411,35 @@ export function MonthlyReport() {
             value={summary.kaikoudai_percentage}
             subtitle='产品类型'
             icon={TrendingDown}
-            gradient='from-orange-500 to-orange-600'
             index={3}
           />
         </div>
 
-        <div className='grid gap-6 lg:grid-cols-3'>
-          <Card className='overflow-hidden border-border/50 lg:col-span-2'>
-            <CardHeader className='bg-muted/30'>
-              <CardTitle className='flex items-center gap-2'>
-                <Calendar className='size-5 text-primary' />
-                日订单热力图
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='p-6'>
+        <Card className='border border-border/40 bg-gradient-to-br from-card to-card/80'>
+          <Tabs defaultValue='heatmap' className='w-full'>
+            <div className='flex items-center justify-between px-4 pt-4'>
+              <TabsList className='h-9'>
+                <TabsTrigger value='heatmap' className='text-xs'>
+                  日订单热力图
+                </TabsTrigger>
+                <TabsTrigger value='trend' className='text-xs'>
+                  每日趋势
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value='heatmap' className='p-4 pt-3'>
               {isLoading ? (
-                <div className='grid grid-cols-7 gap-2'>
-                  {Array.from({ length: 35 }).map((_, i) => (
-                    <Skeleton key={i} className='aspect-square' />
-                  ))}
+                <div className='space-y-3'>
+                  <div className='grid grid-cols-7 gap-1'>
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <Skeleton key={i} className='h-6 rounded-md' />
+                    ))}
+                  </div>
+                  <div className='grid grid-cols-7 gap-1'>
+                    {Array.from({ length: 35 }).map((_, i) => (
+                      <Skeleton key={i} className='h-16 rounded-lg' />
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <HeatmapCalendar
@@ -441,29 +449,16 @@ export function MonthlyReport() {
                   getDayData={getDayData}
                 />
               )}
-            </CardContent>
-          </Card>
-
-          <Card className='overflow-hidden border-border/50'>
-            <CardHeader className='bg-muted/30'>
-              <CardTitle className='flex items-center gap-2'>
-                <TrendingUp className='size-5 text-primary' />
-                每日趋势
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='p-6'>
+            </TabsContent>
+            <TabsContent value='trend' className='p-4 pt-3'>
               {isLoading ? (
-                <div className='space-y-3'>
-                  {Array.from({ length: 7 }).map((_, i) => (
-                    <Skeleton key={i} className='h-8 w-full' />
-                  ))}
-                </div>
+                <Skeleton className='h-[280px] w-full rounded-lg' />
               ) : chartData.length > 0 ? (
                 <ChartContainer
                   config={chartConfig}
                   className='h-[280px] w-full'
                 >
-                  <BarChart data={chartData} barCategoryGap='20%'>
+                  <LineChart data={chartData}>
                     <CartesianGrid
                       vertical={false}
                       strokeDasharray='3 3'
@@ -491,7 +486,7 @@ export function MonthlyReport() {
                       }}
                     />
                     <ChartTooltip
-                      cursor={{ fill: 'hsl(var(--muted) / 0.5)' }}
+                      cursor={{ stroke: 'hsl(var(--muted))', strokeWidth: 2 }}
                       content={
                         <ChartTooltipContent
                           labelFormatter={(label) => `${label}日`}
@@ -502,108 +497,27 @@ export function MonthlyReport() {
                         />
                       }
                     />
-                    <Bar
+                    <Line
+                      type='monotone'
                       dataKey='order_amount'
-                      fill='var(--color-order_amount)'
-                      radius={[4, 4, 0, 0]}
-                      className='transition-opacity duration-200 hover:opacity-80'
+                      stroke='var(--color-order_amount)'
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4, fill: 'var(--color-order_amount)' }}
                     />
-                  </BarChart>
+                  </LineChart>
                 </ChartContainer>
               ) : (
-                <div className='flex h-[280px] items-center justify-center text-muted-foreground'>
+                <div className='flex h-[280px] items-center justify-center text-sm text-muted-foreground'>
                   暂无数据
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className='mt-6 grid gap-6 lg:grid-cols-2'>
-          <Card className='border-border/50'>
-            <CardHeader className='bg-muted/30'>
-              <div className='flex items-center justify-between'>
-                <CardTitle>月度概览</CardTitle>
-                <Badge variant='secondary'>
-                  {format(currentMonth, 'yyyy年MM月', { locale: zhCN })}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className='p-6'>
-              <div className='space-y-4'>
-                <div className='flex items-center justify-between rounded-lg bg-muted/30 p-4'>
-                  <div className='flex items-center gap-3'>
-                    <div className='flex size-10 items-center justify-center rounded-full bg-blue-500/10'>
-                      <Package className='size-5 text-blue-500' />
-                    </div>
-                    <div>
-                      <p className='text-sm text-muted-foreground'>发货金额</p>
-                      <p className='text-xl font-bold'>
-                        ¥{summary.total_ship_amount.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowUpRight className='size-5 text-emerald-500' />
-                </div>
-                <div className='flex items-center justify-between rounded-lg bg-muted/30 p-4'>
-                  <div className='flex items-center gap-3'>
-                    <div className='flex size-10 items-center justify-center rounded-full bg-emerald-500/10'>
-                      <ShoppingCart className='size-5 text-emerald-500' />
-                    </div>
-                    <div>
-                      <p className='text-sm text-muted-foreground'>订单金额</p>
-                      <p className='text-xl font-bold'>
-                        ¥{summary.total_order_amount.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowUpRight className='size-5 text-emerald-500' />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className='border-border/50'>
-            <CardHeader className='bg-muted/30'>
-              <CardTitle>产品分布</CardTitle>
-            </CardHeader>
-            <CardContent className='p-6'>
-              <div className='space-y-4'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between text-sm'>
-                    <span className='text-muted-foreground'>接驳带</span>
-                    <span className='font-medium'>
-                      {summary.jiebodai_percentage}%
-                    </span>
-                  </div>
-                  <div className='h-2 overflow-hidden rounded-full bg-muted'>
-                    <div
-                      className='h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-600 transition-all duration-500'
-                      style={{ width: `${summary.jiebodai_percentage}%` }}
-                    />
-                  </div>
-                </div>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between text-sm'>
-                    <span className='text-muted-foreground'>开口带</span>
-                    <span className='font-medium'>
-                      {summary.kaikoudai_percentage}%
-                    </span>
-                  </div>
-                  <div className='h-2 overflow-hidden rounded-full bg-muted'>
-                    <div
-                      className='h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500'
-                      style={{ width: `${summary.kaikoudai_percentage}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </TabsContent>
+          </Tabs>
+        </Card>
 
         {error && (
-          <div className='mt-6 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3'>
+          <div className='mt-4 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3'>
             <p className='text-sm text-destructive'>
               {error.message || '获取数据失败'}
             </p>
