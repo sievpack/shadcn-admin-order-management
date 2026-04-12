@@ -22,7 +22,6 @@ export function UsersMultiDeleteDialog<TData>({
       entityName='用户'
       onBulkDelete={async (ids) => {
         // TODO: 调用实际的用户批量删除 API
-        console.log('Delete users:', ids)
       }}
     />
   )

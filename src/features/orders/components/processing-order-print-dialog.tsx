@@ -26,11 +26,7 @@ export function ProcessingOrderPrintDialog({
   orderId,
   orderNumber,
 }: ProcessingOrderPrintDialogProps) {
-  console.log('[PrintDialog] orderId:', orderId)
   const { data: printData, isLoading, error } = useProcessingOrderPrint(orderId)
-  console.log('[PrintDialog] printData:', printData)
-  console.log('[PrintDialog] error:', error)
-  console.log('[PrintDialog] isLoading:', isLoading)
 
   const pdfData =
     printData?.code === 0 && printData.data
@@ -41,7 +37,6 @@ export function ProcessingOrderPrintDialog({
           total_pages: printData.data.total_pages,
         }
       : null
-  console.log('[PrintDialog] pdfData:', pdfData)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
